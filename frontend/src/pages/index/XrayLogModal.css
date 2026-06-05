@@ -111,15 +111,23 @@
 }
 
 body.dark .log-container {
-  --log-blocked: #ff7575;
-  --log-proxy: #6aa6ee;
-  --log-divider: rgba(255, 255, 255, 0.1);
+  --log-blocked: #ff3b30;
+  --log-proxy: #00f0ff;
+  --log-divider: rgba(255, 255, 255, 0.08);
+  background: #020304 !important;
+  color: #a5ecf1;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.05);
 }
 
 html[data-theme="ultra-dark"] .log-container {
-  --log-blocked: #ff8a8a;
-  --log-proxy: #7fb6f1;
-  --log-divider: rgba(255, 255, 255, 0.12);
+  --log-blocked: #ff3b30;
+  --log-proxy: #00f0ff;
+  --log-divider: rgba(255, 255, 255, 0.06);
+  background: #000000 !important;
+  color: #88e0e6;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.03);
 }
 
 .xraylog-modal-mobile .ant-modal-content {

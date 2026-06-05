@@ -23,6 +23,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { AllSettingSchema } from '@/schemas/setting';
 import AppSidebar from '@/layouts/AppSidebar';
+import PlanVerificationModal from '@/components/ui/PlanVerificationModal';
 import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
 import TelegramTab from './TelegramTab';
@@ -69,6 +70,7 @@ export default function SettingsPage() {
 
   const {
     allSetting,
+    originalSetting,
     updateSetting,
     fetched,
     spinning,
@@ -76,6 +78,8 @@ export default function SettingsPage() {
     saveDisabled,
     saveAll,
   } = useAllSettings();
+
+  const [showPlan, setShowPlan] = useState(false);
 
   const [entryHost, setEntryHost] = useState('');
   const [entryPort, setEntryPort] = useState('');
@@ -129,7 +133,17 @@ export default function SettingsPage() {
       messageApi.error(`${fieldPath}: ${t(msgKey, { defaultValue: msgKey })}`);
       return;
     }
-    await saveAll();
+    setShowPlan(true);
+  }
+
+  async function executeSave() {
+    setShowPlan(false);
+    setSpinning(true);
+    try {
+      await saveAll();
+    } finally {
+      setSpinning(false);
+    }
   }
 
   function restartPanel() {
@@ -269,6 +283,15 @@ export default function SettingsPage() {
           </Layout.Content>
         </Layout>
       </Layout>
+      <PlanVerificationModal
+        open={showPlan}
+        title="Settings Implementation Plan"
+        original={originalSetting}
+        modified={allSetting}
+        confirmLoading={spinning}
+        onConfirm={executeSave}
+        onCancel={() => setShowPlan(false)}
+      />
     </ConfigProvider>
   );
 }

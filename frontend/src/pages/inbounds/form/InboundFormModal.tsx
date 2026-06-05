@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import {
@@ -47,6 +47,7 @@ import { XHttpStreamSettingsSchema } from '@/schemas/protocols/stream/xhttp';
 import { DateTimePicker } from '@/components/form';
 import { FinalMaskForm } from '@/lib/xray/forms/transport';
 import './InboundFormModal.css';
+import PlanVerificationModal from '@/components/ui/PlanVerificationModal';
 
 import { AdvancedAllEditor, AdvancedSliceEditor } from './advanced-editors';
 import { formatInboundIssue, formatInboundValidation } from './formatValidationError';
@@ -133,6 +134,22 @@ export default function InboundFormModal({
   const [messageApi, messageContextHolder] = message.useMessage();
   const [form] = Form.useForm<InboundFormValues>();
   const [saving, setSaving] = useState(false);
+  const [showPlan, setShowPlan] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<any>(null);
+
+  const originalPayload = useMemo(() => {
+    if (mode === 'edit' && dbInbound) {
+      try {
+        const formVals = rawInboundToFormValues(dbInbound);
+        return formValuesToWirePayload(formVals);
+      } catch (e) {
+        console.error('Error generating original payload:', e);
+        return null;
+      }
+    }
+    return null;
+  }, [mode, dbInbound]);
+
   const {
     fallbacks,
     fallbackChildOptions,
@@ -414,13 +431,19 @@ export default function InboundFormModal({
       );
       return;
     }
+    const payload = formValuesToWirePayload(parsed.data);
+    setPendingPayload(payload);
+    setShowPlan(true);
+  };
+
+  const executeSave = async () => {
+    if (!pendingPayload) return;
     setSaving(true);
     try {
-      const payload = formValuesToWirePayload(parsed.data);
       const url = mode === 'edit' && dbInbound
         ? `/panel/api/inbounds/update/${dbInbound.id}`
         : '/panel/api/inbounds/add';
-      const msg = await HttpUtil.post(url, payload);
+      const msg = await HttpUtil.post(url, pendingPayload);
       if (msg?.success) {
         if (isFallbackHost) {
           const obj = msg.obj as { id?: number; Id?: number } | null;
@@ -430,6 +453,7 @@ export default function InboundFormModal({
           if (masterId) await saveFallbacks(masterId);
         }
         onSaved();
+        setShowPlan(false);
         onClose();
       }
     } finally {
@@ -907,6 +931,15 @@ export default function InboundFormModal({
           ]} />
         </Form>
       </Modal>
+      <PlanVerificationModal
+        open={showPlan}
+        title="Inbound Implementation Plan"
+        original={originalPayload}
+        modified={pendingPayload}
+        confirmLoading={saving}
+        onConfirm={executeSave}
+        onCancel={() => setShowPlan(false)}
+      />
     </>
   );
 }

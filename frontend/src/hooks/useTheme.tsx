@@ -29,50 +29,68 @@ const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
 const DARK_TOKENS = {
-  colorBgBase: '#1a1b1f',
-  colorBgLayout: '#1a1b1f',
-  colorBgContainer: '#23252b',
-  colorBgElevated: '#2d2f37',
+  colorPrimary: '#00f0ff', // Glowing Cyan
+  colorSuccess: '#39ff14', // Neon Green
+  colorWarning: '#ffae00', // Neon Warning Orange
+  colorError: '#ff3b30',   // Neon Red
+  colorBgBase: '#08090c',
+  colorBgLayout: '#040507',
+  colorBgContainer: '#0d1117',
+  colorBgElevated: '#161b22',
+  colorBorder: '#1f2937',
+  colorTextBase: '#f3f4f6',
+  borderRadius: 6,
+  fontFamily: 'Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  fontFamilyCode: '"Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
 };
 const ULTRA_DARK_TOKENS = {
-  colorBgBase: '#000',
-  colorBgLayout: '#000',
-  colorBgContainer: '#101013',
-  colorBgElevated: '#1a1a1e',
+  colorPrimary: '#00f0ff', // Glowing Cyan
+  colorSuccess: '#39ff14',
+  colorWarning: '#ffae00',
+  colorError: '#ff3b30',
+  colorBgBase: '#000000',
+  colorBgLayout: '#000000',
+  colorBgContainer: '#070709',
+  colorBgElevated: '#0f0f12',
+  colorBorder: '#141416',
+  colorTextBase: '#e5e7eb',
+  borderRadius: 4,
+  fontFamily: 'Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  fontFamilyCode: '"Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
 };
 const DARK_LAYOUT_TOKENS = {
-  bodyBg: '#1a1b1f',
-  headerBg: '#15161a',
-  headerColor: '#ffffff',
-  footerBg: '#1a1b1f',
-  siderBg: '#15161a',
-  triggerBg: '#23252b',
-  triggerColor: '#ffffff',
+  bodyBg: '#040507',
+  headerBg: '#08090c',
+  headerColor: '#00f0ff',
+  footerBg: '#040507',
+  siderBg: '#08090c',
+  triggerBg: '#0d1117',
+  triggerColor: '#00f0ff',
 };
 const ULTRA_DARK_LAYOUT_TOKENS = {
-  bodyBg: '#000',
-  headerBg: '#050507',
-  headerColor: '#ffffff',
-  footerBg: '#000',
-  siderBg: '#050507',
-  triggerBg: '#1a1a1e',
-  triggerColor: '#ffffff',
+  bodyBg: '#000000',
+  headerBg: '#000000',
+  headerColor: '#00f0ff',
+  footerBg: '#000000',
+  siderBg: '#000000',
+  triggerBg: '#070709',
+  triggerColor: '#00f0ff',
 };
 const DARK_MENU_TOKENS = {
-  darkItemBg: '#15161a',
-  darkSubMenuItemBg: '#1a1b1f',
-  darkPopupBg: '#23252b',
+  darkItemBg: '#08090c',
+  darkSubMenuItemBg: '#0d1117',
+  darkPopupBg: '#0d1117',
 };
 const ULTRA_DARK_MENU_TOKENS = {
-  darkItemBg: '#050507',
-  darkSubMenuItemBg: '#000',
-  darkPopupBg: '#101013',
+  darkItemBg: '#000000',
+  darkSubMenuItemBg: '#070709',
+  darkPopupBg: '#070709',
 };
 const DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(255, 255, 255, 0.06)',
+  colorBorderSecondary: 'rgba(0, 240, 255, 0.15)',
 };
 const ULTRA_DARK_CARD_TOKENS = {
-  colorBorderSecondary: 'rgba(255, 255, 255, 0.04)',
+  colorBorderSecondary: 'rgba(0, 240, 255, 0.1)',
 };
 const STATISTIC_TOKENS = {
   contentFontSize: 17,
@@ -83,6 +101,11 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
   if (!isDark) {
     return {
       algorithm: antdTheme.defaultAlgorithm,
+      token: {
+        colorPrimary: '#0090a0',
+        fontFamily: 'Outfit, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        fontFamilyCode: '"Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace',
+      },
       components: {
         Statistic: STATISTIC_TOKENS,
       },

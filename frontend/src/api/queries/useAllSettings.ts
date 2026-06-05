@@ -59,6 +59,7 @@ export function useAllSettings() {
 
   return {
     allSetting: draft,
+    originalSetting: server,
     updateSetting,
     fetched: query.data !== undefined,
     spinning: extraSpinning || saveMut.isPending,

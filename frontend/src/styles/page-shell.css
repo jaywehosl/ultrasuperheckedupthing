@@ -10,6 +10,7 @@
   --bg-card: #ffffff;
   min-height: 100vh;
   background: var(--bg-page);
+  transition: background 0.3s ease, background-image 0.3s ease;
 }
 
 .index-page.is-dark,
@@ -20,8 +21,16 @@
 .nodes-page.is-dark,
 .groups-page.is-dark,
 .api-docs-page.is-dark {
-  --bg-page: #1a1b1f;
-  --bg-card: #23252b;
+  --bg-page: #08090c;
+  --bg-card: rgba(13, 17, 23, 0.45);
+  background: radial-gradient(circle at 50% 50%, #0d1117 0%, #040507 100%);
+  background-image: 
+    radial-gradient(circle at 50% 50%, #0d1117 0%, #040507 100%),
+    linear-gradient(rgba(0, 240, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .index-page.is-dark.is-ultra,
@@ -32,8 +41,15 @@
 .nodes-page.is-dark.is-ultra,
 .groups-page.is-dark.is-ultra,
 .api-docs-page.is-dark.is-ultra {
-  --bg-page: #000;
-  --bg-card: #101013;
+  --bg-page: #000000;
+  --bg-card: rgba(7, 7, 9, 0.55);
+  background: #000000;
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.008) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.008) 1px, transparent 1px);
+  background-size: 30px 30px, 30px 30px;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .index-page .ant-layout,

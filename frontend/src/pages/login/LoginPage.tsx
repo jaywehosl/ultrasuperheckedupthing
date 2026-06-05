@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -40,9 +40,123 @@ export default function LoginPage() {
   const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig } = useTheme();
   const [messageApi, messageContextHolder] = message.useMessage();
 
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   useEffect(() => {
     setMessageInstance(messageApi);
   }, [messageApi]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    let mouse = { x: width / 2, y: height / 2, tx: width / 2, ty: height / 2 };
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.tx = e.clientX;
+      mouse.ty = e.clientY;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    class Particle {
+      x: number = Math.random() * width;
+      y: number = Math.random() * height;
+      vx: number = 0;
+      vy: number = 0;
+      alpha: number = Math.random() * 0.4 + 0.15;
+      size: number = Math.random() * 1.5 + 0.5;
+      color: string = Math.random() > 0.55 ? '#00f0ff' : '#9b51e0'; // Cyan or Neon Purple
+      history: { x: number; y: number }[] = [];
+
+      update(time: number) {
+        const angleY = this.y * 0.003 + time * 0.0003;
+        const angleX = this.x * 0.003 + time * 0.0003;
+        
+        const fX = Math.cos(angleY) * 0.7 + Math.sin(angleX * 0.4) * 0.3;
+        const fY = Math.sin(angleX) * 0.7 + Math.cos(angleY * 0.4) * 0.3;
+
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const pull = Math.min(0.25, 60 / dist);
+
+        this.vx += (fX + (dx / dist) * pull - this.vx) * 0.04;
+        this.vy += (fY + (dy / dist) * pull - this.vy) * 0.04;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+
+        this.history.push({ x: this.x, y: this.y });
+        if (this.history.length > 20) {
+          this.history.shift();
+        }
+      }
+
+      draw(c: CanvasRenderingContext2D) {
+        if (this.history.length < 2) return;
+        c.beginPath();
+        c.moveTo(this.history[0].x, this.history[0].y);
+        for (let i = 1; i < this.history.length; i++) {
+          c.lineTo(this.history[i].x, this.history[i].y);
+        }
+        c.strokeStyle = this.color;
+        c.globalAlpha = this.alpha;
+        c.lineWidth = this.size;
+        c.stroke();
+      }
+    }
+
+    const particles: Particle[] = [];
+    const particleCount = Math.min(100, Math.floor((width * height) / 15000));
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    let startTime = Date.now();
+    const render = () => {
+      const elapsed = Date.now() - startTime;
+      
+      mouse.x += (mouse.tx - mouse.x) * 0.06;
+      mouse.y += (mouse.ty - mouse.y) * 0.06;
+
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = isDark ? (isUltra ? 'rgba(0, 0, 0, 0.06)' : 'rgba(8, 9, 12, 0.06)') : 'rgba(238, 242, 255, 0.06)';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.globalCompositeOperation = 'screen';
+      particles.forEach((p) => {
+        p.update(elapsed);
+        p.draw(ctx);
+      });
+
+      animationId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationId);
+    };
+  }, [isDark, isUltra]);
 
   const [fetched, setFetched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -127,6 +241,7 @@ export default function LoginPage() {
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       <Layout className={pageClass}>
+        <canvas ref={canvasRef} className="kinetic-canvas" />
         <Layout.Content className="login-content">
           <div className="login-toolbar">
             <Button

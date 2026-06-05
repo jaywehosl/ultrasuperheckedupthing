@@ -1,5 +1,28 @@
+.status-card {
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+}
+
 .status-card .text-center {
   text-align: center;
+  padding: 12px 0;
+}
+
+.status-card .ant-progress-text {
+  font-family: var(--ant-font-family-code) !important;
+  color: var(--ant-color-primary) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+  font-weight: 700 !important;
+}
+
+.status-card div {
+  font-size: 11px;
+  color: var(--ant-color-text-description);
+}
+
+.status-card div b {
+  color: var(--ant-color-text);
+  font-family: var(--ant-font-family-code);
 }
 
 .status-card .ant-progress-text,

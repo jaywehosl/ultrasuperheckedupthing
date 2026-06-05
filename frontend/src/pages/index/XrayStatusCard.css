@@ -1,6 +1,13 @@
+.xray-status-card {
+  border: 1px solid rgba(0, 240, 255, 0.15) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+}
+
 .xray-status-card .action {
   cursor: pointer;
   justify-content: center;
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
 }
 
 .error-line {
