@@ -1,8 +1,233 @@
+/* Google Antigravity Light Editorial Style - InboundList */
+
+/* Cards container wrapper */
+.inbounds-page .ant-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(18, 19, 23, 0.05) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 12px 36px rgba(18, 19, 23, 0.03) !important;
+  padding: 12px 16px !important;
+  font-family: "Google Sans Flex", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inbounds-page .ant-card-head {
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05) !important;
+  padding: 0 8px 16px 8px !important;
+  margin-bottom: 16px;
+}
+
+/* Button overrides - Pill style */
+.inbounds-page .ant-btn {
+  border-radius: 9999px !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  transition: all 0.15s ease-out !important;
+  padding: 6px 18px !important;
+  height: 36px !important;
+}
+
+.inbounds-page .ant-btn-primary {
+  background: #121317 !important;
+  border-color: #121317 !important;
+  color: #ffffff !important;
+}
+
+.inbounds-page .ant-btn-primary:hover {
+  background: #2b2d35 !important;
+  border-color: #2b2d35 !important;
+}
+
+.inbounds-page .ant-btn-default {
+  background: rgba(183, 191, 217, 0.1) !important;
+  border: 1px solid rgba(18, 19, 23, 0.06) !important;
+  color: #121317 !important;
+}
+
+.inbounds-page .ant-btn-default:hover {
+  background: rgba(183, 191, 217, 0.2) !important;
+  color: #121317 !important;
+  border-color: rgba(18, 19, 23, 0.15) !important;
+}
+
+/* Selected Count Tag */
+.inbounds-page .ant-tag-blue {
+  background: rgba(50, 121, 249, 0.08) !important;
+  color: #3279F9 !important;
+  border: 1px solid rgba(50, 121, 249, 0.15) !important;
+  border-radius: 9999px !important;
+  padding: 3px 12px !important;
+  font-weight: 600;
+}
+
+/* Table styling */
+.inbounds-page .ant-table {
+  background: transparent !important;
+}
+
+.inbounds-page .ant-table-container {
+  border: 1px solid rgba(18, 19, 23, 0.05) !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.inbounds-page .ant-table-thead > tr > th {
+  background: #f8f9fc !important;
+  color: #121317 !important;
+  border-bottom: 1px solid rgba(18, 19, 23, 0.08) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 12px 16px !important;
+}
+
+.inbounds-page .ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgba(18, 19, 23, 0.04) !important;
+  color: #121317;
+  padding: 12px 16px !important;
+  transition: all 0.15s ease-out;
+}
+
+.inbounds-page .ant-table-row {
+  background: #ffffff !important;
+}
+
+.inbounds-page .ant-table-row:hover > td {
+  background: #f8f9fc !important;
+}
+
+/* Selected row outline indicator */
+.inbounds-page .ant-table-row-selected > td {
+  background: rgba(50, 121, 249, 0.03) !important;
+}
+
+/* Monospaced fields for numeric columns */
+.inbounds-page td:first-child, /* ID */
+.inbounds-page td:nth-child(4), /* Port */
+.inbounds-page .client-count-tag,
+.inbounds-page .ant-tag {
+  font-family: ui-monospace, SFMono-Regular, Consolas, Monaco, monospace;
+}
+
+/* Google-style Pill Badges */
+.antigravity-tag {
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.02em;
+  padding: 2px 10px !important;
+  border-radius: 9999px !important; /* Perfect Pill */
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease-out;
+}
+
+/* VMess: Google Green */
+.antigravity-tag.protocol-vmess {
+  background: rgba(52, 168, 83, 0.08) !important;
+  color: #34A853 !important;
+  border-color: rgba(52, 168, 83, 0.15) !important;
+}
+
+/* VLESS: Google Blue */
+.antigravity-tag.protocol-vless {
+  background: rgba(66, 133, 244, 0.08) !important;
+  color: #4285F4 !important;
+  border-color: rgba(66, 133, 244, 0.15) !important;
+}
+
+/* Trojan: Google Yellow / Orange */
+.antigravity-tag.protocol-trojan {
+  background: rgba(251, 188, 5, 0.08) !important;
+  color: #b07d00 !important;
+  border-color: rgba(251, 188, 5, 0.15) !important;
+}
+
+/* Shadowsocks / SS: Google Purple */
+.antigravity-tag.protocol-shadowsocks,
+.antigravity-tag.protocol-shadowsocks2022,
+.antigravity-tag.protocol-ss {
+  background: rgba(160, 32, 240, 0.08) !important;
+  color: #8a2be2 !important;
+  border-color: rgba(160, 32, 240, 0.15) !important;
+}
+
+/* Hysteria / Wireguard: Google Red */
+.antigravity-tag.protocol-hysteria,
+.antigravity-tag.protocol-wireguard {
+  background: rgba(234, 67, 53, 0.08) !important;
+  color: #EA4335 !important;
+  border-color: rgba(234, 67, 53, 0.15) !important;
+}
+
+/* Generic transport & network tags */
+.antigravity-tag.network-tag {
+  background: rgba(18, 19, 23, 0.04) !important;
+  color: rgba(18, 19, 23, 0.7) !important;
+  border-color: rgba(18, 19, 23, 0.08) !important;
+}
+
+.antigravity-tag.tls-tag {
+  background: rgba(66, 133, 244, 0.05) !important;
+  color: #4285F4 !important;
+  border-color: rgba(66, 133, 244, 0.1) !important;
+}
+
+.antigravity-tag.reality-tag {
+  background: rgba(66, 133, 244, 0.08) !important;
+  color: #1a73e8 !important;
+  border-color: rgba(66, 133, 244, 0.18) !important;
+}
+
+.antigravity-tag.l4-tag {
+  background: rgba(18, 19, 23, 0.04) !important;
+  color: rgba(18, 19, 23, 0.7) !important;
+}
+
+/* Traffic and clients tags */
+.inbounds-page .client-count-tag {
+  background: rgba(18, 19, 23, 0.03) !important;
+  border: 1px solid rgba(18, 19, 23, 0.06) !important;
+  color: #121317 !important;
+  border-radius: 9999px !important;
+  padding: 2px 8px !important;
+}
+
+.inbounds-page .ant-tag-green {
+  background: rgba(52, 168, 83, 0.08) !important;
+  color: #34A853 !important;
+  border-color: rgba(52, 168, 83, 0.15) !important;
+}
+
+.inbounds-page .ant-tag-red {
+  background: rgba(234, 67, 53, 0.08) !important;
+  color: #EA4335 !important;
+  border-color: rgba(234, 67, 53, 0.15) !important;
+}
+
+.inbounds-page .ant-tag-blue {
+  background: rgba(66, 133, 244, 0.08) !important;
+  color: #4285F4 !important;
+  border-color: rgba(66, 133, 244, 0.15) !important;
+}
+
+/* Actions styling */
 .action-buttons {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
+}
+
+.row-action-trigger {
+  font-size: 16px;
+  cursor: pointer;
+  color: rgba(18, 19, 23, 0.45);
+  transition: all 0.15s ease-out;
+}
+
+.row-action-trigger:hover {
+  color: #3279F9;
 }
 
 .protocol-tags {
@@ -11,53 +236,30 @@
   gap: 4px;
 }
 
-.client-count-tag {
-  font-variant-numeric: tabular-nums;
-}
-
-.row-action-trigger {
-  font-size: 20px;
-  cursor: pointer;
-}
-
 .client-email-list {
   max-height: 200px;
   overflow-y: auto;
-  min-width: 150px;
+  min-width: 170px;
+  padding: 4px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid rgba(18, 19, 23, 0.08);
+  box-shadow: 0 4px 12px rgba(18, 19, 23, 0.06);
 }
 
 .client-email-list > div {
-  padding: 2px 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  padding: 6px 8px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  color: #121317;
+  border-bottom: 1px solid rgba(18, 19, 23, 0.04);
 }
 
-.inbounds-page .ant-table {
-  border-radius: 8px;
-  overflow: hidden;
+.client-email-list > div:last-child {
+  border-bottom: none;
 }
 
-.inbounds-page .ant-table-container {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.inbounds-page .ant-table-thead > tr:first-child > *:first-child {
-  border-start-start-radius: 8px;
-}
-
-.inbounds-page .ant-table-thead > tr:first-child > *:last-child {
-  border-start-end-radius: 8px;
-}
-
-.inbounds-page .ant-table-tbody > tr:last-child > *:first-child {
-  border-end-start-radius: 8px;
-}
-
-.inbounds-page .ant-table-tbody > tr:last-child > *:last-child {
-  border-end-end-radius: 8px;
-}
-
+/* Mobile layout adaptation */
 .inbound-cards {
   display: flex;
   flex-direction: column;
@@ -66,18 +268,26 @@
 }
 
 .inbound-card {
-  border: 1px solid var(--ant-color-border-secondary);
-  border-radius: 10px;
-  padding: 12px;
-  background: var(--ant-color-fill-quaternary);
+  border: 1px solid rgba(18, 19, 23, 0.05) !important;
+  border-radius: 16px;
+  padding: 14px;
+  background: #ffffff !important;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: all 0.2s ease-out;
+  box-shadow: 0 4px 16px rgba(18, 19, 23, 0.02);
+}
+
+.inbound-card:hover {
+  border-color: rgba(50, 121, 249, 0.2) !important;
+  box-shadow: 0 8px 24px rgba(18, 19, 23, 0.04);
 }
 
 .inbound-card.is-selected {
-  border-color: var(--ant-color-primary);
-  background: color-mix(in srgb, var(--ant-color-primary) 6%, transparent);
+  border-color: #3279F9 !important;
+  background: rgba(50, 121, 249, 0.02) !important;
+  box-shadow: 0 8px 24px rgba(50, 121, 249, 0.06) !important;
 }
 
 .card-bulk-bar {
@@ -88,11 +298,13 @@
 }
 
 .bulk-count {
+  font-family: ui-monospace, monospace;
   font-size: 12px;
-  background: color-mix(in srgb, var(--ant-color-primary) 12%, transparent);
-  color: var(--ant-color-primary);
-  padding: 1px 8px;
-  border-radius: 10px;
+  background: rgba(50, 121, 249, 0.08);
+  color: #3279F9;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-weight: 700;
 }
 
 .card-head {
@@ -104,12 +316,15 @@
 }
 
 .card-id {
+  font-family: ui-monospace, monospace;
   font-size: 11px;
-  opacity: 0.6;
+  font-weight: bold;
+  color: rgba(18, 19, 23, 0.45);
 }
 
 .tag-name {
   font-weight: 600;
+  color: #121317;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -120,7 +335,7 @@
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -141,7 +356,7 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.6;
+  color: rgba(18, 19, 23, 0.45);
   min-width: 96px;
   flex-shrink: 0;
 }
@@ -152,23 +367,20 @@
 
 .card-empty {
   text-align: center;
-  color: var(--ant-color-text-secondary);
-  padding: 24px 12px;
+  color: rgba(18, 19, 23, 0.4);
+  padding: 36px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  border: 1px dashed rgba(18, 19, 23, 0.1);
+  border-radius: 12px;
+  background: #f8f9fc;
 }
 
 @media (max-width: 768px) {
   .inbounds-page .ant-card-head {
-    padding: 0 12px;
-    min-height: 44px;
-  }
-
-  .inbounds-page .ant-card-head-title,
-  .inbounds-page .ant-card-extra {
-    padding: 8px 0;
+    padding: 0 8px 12px 8px !important;
   }
 
   .inbounds-page .ant-card-body {
@@ -176,7 +388,7 @@
   }
 
   .inbounds-page .row-action-trigger {
-    font-size: 22px;
+    font-size: 18px;
     padding: 4px;
   }
 }

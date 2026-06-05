@@ -154,50 +154,50 @@ export default function InboundList({
               </div>
             ) : (
               <>
-              <div className="card-bulk-bar">
-                <Checkbox
-                  checked={allSelected}
-                  indeterminate={someSelected}
-                  onChange={(e) => selectAll(e.target.checked)}
-                >
-                  {t('pages.inbounds.selectAll')}
-                </Checkbox>
-                {selectedRowKeys.length > 0 && (
-                  <span className="bulk-count">{selectedRowKeys.length}</span>
-                )}
-              </div>
-              {dbInbounds.map((record) => (
-                <div key={record.id} className={`inbound-card${selectedRowKeys.includes(record.id) ? ' is-selected' : ''}`}>
-                  <div className="card-head">
-                    <Checkbox
-                      checked={selectedRowKeys.includes(record.id)}
-                      onChange={(e) => toggleSelect(record.id, e.target.checked)}
-                    />
-                    <span className="card-id">#{record.id}</span>
-                    <span className="tag-name">{record.remark}</span>
-                    <div className="card-actions" onClick={(e) => e.stopPropagation()}>
-                      <Tooltip title={t('pages.inbounds.inboundInfo')}>
-                        <InfoCircleOutlined className="row-action-trigger" onClick={() => setStatsRecord(record)} />
-                      </Tooltip>
-                      <Switch
-                        checked={record.enable}
-                        size="small"
-                        onChange={(next) => onSwitchEnable(record, next)}
+                <div className="card-bulk-bar">
+                  <Checkbox
+                    checked={allSelected}
+                    indeterminate={someSelected}
+                    onChange={(e) => selectAll(e.target.checked)}
+                  >
+                    {t('pages.inbounds.selectAll')}
+                  </Checkbox>
+                  {selectedRowKeys.length > 0 && (
+                    <span className="bulk-count">{selectedRowKeys.length}</span>
+                  )}
+                </div>
+                {dbInbounds.map((record) => (
+                  <div key={record.id} className={`inbound-card${selectedRowKeys.includes(record.id) ? ' is-selected' : ''}`}>
+                    <div className="card-head">
+                      <Checkbox
+                        checked={selectedRowKeys.includes(record.id)}
+                        onChange={(e) => toggleSelect(record.id, e.target.checked)}
                       />
-                      <Dropdown
-                        trigger={['click']}
-                        placement="bottomRight"
-                        menu={{
-                          items: buildRowActionsMenu({ record, subEnable, t, isMobile: true, hasClients: (clientCount[record.id]?.clients || 0) > 0 }),
-                          onClick: ({ key }) => onRowAction({ key: key as RowAction, dbInbound: record }),
-                        }}
-                      >
-                        <MoreOutlined className="row-action-trigger" onClick={(e) => e.preventDefault()} />
-                      </Dropdown>
+                      <span className="card-id">#{record.id}</span>
+                      <span className="tag-name">{record.remark}</span>
+                      <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+                        <Tooltip title={t('pages.inbounds.inboundInfo')}>
+                          <InfoCircleOutlined className="row-action-trigger" onClick={() => setStatsRecord(record)} />
+                        </Tooltip>
+                        <Switch
+                          checked={record.enable}
+                          size="small"
+                          onChange={(next) => onSwitchEnable(record, next)}
+                        />
+                        <Dropdown
+                          trigger={['click']}
+                          placement="bottomRight"
+                          menu={{
+                            items: buildRowActionsMenu({ record, subEnable, t, isMobile: true, hasClients: (clientCount[record.id]?.clients || 0) > 0 }),
+                            onClick: ({ key }) => onRowAction({ key: key as RowAction, dbInbound: record }),
+                          }}
+                        >
+                          <MoreOutlined className="row-action-trigger" onClick={(e) => e.preventDefault()} />
+                        </Dropdown>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
               </>
             )}
           </div>

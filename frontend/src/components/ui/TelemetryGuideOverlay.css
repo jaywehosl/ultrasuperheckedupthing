@@ -1,0 +1,167 @@
+.telemetry-guide-overlay-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  pointer-events: none;
+  font-family: "Google Sans Flex", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.guide-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(18, 19, 23, 0.2);
+  backdrop-filter: blur(1px);
+  pointer-events: auto;
+  transition: opacity 0.3s ease;
+}
+
+.guide-connector-svg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.guide-target-glow {
+  position: absolute;
+  z-index: 10001;
+  box-shadow: 0 0 0 9999px rgba(18, 19, 23, 0.25), 0 0 0 2px #3279F9;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: target-pulse-glow 2s infinite ease-in-out;
+  box-sizing: border-box;
+}
+
+@keyframes target-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 9999px rgba(18, 19, 23, 0.25), 0 0 0 2px rgba(50, 121, 249, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(18, 19, 23, 0.2), 0 0 0 3px rgba(50, 121, 249, 1);
+  }
+}
+
+.guide-callout-card {
+  position: absolute;
+  width: 320px;
+  z-index: 10002;
+  background: #ffffff;
+  border: 1px solid rgba(18, 19, 23, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(18, 19, 23, 0.12);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  animation: callout-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes callout-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.guide-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05);
+  background: rgba(50, 121, 249, 0.04);
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+}
+
+.guide-step-indicator {
+  font-size: 10px;
+  color: #3279F9;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.guide-card-body {
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-step-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #121317;
+  letter-spacing: 0.02em;
+}
+
+.guide-step-description {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(18, 19, 23, 0.65);
+}
+
+.guide-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(18, 19, 23, 0.05);
+}
+
+.guide-nav-btn {
+  font-size: 11px !important;
+  font-weight: bold !important;
+  color: #3279F9 !important;
+  padding: 2px 8px !important;
+  height: auto !important;
+  border-radius: 9999px !important;
+}
+
+.guide-nav-btn:hover:not(:disabled) {
+  background: rgba(50, 121, 249, 0.06) !important;
+}
+
+.guide-nav-btn:disabled {
+  color: rgba(18, 19, 23, 0.25) !important;
+}
+
+.guide-finish-btn {
+  color: #34A853 !important;
+}
+
+.guide-finish-btn:hover {
+  background: rgba(52, 168, 83, 0.06) !important;
+}
+
+.guide-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.guide-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(18, 19, 23, 0.12);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guide-dot.is-active {
+  background: #3279F9;
+}

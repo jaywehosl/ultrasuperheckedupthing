@@ -43,6 +43,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import AppSidebar from '@/layouts/AppSidebar';
 import { LazyMount } from '@/components/utility';
 import { setMessageInstance } from '@/utils/messageBus';
+import { TelemetryGuideOverlay, TerminalBootLoader } from '@/components/ui';
 import StatusCard from './StatusCard';
 import XrayStatusCard from './XrayStatusCard';
 import type { PanelUpdateInfo } from './PanelUpdateModal';
@@ -85,6 +86,10 @@ export default function IndexPage() {
   const [configText, setConfigText] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingTip, setLoadingTip] = useState(t('loading'));
+  const [guideActive, setGuideActive] = useState(false);
+  const [booting, setBooting] = useState(() => {
+    return sessionStorage.getItem('antigravity_boot_loaded') !== 'true';
+  });
 
   useEffect(() => {
     HttpUtil.post<{ ipLimitEnable?: boolean }>('/panel/setting/defaultSettings').then((msg) => {
@@ -179,7 +184,7 @@ export default function IndexPage() {
               ) : (
                 <Row gutter={[isMobile ? 8 : 16, 12]}>
                   <Col span={24}>
-                    <StatusCard status={status} isMobile={isMobile} />
+                    <StatusCard status={status} isMobile={isMobile} onToggleGuide={() => setGuideActive(true)} />
                   </Col>
 
                   <Col xs={24} lg={12}>
@@ -521,6 +526,8 @@ export default function IndexPage() {
             />
           </Modal>
         </LazyMount>
+        <TelemetryGuideOverlay active={guideActive} onClose={() => setGuideActive(false)} page="index" />
+        {booting && <TerminalBootLoader onComplete={() => setBooting(false)} />}
       </Layout>
     </ConfigProvider>
   );
