@@ -20,20 +20,14 @@ This is a custom edition of the 3X-UI control panel. It removes page division in
 
 ## Quick Start
 
-### 1. Precompiled Custom Release (Recommended)
-You can deploy the precompiled release directly on any Linux AMD64 VPS without installing Go or Node.js. It contains all custom styles, compiled binaries, startup scripts, and systemd definitions:
+### 1. One-click Installation (Recommended)
+You can deploy this custom precompiled Antigravity edition directly on any Linux AMD64 VPS with a single command:
 
 ```bash
-# Download the custom release archive
-wget https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/v3.2.8-antigravity/x-ui-linux-amd64.tar.gz
-
-# Extract the archive
-tar -zxvf x-ui-linux-amd64.tar.gz
-
-# Install and start the service
-cd x-ui
-sudo ./x-ui.sh install
+bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install.sh)
 ```
+
+This installer script will automatically fetch our latest custom binary release from GitHub Releases, register systemd service endpoints, and configure dependencies.
 
 ### 2. Run Locally (Developer Mode)
 Prerequisites: Go 1.21+ and Node.js 18+.

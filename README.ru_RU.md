@@ -20,20 +20,14 @@
 
 ## Быстрый старт
 
-### 1. Готовый скомпилированный релиз (Рекомендуется)
-Вы можете развернуть готовый билд на любом сервере Linux AMD64 без необходимости установки Go и Node.js. Архив содержит все кастомные стили, скомпилированные исполняемые файлы, скрипты запуска и службы systemd:
+### 1. Установка в одно действие (Рекомендуется)
+Вы можете развернуть готовую сборку Antigravity-издания на любом сервере Linux AMD64 одной командой:
 
 ```bash
-# Скачивание готового релиза
-wget https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/v3.2.8-antigravity/x-ui-linux-amd64.tar.gz
-
-# Распаковка архива
-tar -zxvf x-ui-linux-amd64.tar.gz
-
-# Установка и запуск службы
-cd x-ui
-sudo ./x-ui.sh install
+bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install.sh)
 ```
+
+Инсталляционный скрипт автоматически скачает наш кастомный архив релиза из GitHub Releases, настроит систему инициализации systemd и запустит службу панели.
 
 ### 2. Запуск локально (Режим разработки)
 Требуются установленные Go 1.21+ и Node.js 18+.
