@@ -227,7 +227,7 @@ export default function AppSidebar() {
         const el = document.getElementById(targetSectionId);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
-          window.history.pushState(null, '', `/#${key.substring(2)}`);
+          window.history.pushState(null, '', `${window.location.pathname}#${key.substring(2)}`);
         }
       }
       return;
