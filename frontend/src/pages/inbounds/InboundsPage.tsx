@@ -34,7 +34,6 @@ import AppSidebar from '@/layouts/AppSidebar';
 const TextModal = lazy(() => import('@/components/feedback/TextModal'));
 const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 
-import { TelemetryGuideOverlay } from '@/components/ui';
 import { useInbounds } from './useInbounds';
 import { InboundList } from './list';
 import { LazyMount } from '@/components/utility';
@@ -125,7 +124,6 @@ export default function InboundsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [formDbInbound, setFormDbInbound] = useState<DBInbound | null>(null);
-  const [guideActive, setGuideActive] = useState(false);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoDbInbound, setInfoDbInbound] = useState<DBInbound | null>(null);
@@ -614,7 +612,6 @@ export default function InboundsPage() {
                       onGeneralAction={onGeneralAction}
                       onRowAction={({ key, dbInbound }) => onRowAction({ key, dbInbound: dbInbound as unknown as DBInbound })}
                       onBulkDelete={confirmBulkDelete}
-                      onToggleGuide={() => setGuideActive(true)}
                     />
                   </Col>
                 </Row>
@@ -713,7 +710,6 @@ export default function InboundsPage() {
             onConfirm={onPromptConfirm}
           />
         </LazyMount>
-        <TelemetryGuideOverlay active={guideActive} onClose={() => setGuideActive(false)} page="inbounds" />
       </div>
     </ConfigProvider>
   );

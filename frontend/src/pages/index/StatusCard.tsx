@@ -101,26 +101,6 @@ export default function StatusCard({ status, isMobile: _isMobile, onToggleGuide 
           <span className="cockpit-led-active" />
           <span className="cockpit-title-text">{t('pages.index.serverTelemetry') || 'SYSTEM TELEMETRY'}</span>
         </div>
-        {onToggleGuide && (
-          <Button
-            size="small"
-            type="primary"
-            className="mission-guide-toggle-btn"
-            onClick={onToggleGuide}
-            icon={<InfoCircleOutlined />}
-            style={{
-              background: 'rgba(50, 121, 249, 0.08)',
-              borderColor: 'rgba(50, 121, 249, 0.25)',
-              color: '#3279F9',
-              borderRadius: '9999px',
-              fontSize: '10px',
-              fontFamily: 'ui-monospace, monospace',
-              fontWeight: 'bold',
-            }}
-          >
-            MISSION GUIDE
-          </Button>
-        )}
       </div>
       <Row gutter={[16, 16]} justify="space-around" className="cockpit-grid">
         <Col xs={12} sm={6}>
