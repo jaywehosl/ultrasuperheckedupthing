@@ -237,6 +237,43 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
 .ant-drawer-body,
 .ant-drawer-footer { background: transparent !important; }
 
+/* ===== Every tile = the login-card glass (frost + float shadow + kant) ===== */
+.custom-card {
+  /* header-glass DNA, but more blur so the dense particle field melts into a
+     milky frost on large surfaces (the header gets away with blur16 only
+     because it is a thin strip over the sparse top edge) */
+  background: rgba(255, 255, 255, 0.34) !important;
+  backdrop-filter: blur(30px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(170%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow:
+    0 24px 70px rgba(18, 19, 23, 0.14),
+    0 4px 16px rgba(18, 19, 23, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+.custom-card:hover {
+  transform: none !important;
+  border-color: rgba(50, 121, 249, 0.5) !important;
+  box-shadow:
+    0 24px 70px rgba(18, 19, 23, 0.14),
+    0 4px 16px rgba(18, 19, 23, 0.06),
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* light frosted modal/overlay backdrop so frosted windows read bright, not grey */
+.ant-modal-mask {
+  background: rgba(232, 238, 251, 0.45) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+.custom-modal-overlay {
+  background: rgba(232, 238, 251, 0.45) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
 .panel-main-content {
   position: relative;
   z-index: 1;
@@ -805,4 +842,64 @@ body.dark .ant-tabs-tab {
   border-radius: 99px !important;
 }
 
+/* ============================================================================
+   SYSTEMIC GLASS — one canonical frost on EVERY surface, driven by a single
+   token (--glass-blur / --glass-saturate). Tune the whole interface from
+   tokens.css. The ONLY exception is action buttons (they keep their solid /
+   pill treatment) — no button selectors appear here.
+   REMINDER: backdrop-filter dies if any ANCESTOR has transform / opacity<1 /
+   filter / animation / will-change / contain / isolation. Never wrap a glass
+   surface in such an element (this is what silently broke the panel).
+   ========================================================================== */
+
+/* --- Group A: panels & overlays (already translucent — just unify the blur) --- */
+.custom-card,
+.ds-card,
+.ant-card,
+.ant-modal-content,
+.ant-drawer-content,
+.ant-popover .ant-popover-container,
+.ant-dropdown-menu,
+.ant-select-dropdown,
+.ant-picker-dropdown .ant-picker-panel-container,
+.ant-table-container,
+.ant-collapse,
+.ant-collapse-content,
+.ant-tooltip-inner,
+.ant-notification-notice,
+.ant-message-notice-content,
+.ant-segmented,
+.custom-modal-container,
+.custom-popover-content,
+.custom-tooltip-content,
+.custom-alert,
+.custom-toast,
+.ds-dialog__content,
+.ds-menu,
+.ds-tooltip {
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+}
+
+/* --- Group B: form controls — add a translucent well so the frost reads --- */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-input-number-affix-wrapper,
+.ant-select:not(.ant-select-customize-input) .ant-select-selector,
+.ant-picker,
+.ds-input {
+  background: rgba(255, 255, 255, 0.30) !important;
+  backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
+}
+.is-dark .ant-input,
+.is-dark .ant-input-affix-wrapper,
+.is-dark .ant-input-number,
+.is-dark .ant-input-number-affix-wrapper,
+.is-dark .ant-select:not(.ant-select-customize-input) .ant-select-selector,
+.is-dark .ant-picker,
+.is-dark .ds-input {
+  background: rgba(20, 22, 30, 0.34) !important;
+}
 

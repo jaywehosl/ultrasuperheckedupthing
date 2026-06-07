@@ -71,7 +71,11 @@
   justify-content: flex-start;
   padding: 40px 0;
   box-sizing: border-box;
-  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* NO entrance animation here: a CSS animation that drives opacity/transform
+     turns .feed-section into an isolated compositing group, which disables
+     backdrop-filter for EVERY card inside it (the frosted glass silently dies).
+     Any reveal animation must live on an inner element that contains no
+     glass/backdrop-filter cards. */
 }
 
 @media (max-width: 768px) {
@@ -82,21 +86,17 @@
   }
 }
 
-/* Delay animations for a neat staggered loading effect */
-.feed-section:nth-child(1) { animation-delay: 0.1s; }
-.feed-section:nth-child(2) { animation-delay: 0.2s; }
-.feed-section:nth-child(3) { animation-delay: 0.3s; }
-.feed-section:nth-child(4) { animation-delay: 0.4s; }
-.feed-section:nth-child(5) { animation-delay: 0.5s; }
 
+/* NOTE: this entrance animation must NOT use `transform`. A persistent
+   transform on .feed-section (animation-fill-mode: both leaves the end-state
+   applied) creates a containing block that disables backdrop-filter for every
+   card inside it — killing the frosted glass. Fade opacity only. */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(24px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

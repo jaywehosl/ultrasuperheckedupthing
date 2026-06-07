@@ -58,9 +58,12 @@
   --blur-md: 24px;
   --blur-lg: 36px;
   --blur-xl: 60px;
-  --glass-saturate: 180%;
-  /* Canonical glass = the login-card frost; reused panel-wide, with soft/strong
-     variants for layering (combine with --surface-1/2/3 for opacity variety). */
+  --glass-saturate: 170%;
+  /* Canonical glass blur. The header uses 16px, but that thin bar sits over the
+     sparse top edge; large cards sit over the DENSE particle field where 16px
+     reads as barely-blurred, so the panel-wide card frost is stronger (30px).
+     Saturate stays at the header value (170%) for a cohesive tint. Opacity is
+     varied separately via --surface-1/2/3 for layering/readability. */
   --glass-blur: 30px;
   --glass-blur-soft: 18px;
   --glass-blur-strong: 44px;
