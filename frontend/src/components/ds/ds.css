@@ -37,14 +37,28 @@
 .ds-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
 .ds-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Action buttons mirror the header "Log Out" pill: frosted glass at rest,
+   blue rim + inner hover-glow on hover, pressed-in on active. */
 .ds-btn--primary {
-  background: var(--color-primary);
-  border-color: var(--color-primary-strong);
-  color: var(--text-on-primary);
+  background: rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(18, 19, 23, 0.10);
+  color: var(--text-1);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: none;
+}
+.is-dark .ds-btn--primary {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 .ds-btn--primary:hover:not(:disabled) {
-  background: var(--color-primary-strong);
-  box-shadow: var(--glow-primary), var(--hover-glow);
+  background: rgba(255, 255, 255, 0.40);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  box-shadow: var(--hover-glow);
+}
+.ds-btn--primary:active:not(:disabled) {
+  transform: none;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.18);
 }
 .ds-btn--text {
   background: transparent;
@@ -89,6 +103,13 @@
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow: var(--elev-2), inset 0 1px 0 var(--specular);
   overflow: hidden;
+  transition: box-shadow var(--dur-mid) var(--ease-out-quint),
+    border-color var(--dur-mid) var(--ease-out-quint);
+}
+/* the inner "hover-glow" rim on block hover */
+.ds-card:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.35);
+  box-shadow: var(--elev-2), var(--hover-glow), inset 0 1px 0 var(--specular);
 }
 .ds-card__header {
   display: flex;
