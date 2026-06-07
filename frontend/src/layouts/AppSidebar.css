@@ -426,7 +426,7 @@ body.dark .drawer-utility-list {
   -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
   box-shadow: none !important;
 }
-.header-container { padding: 0 32px !important; max-width: 1400px !important; }
+.header-container { padding: 0 32px !important; max-width: none !important; }
 
 /* theme/language toggles = the login .toolbar-btn (circular + canonical hover) */
 .sidebar-theme-cycle {
