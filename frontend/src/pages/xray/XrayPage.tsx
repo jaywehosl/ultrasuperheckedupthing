@@ -17,8 +17,17 @@ import {
   Row,
   Space,
   Spin,
-} from 'antd';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+} from '@/components/ui';
+import {
+  QuestionCircleOutlined,
+  SettingOutlined,
+  SwapOutlined,
+  UploadOutlined,
+  ClusterOutlined,
+  DatabaseOutlined,
+  CodeOutlined,
+} from '@ant-design/icons';
+import { VerticalTabs } from '@/components/ui';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -80,6 +89,15 @@ export default function XrayPage() {
   const navigate = useNavigate();
   const sectionSlug = location.hash.replace(/^#/, '');
   const activeSection = SECTION_SLUGS.includes(sectionSlug) ? sectionSlug : 'basic';
+
+  const tabItems = useMemo(() => [
+    { key: 'basic', label: t('pages.xray.basicTemplate'), icon: <SettingOutlined /> },
+    { key: 'routing', label: t('pages.xray.Routings'), icon: <SwapOutlined /> },
+    { key: 'outbound', label: t('pages.xray.Outbounds'), icon: <UploadOutlined /> },
+    { key: 'balancer', label: t('pages.xray.Balancers'), icon: <ClusterOutlined /> },
+    { key: 'dns', label: 'DNS', icon: <DatabaseOutlined /> },
+    { key: 'advanced', label: t('pages.xray.advancedTemplate'), icon: <CodeOutlined /> },
+  ], [t]);
 
   const mutate = useCallback(
     (mutator: (next: XraySettingsValue) => void) => {
@@ -338,8 +356,16 @@ export default function XrayPage() {
                     </Card>
                   </Col>
 
-                  <Col span={24}>
-                    <Card hoverable>
+                  <Col xs={24} md={6}>
+                    <VerticalTabs
+                      items={tabItems}
+                      activeKey={activeSection}
+                      onChange={(key) => navigate(`#${key}`)}
+                    />
+                  </Col>
+
+                  <Col xs={24} md={18}>
+                    <Card hoverable style={{ minHeight: '480px' }}>
                       {sectionBody}
                     </Card>
                   </Col>

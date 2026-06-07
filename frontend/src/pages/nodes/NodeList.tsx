@@ -4,13 +4,15 @@ import {
   Badge,
   Button,
   Card,
-  Dropdown,
   Modal,
   Space,
-  Switch,
-  Table,
   Tag,
   Tooltip,
+} from '@/components/ui';
+import {
+  Dropdown,
+  Switch,
+  Table,
 } from 'antd';
 import type { BadgeProps } from 'antd';
 import type { ColumnsType } from 'antd/es/table';

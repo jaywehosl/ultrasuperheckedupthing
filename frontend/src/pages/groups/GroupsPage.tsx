@@ -5,9 +5,6 @@ import {
   Card,
   Col,
   ConfigProvider,
-  Dropdown,
-  Form,
-  Input,
   Layout,
   Modal,
   Result,
@@ -15,10 +12,15 @@ import {
   Space,
   Spin,
   Statistic,
-  Table,
   Tag,
   Tooltip,
   message,
+} from '@/components/ui';
+import {
+  Dropdown,
+  Form,
+  Input,
+  Table,
 } from 'antd';
 import type { MenuProps, TableColumnsType } from 'antd';
 import {

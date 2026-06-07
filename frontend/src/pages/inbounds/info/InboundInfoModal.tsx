@@ -1,6 +1,13 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Divider, Modal, Space, Tabs, Tag, Tooltip } from 'antd';
+import {
+  Button,
+  Modal,
+  Space,
+  Tag,
+  Tooltip,
+} from '@/components/ui';
+import { Divider, Tabs } from 'antd';
 import { CopyOutlined, SyncOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, IntlUtil, SizeFormatter, ColorUtils } from '@/utils';

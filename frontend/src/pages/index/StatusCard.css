@@ -1,14 +1,9 @@
 /* Google Antigravity Light Editorial Style - StatusCard */
 
 .status-card-cockpit {
-  background: #ffffff !important;
-  border: 1px solid rgba(18, 19, 23, 0.05) !important;
-  border-radius: 24px !important;
-  box-shadow: 0 12px 36px rgba(18, 19, 23, 0.03) !important;
-  padding: 16px 20px !important;
+  padding: 24px !important;
   margin-bottom: 16px;
   font-family: "Google Sans Flex", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .status-card-cockpit .ant-card-body {
@@ -60,11 +55,16 @@
   text-transform: uppercase;
 }
 
+body.dark .cockpit-title-text {
+  color: #ffffff;
+}
+
 /* Telemetry Grid */
 .cockpit-grid {
   margin-top: 12px;
 }
 
+/* Telemetry Dial Widget */
 /* Telemetry Dial Widget */
 .telemetry-dial-box {
   display: flex;
@@ -72,17 +72,48 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 12px;
-  background: #f8f9fc;
-  border-radius: 20px;
-  border: 1px solid rgba(18, 19, 23, 0.03);
-  transition: all 0.25s ease-out;
+  padding: 20px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 
+    0 10px 24px rgba(0, 0, 0, 0.01),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.dark .telemetry-dial-box {
+  background: rgba(21, 22, 29, 0.35);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 
+    0 10px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme="ultra-dark"] body.dark .telemetry-dial-box {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.04);
 }
 
 .telemetry-dial-box:hover {
-  background: #f1f3f9;
-  border-color: rgba(50, 121, 249, 0.15);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.35);
+  border-color: var(--dial-color) !important;
+  transform: translateY(-4px);
+  box-shadow: 
+    0 16px 32px rgba(0, 0, 0, 0.03),
+    0 4px 16px var(--dial-color-glow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+body.dark .telemetry-dial-box:hover {
+  background: rgba(21, 22, 29, 0.5);
+  border-color: var(--dial-color) !important;
+  box-shadow: 
+    0 16px 32px rgba(0, 0, 0, 0.25),
+    0 4px 20px var(--dial-color-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .telemetry-dial-container {
@@ -105,15 +136,24 @@
   transition: stroke 0.3s ease;
 }
 
+body.dark .telemetry-dial-ticks {
+  stroke: rgba(255, 255, 255, 0.04);
+}
+
 /* Dial track */
 .telemetry-dial-rail {
   stroke: rgba(18, 19, 23, 0.06);
   stroke-width: 5;
 }
 
+body.dark .telemetry-dial-rail {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+
 /* Active dial stroke */
 .telemetry-dial-active {
   transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease;
+  filter: drop-shadow(0 0 3px var(--dial-color));
 }
 
 .telemetry-dial-content {

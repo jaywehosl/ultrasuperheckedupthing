@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AutoComplete, Form, Modal, message } from 'antd';
+import { Modal, message } from '@/components/ui';
+import { AutoComplete, Form } from 'antd';
 
 interface BulkAddToGroupModalProps {
   open: boolean;

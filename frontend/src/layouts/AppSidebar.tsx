@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Drawer, Layout, Menu } from 'antd';
-import type { MenuProps } from 'antd';
 import {
   ApiOutlined,
   CloseOutlined,
@@ -33,6 +31,17 @@ import {
 import { HttpUtil } from '@/utils';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
+import {
+  DashboardIcon,
+  InboundsIcon,
+  ClientsIcon,
+  GroupsIcon,
+  NodesIcon,
+  SettingsIcon,
+  XrayIcon,
+  ApiDocsIcon,
+  LogoutIcon,
+} from '@/components/ui';
 import './AppSidebar.css';
 
 const SIDEBAR_COLLAPSED_KEY = 'isSidebarCollapsed';
@@ -42,16 +51,16 @@ const LOGOUT_KEY = '__logout__';
 
 type IconName = 'dashboard' | 'inbound' | 'team' | 'groups' | 'setting' | 'tool' | 'cluster' | 'logout' | 'apidocs';
 
-const iconByName: Record<IconName, ComponentType> = {
-  dashboard: DashboardOutlined,
-  inbound: ImportOutlined,
-  team: TeamOutlined,
-  groups: TagsOutlined,
-  setting: SettingOutlined,
-  tool: ToolOutlined,
-  cluster: ClusterOutlined,
-  logout: LogoutOutlined,
-  apidocs: ApiOutlined,
+const iconByName: Record<IconName, ComponentType<any>> = {
+  dashboard: DashboardIcon,
+  inbound: InboundsIcon,
+  team: ClientsIcon,
+  groups: GroupsIcon,
+  setting: SettingsIcon,
+  tool: XrayIcon,
+  cluster: NodesIcon,
+  logout: LogoutIcon,
+  apidocs: ApiDocsIcon,
 };
 
 function readCollapsed(): boolean {
@@ -146,8 +155,8 @@ export default function AppSidebar() {
   const navItems = useMemo(() => tabs.filter((tab) => tab.icon !== 'logout'), [tabs]);
   const utilItems = useMemo(() => tabs.filter((tab) => tab.icon === 'logout'), [tabs]);
 
-  const settingsChildren = useMemo<NonNullable<MenuProps['items']>>(() => {
-    const children: NonNullable<MenuProps['items']> = [
+  const settingsChildren = useMemo(() => {
+    const children = [
       { key: '/settings#general', icon: <SettingOutlined />, label: t('pages.settings.panelSettings') },
       { key: '/settings#security', icon: <SafetyOutlined />, label: t('pages.settings.securitySettings') },
       { key: '/settings#telegram', icon: <MessageOutlined />, label: t('pages.settings.TGBotSettings') },
@@ -159,7 +168,7 @@ export default function AppSidebar() {
     return children;
   }, [t, showSubFormats]);
 
-  const xrayChildren = useMemo<NonNullable<MenuProps['items']>>(() => [
+  const xrayChildren = useMemo(() => [
     { key: '/xray#basic', icon: <SettingOutlined />, label: t('pages.xray.basicTemplate') },
     { key: '/xray#routing', icon: <SwapOutlined />, label: t('pages.xray.Routings') },
     { key: '/xray#outbound', icon: <UploadOutlined />, label: t('pages.xray.Outbounds') },
@@ -195,19 +204,6 @@ export default function AppSidebar() {
     }
   }, [openSubmenu]);
 
-  const toMenuItems = useCallback((items: typeof tabs): MenuProps['items'] =>
-    items.map((tab) => {
-      const Icon = iconByName[tab.icon];
-      if (tab.key === '/settings') {
-        return { key: tab.key, icon: <Icon />, label: tab.title, children: settingsChildren };
-      }
-      if (tab.key === '/xray') {
-        return { key: tab.key, icon: <Icon />, label: tab.title, children: xrayChildren };
-      }
-      return { key: tab.key, icon: <Icon />, label: tab.title };
-    }),
-  [settingsChildren, xrayChildren]);
-
   const openLink = useCallback(async (key: string) => {
     if (key === LOGOUT_KEY) {
       await HttpUtil.post('/logout');
@@ -236,17 +232,6 @@ export default function AppSidebar() {
     navigate(key);
   }, [navigate, pathname]);
 
-  const onMenuClick = useCallback<NonNullable<MenuProps['onClick']>>(({ key }) => {
-    openLink(String(key));
-  }, [openLink]);
-
-  const onSiderCollapse = useCallback((isCollapsed: boolean, type: 'clickTrigger' | 'responsive') => {
-    if (type === 'clickTrigger') {
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
-      setCollapsed(isCollapsed);
-    }
-  }, []);
-
   const cycleTheme = useCallback((id: string) => {
     pauseAnimationsUntilLeave(id);
     if (!isDark) {
@@ -274,14 +259,26 @@ export default function AppSidebar() {
         </div>
 
         <div className="header-center">
-          <Menu
-            mode="horizontal"
-            selectedKeys={[selectedKey]}
-            className="header-nav-menu"
-            items={toMenuItems(navItems)}
-            onClick={onMenuClick}
-            style={{ border: 'none', background: 'transparent' }}
-          />
+          <nav className="header-nav-list-container">
+            <ul className="header-nav-list">
+              {navItems.map((tab) => {
+                const Icon = iconByName[tab.icon];
+                const isActive = pathname === tab.key || (tab.key.startsWith('/#') && pathname === '/' && hash === tab.key.substring(1));
+                return (
+                  <li key={tab.key} className="header-nav-item-wrapper">
+                    <button
+                      type="button"
+                      className={`nav-menu-item ${isActive ? 'is-active' : ''}`}
+                      onClick={() => openLink(tab.key)}
+                    >
+                      <Icon />
+                      <span>{tab.title}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
         </div>
 
         <div className="header-right">
@@ -312,64 +309,84 @@ export default function AppSidebar() {
         </div>
       </div>
 
-      <Drawer
-        placement="left"
-        closable={false}
-        open={drawerOpen}
-        rootClassName={currentTheme}
-        size="min(82vw, 320px)"
-        styles={{
-          wrapper: { padding: 0 },
-          body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' },
-          header: { display: 'none' },
-        }}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <div className="drawer-header">
-          <div className="brand-block">
-            <span className="drawer-brand">3X-UI</span>
-          </div>
-          <div className="drawer-header-actions">
-            <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
-            <ThemeCycleButton
-              id="theme-cycle-drawer"
-              isDark={isDark}
-              isUltra={isUltra}
-              onCycle={() => cycleTheme('theme-cycle-drawer')}
-              ariaLabel={t('menu.theme')}
-            />
-            <button
-              className="drawer-close"
-              type="button"
-              aria-label={t('close')}
-              onClick={() => setDrawerOpen(false)}
-            >
-              <CloseOutlined />
-            </button>
+      {drawerOpen && (
+        <div className="custom-drawer-overlay" onClick={() => setDrawerOpen(false)}>
+          <div className="custom-drawer-content" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-header">
+              <div className="brand-block">
+                <span className="drawer-brand">3X-UI</span>
+              </div>
+              <div className="drawer-header-actions">
+                <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
+                <ThemeCycleButton
+                  id="theme-cycle-drawer"
+                  isDark={isDark}
+                  isUltra={isUltra}
+                  onCycle={() => cycleTheme('theme-cycle-drawer')}
+                  ariaLabel={t('menu.theme')}
+                />
+                <button
+                  className="drawer-close"
+                  type="button"
+                  aria-label={t('close')}
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  <CloseOutlined />
+                </button>
+              </div>
+            </div>
+            
+            <div className="drawer-body">
+              <ul className="drawer-nav-list">
+                {navItems.map((tab) => {
+                  const Icon = iconByName[tab.icon];
+                  const isActive = pathname === tab.key || (tab.key.startsWith('/#') && pathname === '/' && hash === tab.key.substring(1));
+                  return (
+                    <li key={tab.key} className="drawer-nav-item-wrapper">
+                      <button
+                        type="button"
+                        className={`nav-menu-item ${isActive ? 'is-active' : ''}`}
+                        onClick={() => {
+                          openLink(tab.key);
+                          setDrawerOpen(false);
+                        }}
+                      >
+                        <Icon />
+                        <span>{tab.title}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <ul className="drawer-utility-list">
+                {utilItems.map((tab) => {
+                  const Icon = iconByName[tab.icon];
+                  return (
+                    <li key={tab.key}>
+                      <button
+                        type="button"
+                        className="nav-menu-item"
+                        onClick={() => {
+                          openLink(tab.key);
+                          setDrawerOpen(false);
+                        }}
+                      >
+                        <Icon />
+                        <span>{tab.title}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="drawer-footer">
+              <VersionBadge version={panelVersion} />
+            </div>
           </div>
         </div>
-        <Menu
-          theme={currentTheme}
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          openKeys={openKeys}
-          onOpenChange={(keys) => setOpenKeys(keys as string[])}
-          className="drawer-menu drawer-nav"
-          items={toMenuItems(navItems)}
-          onClick={(info) => { onMenuClick(info); setDrawerOpen(false); }}
-        />
-        <Menu
-          theme={currentTheme}
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          className="drawer-menu drawer-utility"
-          items={toMenuItems(utilItems)}
-          onClick={(info) => { onMenuClick(info); setDrawerOpen(false); }}
-        />
-        <div className="drawer-footer">
-          <VersionBadge version={panelVersion} />
-        </div>
-      </Drawer>
+      )}
     </header>
   );
 }

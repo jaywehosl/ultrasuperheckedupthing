@@ -12,7 +12,7 @@ import {
   Spin,
   Statistic,
   message,
-} from 'antd';
+} from '@/components/ui';
 
 import { setMessageInstance } from '@/utils/messageBus';
 import {

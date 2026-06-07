@@ -45,9 +45,8 @@
 .nodes-page .ant-card.ant-card-hoverable:hover,
 .groups-page .ant-card.ant-card-hoverable:hover,
 .api-docs-page .ant-card.ant-card-hoverable:hover {
-  transform: translateY(-2px);
-  border-color: rgba(50, 121, 249, 0.3) !important;
-  box-shadow: 0 16px 40px rgba(50, 121, 249, 0.04) !important;
+  border-color: rgba(50, 121, 249, 0.35) !important;
+  box-shadow: 0 12px 36px rgba(50, 121, 249, 0.05) !important;
 }
 
 .index-page.is-dark .ant-card.ant-card-hoverable:hover,
@@ -58,8 +57,8 @@
 .nodes-page.is-dark .ant-card.ant-card-hoverable:hover,
 .groups-page.is-dark .ant-card.ant-card-hoverable:hover,
 .api-docs-page.is-dark .ant-card.ant-card-hoverable:hover {
-  border-color: rgba(50, 121, 249, 0.4) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(50, 121, 249, 0.45) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35) !important;
 }
 
 .index-page .ant-card .ant-card-actions,

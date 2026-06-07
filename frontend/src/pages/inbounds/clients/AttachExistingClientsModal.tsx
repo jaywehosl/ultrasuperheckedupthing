@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Input, Modal, Select, Space, Spin, Table, Tag, Typography, message } from 'antd';
+import {
+  Alert,
+  Modal,
+  Space,
+  Spin,
+  Tag,
+  message,
+} from '@/components/ui';
+import { Input, Select, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 import { HttpUtil } from '@/utils';

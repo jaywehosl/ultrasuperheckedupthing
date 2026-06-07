@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -14,7 +14,14 @@ import {
   Space,
   Spin,
   message,
-} from 'antd';
+} from '@/components/ui';
+import {
+  SettingOutlined,
+  SafetyOutlined,
+  MessageOutlined,
+  CloudServerOutlined,
+  CodeOutlined,
+} from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
 import { setMessageInstance } from '@/utils/messageBus';
@@ -23,6 +30,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { AllSettingSchema } from '@/schemas/setting';
 import PlanVerificationModal from '@/components/ui/PlanVerificationModal';
+import { VerticalTabs } from '@/components/ui';
 import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
 import TelegramTab from './TelegramTab';
@@ -62,6 +70,7 @@ export default function SettingsPage() {
   const { isMobile } = useMediaQuery();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setMessageInstance(messageApi);
@@ -77,6 +86,23 @@ export default function SettingsPage() {
     saveDisabled,
     saveAll,
   } = useAllSettings();
+
+  const showSubFormats = useMemo(() => {
+    return !!(allSetting?.subJsonEnable || allSetting?.subClashEnable);
+  }, [allSetting?.subJsonEnable, allSetting?.subClashEnable]);
+
+  const tabItems = useMemo(() => {
+    const list = [
+      { key: 'general', label: t('pages.settings.panelSettings'), icon: <SettingOutlined /> },
+      { key: 'security', label: t('pages.settings.securitySettings'), icon: <SafetyOutlined /> },
+      { key: 'telegram', label: t('pages.settings.TGBotSettings'), icon: <MessageOutlined /> },
+      { key: 'subscription', label: t('pages.settings.subSettings'), icon: <CloudServerOutlined /> },
+    ];
+    if (showSubFormats) {
+      list.push({ key: 'subscription-formats', label: 'Sub Formats', icon: <CodeOutlined /> });
+    }
+    return list;
+  }, [t, showSubFormats]);
 
   const [showPlan, setShowPlan] = useState(false);
 
@@ -268,8 +294,16 @@ export default function SettingsPage() {
                       </Card>
                     </Col>
 
-                    <Col span={24}>
-                      <Card hoverable>
+                    <Col xs={24} md={6}>
+                      <VerticalTabs
+                        items={tabItems}
+                        activeKey={activeSlug}
+                        onChange={(key) => navigate(`#${key}`)}
+                      />
+                    </Col>
+
+                    <Col xs={24} md={18}>
+                      <Card hoverable style={{ minHeight: '450px' }}>
                         {categoryBody}
                       </Card>
                     </Col>

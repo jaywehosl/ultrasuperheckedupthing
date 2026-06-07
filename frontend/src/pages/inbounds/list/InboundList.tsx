@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import {
   Button,
   Card,
-  Checkbox,
-  Dropdown,
   Space,
-  Switch,
-  Table,
   Tag,
   Tooltip,
+} from '@/components/ui';
+import {
+  Checkbox,
+  Dropdown,
+  Switch,
+  Table,
   type MenuProps,
 } from 'antd';
 import {

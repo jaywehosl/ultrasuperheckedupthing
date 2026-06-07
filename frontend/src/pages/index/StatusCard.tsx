@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Col, Row, Tooltip, Button } from 'antd';
+import { Card, Col, Row, Tooltip, Button } from '@/components/ui';
 import { AreaChartOutlined, InfoCircleOutlined } from '@ant-design/icons';
+
 
 import { CPUFormatter, SizeFormatter } from '@/utils';
 import type { Status } from '@/models/status';
@@ -34,7 +35,13 @@ function TelemetryDial({ percent, color, label, detail }: TelemetryDialProps) {
   const mappedColor = mapGoogleColor(color);
 
   return (
-    <div className="telemetry-dial-box">
+    <div
+      className="telemetry-dial-box"
+      style={{
+        '--dial-color': mappedColor,
+        '--dial-color-glow': `${mappedColor}24`,
+      } as React.CSSProperties}
+    >
       <div className="telemetry-dial-container">
         <svg viewBox="0 0 100 100" className="telemetry-dial-svg">
           {/* Outer ticking accent circle */}

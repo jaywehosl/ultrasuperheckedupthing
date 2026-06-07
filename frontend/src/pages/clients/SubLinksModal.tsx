@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Modal, Table, Tooltip, Typography, message } from 'antd';
+import { Alert, Button, Modal, Tooltip, message } from '@/components/ui';
+import { Table, Typography } from 'antd';
 import type { TableColumnType } from 'antd';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Form, InputNumber, Modal, message } from 'antd';
+import { Alert, Modal, message } from '@/components/ui';
+import { Form, InputNumber } from 'antd';
 
 import { ClientBulkAdjustFormSchema } from '@/schemas/client';
 

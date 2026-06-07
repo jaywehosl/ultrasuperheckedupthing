@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Collapse, Modal } from 'antd';
+import { Modal } from '@/components/ui';
+import { Collapse } from 'antd';
 import type { CollapseProps } from 'antd';
 
 import { Protocols } from '@/schemas/primitives';

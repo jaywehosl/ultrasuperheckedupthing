@@ -2,16 +2,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import {
+  Col,
+  Modal,
+  Radio,
+  Row,
+  Tooltip,
+  message,
+} from '@/components/ui';
+import {
   Form,
   Input,
   InputNumber,
-  Modal,
-  Radio,
   Select,
   Switch,
   Tabs,
-  Tooltip,
-  message,
 } from 'antd';
 
 import { HttpUtil, NumberFormatter, RandomUtil, SizeFormatter, Wireguard } from '@/utils';
@@ -479,114 +483,139 @@ export default function InboundFormModal({
       <Form.Item name="lastTrafficResetTime" hidden noStyle><InputNumber /></Form.Item>
       <Form.Item name="clientStats" hidden noStyle><Input /></Form.Item>
 
-      <Form.Item name="enable" label={t('enable')} valuePropName="checked">
-        <Switch />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={6}>
+          <Form.Item name="enable" label={t('enable')} valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={18}>
+          <Form.Item name="remark" label={t('pages.inbounds.remark')}>
+            <Input />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      <Form.Item name="remark" label={t('pages.inbounds.remark')}>
-        <Input />
-      </Form.Item>
-
-      {selectableNodes.length > 0 && isNodeEligible && (
-        <Form.Item name="nodeId" label={t('pages.inbounds.deployTo')}>
-          <Select
-            disabled={mode === 'edit'}
-            placeholder={t('pages.inbounds.localPanel')}
-            allowClear
-            options={selectableNodes.map((n) => ({
-              value: n.id,
-              label: `${n.name}${n.status === 'offline' ? ' (offline)' : ''}`,
-              disabled: n.status === 'offline',
-            }))}
-          />
-        </Form.Item>
-      )}
-
-      <Form.Item name="protocol" label={t('pages.inbounds.protocol')}>
-        <Select disabled={mode === 'edit'} options={PROTOCOL_OPTIONS} />
-      </Form.Item>
-
-      <Form.Item
-        name="listen"
-        label={t('pages.inbounds.address')}
-        extra={t('pages.inbounds.form.listenHelp')}
-      >
-        <Input placeholder={t('pages.inbounds.monitorDesc')} />
-      </Form.Item>
-
-      <Form.Item
-        name="port"
-        label={t('pages.inbounds.port')}
-        rules={[antdRule(InboundFormBaseSchema.shape.port, t)]}
-      >
-        <InputNumber min={isUdsListen ? 0 : 1} max={65535} />
-      </Form.Item>
-
-      <Form.Item
-        label={
-          <Tooltip title={t('pages.inbounds.meansNoLimit')}>
-            {t('pages.inbounds.totalFlow')}
-          </Tooltip>
-        }
-      >
-        <Form.Item
-          noStyle
-          shouldUpdate={(prev, curr) => prev.total !== curr.total}
-        >
-          {({ getFieldValue, setFieldValue }) => {
-            const totalBytes = (getFieldValue('total') as number) ?? 0;
-            const totalGB = totalBytes
-              ? Math.round((totalBytes / SizeFormatter.ONE_GB) * 100) / 100
-              : 0;
-            return (
-              <InputNumber
-                value={totalGB}
-                min={0}
-                step={1}
-                onChange={(v) => {
-                  const bytes = NumberFormatter.toFixed(
-                    (Number(v) || 0) * SizeFormatter.ONE_GB,
-                    0,
-                  );
-                  setFieldValue('total', bytes);
-                }}
+      <Row gutter={16}>
+        <Col xs={24} md={selectableNodes.length > 0 && isNodeEligible ? 12 : 24}>
+          <Form.Item name="protocol" label={t('pages.inbounds.protocol')}>
+            <Select disabled={mode === 'edit'} options={PROTOCOL_OPTIONS} />
+          </Form.Item>
+        </Col>
+        {selectableNodes.length > 0 && isNodeEligible && (
+          <Col xs={24} md={12}>
+            <Form.Item name="nodeId" label={t('pages.inbounds.deployTo')}>
+              <Select
+                disabled={mode === 'edit'}
+                placeholder={t('pages.inbounds.localPanel')}
+                allowClear
+                options={selectableNodes.map((n) => ({
+                  value: n.id,
+                  label: `${n.name}${n.status === 'offline' ? ' (offline)' : ''}`,
+                  disabled: n.status === 'offline',
+                }))}
               />
-            );
-          }}
-        </Form.Item>
-      </Form.Item>
+            </Form.Item>
+          </Col>
+        )}
+      </Row>
 
-      <Form.Item name="trafficReset" label={t('pages.inbounds.periodicTrafficResetTitle')}>
-        <Select
-          options={TRAFFIC_RESETS.map((r) => ({
-            value: r,
-            label: t(`pages.inbounds.periodicTrafficReset.${r}`),
-          }))}
-        />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={16}>
+          <Form.Item
+            name="listen"
+            label={t('pages.inbounds.address')}
+            extra={t('pages.inbounds.form.listenHelp')}
+          >
+            <Input placeholder={t('pages.inbounds.monitorDesc')} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={8}>
+          <Form.Item
+            name="port"
+            label={t('pages.inbounds.port')}
+            rules={[antdRule(InboundFormBaseSchema.shape.port, t)]}
+          >
+            <InputNumber min={isUdsListen ? 0 : 1} max={65535} style={{ width: '100%' }} />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      <Form.Item
-        label={
-          <Tooltip title={t('pages.inbounds.leaveBlankToNeverExpire')}>
-            {t('pages.inbounds.expireDate')}
-          </Tooltip>
-        }
-      >
-        <Form.Item
-          noStyle
-          shouldUpdate={(prev, curr) => prev.expiryTime !== curr.expiryTime}
-        >
-          {({ getFieldValue, setFieldValue }) => {
-            const expiry = (getFieldValue('expiryTime') as number) ?? 0;
-            return (
-              <DateTimePicker
-                value={expiry > 0 ? dayjs(expiry) : null}
-                onChange={(d) => setFieldValue('expiryTime', d ? d.valueOf() : 0)}
-              />
-            );
-          }}
-        </Form.Item>
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label={
+              <Tooltip title={t('pages.inbounds.meansNoLimit')}>
+                {t('pages.inbounds.totalFlow')}
+              </Tooltip>
+            }
+          >
+            <Form.Item
+              noStyle
+              shouldUpdate={(prev, curr) => prev.total !== curr.total}
+            >
+              {({ getFieldValue, setFieldValue }) => {
+                const totalBytes = (getFieldValue('total') as number) ?? 0;
+                const totalGB = totalBytes
+                  ? Math.round((totalBytes / SizeFormatter.ONE_GB) * 100) / 100
+                  : 0;
+                return (
+                  <InputNumber
+                    value={totalGB}
+                    min={0}
+                    step={1}
+                    style={{ width: '100%' }}
+                    onChange={(v) => {
+                      const bytes = NumberFormatter.toFixed(
+                        (Number(v) || 0) * SizeFormatter.ONE_GB,
+                        0,
+                      );
+                      setFieldValue('total', bytes);
+                    }}
+                  />
+                );
+              }}
+            </Form.Item>
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item name="trafficReset" label={t('pages.inbounds.periodicTrafficResetTitle')}>
+            <Select
+              options={TRAFFIC_RESETS.map((r) => ({
+                value: r,
+                label: t(`pages.inbounds.periodicTrafficReset.${r}`),
+              }))}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col xs={24} md={24}>
+          <Form.Item
+            label={
+              <Tooltip title={t('pages.inbounds.leaveBlankToNeverExpire')}>
+                {t('pages.inbounds.expireDate')}
+              </Tooltip>
+            }
+          >
+            <Form.Item
+              noStyle
+              shouldUpdate={(prev, curr) => prev.expiryTime !== curr.expiryTime}
+            >
+              {({ getFieldValue, setFieldValue }) => {
+                const expiry = (getFieldValue('expiryTime') as number) ?? 0;
+                return (
+                  <DateTimePicker
+                    value={expiry > 0 ? dayjs(expiry) : null}
+                    onChange={(d) => setFieldValue('expiryTime', d ? d.valueOf() : 0)}
+                  />
+                );
+              }}
+            </Form.Item>
+          </Form.Item>
+        </Col>
+      </Row>
     </>
   );
 
@@ -678,7 +707,7 @@ export default function InboundFormModal({
       {protocol !== Protocols.HYSTERIA && (
         <Form.Item label={t('transmission')} name={['streamSettings', 'network']}>
           <Select
-            style={{ width: '75%' }}
+            style={{ width: '100%' }}
             onChange={onNetworkChange}
             options={[
               { value: 'tcp', label: 'RAW' },
@@ -896,9 +925,8 @@ export default function InboundFormModal({
       >
         <Form
           form={form}
+          layout="vertical"
           colon={false}
-          labelCol={{ sm: { span: 8 } }}
-          wrapperCol={{ sm: { span: 14 } }}
           onValuesChange={onValuesChange}
         >
           <Tabs items={[

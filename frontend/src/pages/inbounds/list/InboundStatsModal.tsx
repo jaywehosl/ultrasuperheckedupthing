@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Modal, Tag } from 'antd';
+import { Modal, Tag } from '@/components/ui';
 
 import { SizeFormatter, IntlUtil, ColorUtils } from '@/utils';
 import { InfinityIcon } from '@/components/ui';

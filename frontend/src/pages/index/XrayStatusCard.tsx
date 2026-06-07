@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Card, Col, Popover, Row, Space, Tag } from 'antd';
+import { Badge, Card, Col, Popover, Row, Space, Tag } from '@/components/ui';
+
 import {
   BarsOutlined,
   PoweroffOutlined,
@@ -61,7 +62,7 @@ export default function XrayStatusCard({
       <Badge status="processing" text={stateText} color={status.xray.color} />
     ) : (
       <Popover
-        title={
+        title = {
           <Row align="middle" justify="space-between">
             <Col>
               <span>{t('pages.index.xrayStatusError')}</span>
@@ -71,7 +72,7 @@ export default function XrayStatusCard({
             </Col>
           </Row>
         }
-        content={
+        content = {
           <>
             {errorLines.map((line, i) => (
               <span key={i} className="error-line">
@@ -88,21 +89,21 @@ export default function XrayStatusCard({
   const actions = [
     ...(ipLimitEnable
       ? [
-          <Space className="action" key="xraylogs" onClick={onOpenXrayLogs}>
+          <Space key="xraylogs" className="action" onClick={onOpenXrayLogs}>
             <BarsOutlined />
             {!isMobile && <span>{t('pages.index.logs')}</span>}
           </Space>,
         ]
       : []),
-    <Space className="action" key="stop" onClick={onStopXray}>
+    <Space key="stop" className="action" onClick={onStopXray}>
       <PoweroffOutlined />
       {!isMobile && <span>{t('pages.index.stopXray')}</span>}
     </Space>,
-    <Space className="action" key="restart" onClick={onRestartXray}>
+    <Space key="restart" className="action" onClick={onRestartXray}>
       <ReloadOutlined />
       {!isMobile && <span>{t('pages.index.restartXray')}</span>}
     </Space>,
-    <Space className="action" key="switch" onClick={onOpenVersionSwitch}>
+    <Space key="switch" className="action" onClick={onOpenVersionSwitch}>
       <ToolOutlined />
       {!isMobile && (
         <span>

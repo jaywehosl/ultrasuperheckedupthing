@@ -4,14 +4,16 @@ import {
   Alert,
   Button,
   Col,
+  Modal,
+  Row,
+  message,
+} from '@/components/ui';
+import {
   Form,
   Input,
   InputNumber,
-  Modal,
-  Row,
   Select,
   Switch,
-  message,
 } from 'antd';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import type { Msg } from '@/utils';

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Modal, Select, Typography, message } from 'antd';
+import { Alert, Modal, message } from '@/components/ui';
+import { Select, Typography } from 'antd';
 
 import type { InboundOption } from '@/hooks/useClients';
 import type { BulkDetachResult } from '@/schemas/client';

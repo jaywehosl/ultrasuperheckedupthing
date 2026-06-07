@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input, Modal, Space, Table, Tag, Typography, message } from 'antd';
+import { Modal, Space, Tag, message } from '@/components/ui';
+import { Input, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 import type { ClientRecord } from '@/hooks/useClients';
