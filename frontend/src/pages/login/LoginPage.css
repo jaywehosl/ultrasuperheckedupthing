@@ -129,9 +129,11 @@
 }
 
 .toolbar-btn:hover {
-  background: rgba(50, 121, 249, 0.08) !important;
-  border-color: #3279F9 !important;
-  color: #3279F9 !important;
+  border-color: rgba(50, 121, 249, 0.5) !important;
+  box-shadow:
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Hero Section */
@@ -277,19 +279,18 @@ body.dark .login-card input:-webkit-autofill:focus {
 
 .login-submit-btn {
   height: 46px !important;
-  /* vivid primary blue, but translucent like the input field */
-  background: linear-gradient(135deg, rgba(50, 121, 249, 0.68) 0%, rgba(37, 96, 210, 0.68) 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(50, 121, 249, 0.45) !important;
+  /* same frosted surface as the fields / dropdown — NOT a blue button */
+  background: rgba(255, 255, 255, 0.32) !important;
+  color: #121317 !important;
+  border: 1px solid rgba(18, 19, 23, 0.1) !important;
   border-radius: 14px !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 600 !important;
   font-size: 14.5px !important;
   letter-spacing: 0.2px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px) saturate(170%) !important;
-  -webkit-backdrop-filter: blur(10px) saturate(170%) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(10px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+  box-shadow: none !important;
   transition: box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease !important;
 }
 
@@ -297,13 +298,11 @@ body.dark .login-card input:-webkit-autofill:focus {
 .login-submit-btn::after { display: none !important; }
 
 .login-submit-btn:hover {
-  border-color: rgba(50, 121, 249, 0.75) !important;
-  background: linear-gradient(135deg, rgba(58, 132, 255, 0.8) 0%, rgba(42, 104, 224, 0.8) 100%) !important;
-  /* bright inner highlight = the field's "reverse glow", read on a blue base */
+  border-color: rgba(50, 121, 249, 0.5) !important;
   box-shadow:
-    inset 0 1px 6px rgba(255, 255, 255, 0.5),
-    inset 0 8px 18px rgba(255, 255, 255, 0.16),
-    0 4px 14px rgba(50, 121, 249, 0.28) !important;
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
   transform: none !important;
 }
 
@@ -320,16 +319,33 @@ body.dark .login-card input:-webkit-autofill:focus {
 /* antd v6 paints the surface on .ant-popover-container (NOT .ant-popover-inner). */
 .ant-popover .ant-popover-arrow { display: none !important; }
 
+/* positioned via `inset` (not transform): kill the zoom + opacity fade so
+   backdrop-filter is consistent from the first frame (no frost "catch-up"). */
+.ant-popover { transform: none !important; animation-duration: 0.001ms !important; }
+
 .ant-popover .ant-popover-container {
-  /* design transferred from the input field: same transparency / border / radius */
+  /* match the login card: same blur + bright glass kant + specular highlight */
   background: rgba(255, 255, 255, 0.32) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-  border: 1px solid rgba(18, 19, 23, 0.1) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: 14px !important;
-  box-shadow: 0 20px 50px rgba(18, 19, 23, 0.16) !important;
+  box-shadow:
+    0 20px 50px rgba(18, 19, 23, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
   overflow: hidden !important;
   padding: 6px !important;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease !important;
+}
+
+/* hover the dropdown panel itself -> same reverse-glow as the login card/field */
+.ant-popover .ant-popover-container:hover {
+  border-color: rgba(50, 121, 249, 0.5) !important;
+  box-shadow:
+    0 20px 50px rgba(18, 19, 23, 0.16),
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 
 .ant-popover .ant-popover-content { background: transparent !important; }
@@ -340,24 +356,29 @@ body.dark .login-card input:-webkit-autofill:focus {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  width: 100% !important;
 }
 
 .ant-popover .ant-menu-item {
+  border: 1px solid transparent !important; /* so the hover kant can appear */
   border-radius: 10px !important;
+  /* full width + zero side margins => symmetric gaps on all 4 sides */
+  width: 100% !important;
+  box-sizing: border-box !important;
   margin: 2px 0 !important;
   color: #121317 !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 /* higher specificity (.ant-menu-root) to beat antd's own hover background */
 .ant-popover .ant-menu-root .ant-menu-item:hover,
 .ant-popover .ant-menu-root .ant-menu-item-active {
-  /* light frosted base + the field's exact inner blue glow = same hover as the input */
-  background-color: rgba(255, 255, 255, 0.55) !important;
-  color: #3279F9 !important;
+  /* exact same effect as the dropdown panel hover */
+  border-color: rgba(50, 121, 249, 0.5) !important;
   box-shadow:
     inset 0 1px 4px rgba(50, 121, 249, 0.22),
     inset 0 7px 16px rgba(50, 121, 249, 0.12),
-    0 2px 6px rgba(50, 121, 249, 0.10) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 
 .ant-popover .ant-menu-item-selected {

@@ -45,3 +45,7 @@ docker-compose.override.yml
 
 # Ignore .env (Environment Variables) file
 .env
+
+# Ignore large local capture / third-party reference assets (not for the repo)
+*.mp4
+/antigravity_reference_assets/
