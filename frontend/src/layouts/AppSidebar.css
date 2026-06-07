@@ -409,3 +409,38 @@ body.dark .drawer-utility-list {
     display: none;
   }
 }
+
+/* === Header as the full-width login-bar template (overrides the floating pill) === */
+.antigravity-header {
+  position: sticky !important;
+  top: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 72px !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(16px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
+  box-shadow: none !important;
+}
+.header-container { padding: 0 32px !important; max-width: 1400px !important; }
+
+/* theme/language toggles = the login .toolbar-btn (circular + canonical hover) */
+.sidebar-theme-cycle {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(18, 19, 23, 0.05) !important;
+  background: transparent !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease !important;
+}
+.sidebar-theme-cycle:hover {
+  background: transparent !important;
+  color: #3279F9 !important;
+  border-color: rgba(50, 121, 249, 0.5) !important;
+  box-shadow: var(--hover-glow) !important;
+  transform: none !important;
+}
