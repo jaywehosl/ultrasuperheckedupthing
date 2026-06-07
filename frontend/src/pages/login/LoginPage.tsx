@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -15,7 +15,6 @@ import {
 import {
   KeyOutlined,
   LockOutlined,
-  MoonFilled,
   MoonOutlined,
   SunOutlined,
   TranslationOutlined,
@@ -28,6 +27,7 @@ import { setMessageInstance } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { LoginFormSchema, TwoFactorCodeSchema, type LoginFormValues } from '@/schemas/login';
 import './LoginPage.css';
+import ParticleField from '@/components/ui/ParticleField';
 
 const HEADLINE_INTERVAL_MS = 2000;
 
@@ -40,112 +40,9 @@ export default function LoginPage() {
   const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig } = useTheme();
   const [messageApi, messageContextHolder] = message.useMessage();
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
   useEffect(() => {
     setMessageInstance(messageApi);
   }, [messageApi]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    let mouse = { x: width / 2, y: height / 2, tx: width / 2, ty: height / 2 };
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.tx = e.clientX;
-      mouse.ty = e.clientY;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    class Particle {
-      x: number = Math.random() * width;
-      y: number = Math.random() * height;
-      vx: number = (Math.random() - 0.5) * 0.3;
-      vy: number = (Math.random() - 0.5) * 0.3;
-      size: number = Math.random() * 80 + 60; // Large organic glowing blobs
-      // Google Red (#EA4335) or Google Blue (#4285F4) with soft transparency
-      color: string = Math.random() > 0.5 ? 'rgba(66, 133, 244, 0.12)' : 'rgba(234, 67, 53, 0.10)';
-
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-
-        // Bounce/loop at margins
-        if (this.x < -150) this.x = width + 150;
-        if (this.x > width + 150) this.x = -150;
-        if (this.y < -150) this.y = height + 150;
-        if (this.y > height + 150) this.y = -150;
-
-        // Mouse follow behavior
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < 400) {
-          const force = (400 - dist) / 4000;
-          this.vx += (dx / dist) * force * 0.2;
-          this.vy += (dy / dist) * force * 0.2;
-        }
-
-        // Limit speed
-        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        if (speed > 1.5) {
-          this.vx = (this.vx / speed) * 1.5;
-          this.vy = (this.vy / speed) * 1.5;
-        }
-      }
-
-      draw(c: CanvasRenderingContext2D) {
-        c.beginPath();
-        const grad = c.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
-        grad.addColorStop(0, this.color);
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        c.fillStyle = grad;
-        c.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        c.fill();
-      }
-    }
-
-    const particles: Particle[] = [];
-    const count = Math.min(24, Math.floor((width * height) / 40000));
-    for (let i = 0; i < count; i++) {
-      particles.push(new Particle());
-    }
-
-    const render = () => {
-      mouse.x += (mouse.tx - mouse.x) * 0.05;
-      mouse.y += (mouse.ty - mouse.y) * 0.05;
-
-      ctx.clearRect(0, 0, width, height);
-
-      particles.forEach((p) => {
-        p.update();
-        p.draw(ctx);
-      });
-
-      animationId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationId);
-    };
-  }, []);
 
   const [fetched, setFetched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -180,16 +77,8 @@ export default function LoginPage() {
 
   const cycleTheme = useCallback(() => {
     pauseAnimationsUntilLeave('login-theme-cycle');
-    if (!isDark) {
-      toggleTheme();
-      if (isUltra) toggleUltra();
-    } else if (!isUltra) {
-      toggleUltra();
-    } else {
-      toggleUltra();
-      toggleTheme();
-    }
-  }, [isDark, isUltra, toggleTheme, toggleUltra]);
+    toggleTheme();
+  }, [toggleTheme]);
 
   const pageClass = useMemo(() => {
     const classes = ['login-app'];
@@ -211,13 +100,18 @@ export default function LoginPage() {
     [],
   );
 
-  const themeIcon = !isDark ? <SunOutlined /> : !isUltra ? <MoonOutlined /> : <MoonFilled />;
+  const themeIcon = isDark ? <MoonOutlined /> : <SunOutlined />;
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
       {messageContextHolder}
       <Layout className={pageClass}>
-        <canvas ref={canvasRef} className="kinetic-canvas" />
+        <ParticleField
+          className="kinetic-canvas"
+          additive={isDark}
+          intensity={isDark ? 1.7 : 0.95}
+          interactive
+        />
         <Layout.Content className="login-content">
           <div className="login-header">
             <div className="brand-block">

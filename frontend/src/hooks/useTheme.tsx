@@ -13,12 +13,19 @@ function readBool(key: string, fallback: boolean): boolean {
 }
 
 function applyDom(isDark: boolean, isUltra: boolean) {
-  document.body.setAttribute('class', isDark ? 'dark' : 'light');
-  if (isUltra) {
-    document.documentElement.setAttribute('data-theme', 'ultra-dark');
+  const root = document.documentElement;
+  // Theme lives on <html> so portaled surfaces (Modals, toasts, dropdowns that
+  // mount on document.body) resolve the same theme as in-flow content.
+  root.classList.toggle('is-dark', isDark);
+  root.classList.toggle('is-ultra', isDark && isUltra);
+  if (isDark && isUltra) {
+    root.setAttribute('data-theme', 'ultra-dark');
   } else {
-    document.documentElement.removeAttribute('data-theme');
+    root.removeAttribute('data-theme');
   }
+  // Legacy `body.dark` / `body.light` convention still used by many rules.
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('light', !isDark);
   const msg = document.getElementById('message');
   if (msg) msg.className = isDark ? 'dark' : 'light';
 }
@@ -32,8 +39,11 @@ if (localStorage.getItem(CACHE_RESET_KEY) !== 'true') {
 }
 
 // module load so the document is in the right theme before React mounts.
-const initialDark = readBool(STORAGE_DARK, false);
-const initialUltra = readBool(STORAGE_ULTRA, false);
+// Dark theme temporarily removed system-wide — single light theme only.
+// (The toggle button stays; dark will be rebuilt from scratch off the light one.)
+const initialDark = false;
+// AMOLED / "ultra dark" theme removed — there is now a single systemic dark theme.
+const initialUltra = false;
 applyDom(initialDark, initialUltra);
 
 const DARK_TOKENS = {
@@ -211,8 +221,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_ULTRA, String(isUltra));
   }, [isDark, isUltra]);
 
-  const toggleTheme = useCallback(() => setIsDark((v) => !v), []);
-  const toggleUltra = useCallback(() => setIsUltra((v) => !v), []);
+  // no-op for now: dark theme removed system-wide, keep the button as a placeholder
+  const toggleTheme = useCallback(() => {}, []);
+  void setIsDark;
+  // no-op: the AMOLED/ultra theme was removed, keep the API for compatibility
+  const toggleUltra = useCallback(() => {}, []);
+  void setIsUltra;
 
   const antdThemeConfig = useMemo(() => buildAntdThemeConfig(isDark, isUltra), [isDark, isUltra]);
 

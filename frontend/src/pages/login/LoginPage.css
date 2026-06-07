@@ -1,6 +1,6 @@
 .login-app {
   --bg-page: #F8F9FC;
-  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-card: rgba(255, 255, 255, 0.22);
   --color-text: #121317;
   --color-text-subtle: rgba(18, 19, 23, 0.6);
   --color-border: rgba(18, 19, 23, 0.05);
@@ -10,27 +10,50 @@
   overflow-y: auto;
   overflow-x: hidden;
   background-color: var(--bg-page);
-  background-image: radial-gradient(rgba(18, 19, 23, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
   background-attachment: fixed;
   font-family: 'Plus Jakarta Sans', sans-serif;
   transition: background-color 0.3s ease;
 }
 
+/* Aurora so the particle field reads as a nebula, not dust on white */
+.login-app::before {
+  content: "";
+  position: fixed;
+  inset: -25%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 38% at 16% 22%, rgba(50, 121, 249, 0.20) 0%, transparent 70%),
+    radial-gradient(34% 34% at 84% 16%, rgba(168, 85, 247, 0.16) 0%, transparent 70%),
+    radial-gradient(42% 42% at 50% 92%, rgba(20, 184, 166, 0.14) 0%, transparent 72%);
+  filter: blur(60px) saturate(140%);
+  animation: loginAuroraDrift 30s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+.login-app.is-dark::before {
+  background:
+    radial-gradient(38% 38% at 16% 22%, rgba(50, 121, 249, 0.28) 0%, transparent 70%),
+    radial-gradient(34% 34% at 84% 16%, rgba(168, 85, 247, 0.22) 0%, transparent 70%),
+    radial-gradient(42% 42% at 50% 92%, rgba(20, 184, 166, 0.18) 0%, transparent 72%);
+}
+
+@keyframes loginAuroraDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(3%, -2%, 0) scale(1.08); }
+}
+
 .login-app.is-dark {
   --bg-page: #0b0c10;
-  --bg-card: rgba(21, 22, 29, 0.75);
+  --bg-card: rgba(21, 22, 29, 0.34);
   --color-text: #ffffff;
   --color-text-subtle: rgba(255, 255, 255, 0.6);
   --color-border: rgba(255, 255, 255, 0.05);
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
 .login-app.is-dark.is-ultra {
   --bg-page: #000000;
-  --bg-card: rgba(12, 12, 14, 0.75);
+  --bg-card: rgba(12, 12, 14, 0.42);
   --color-border: rgba(255, 255, 255, 0.03);
-  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 }
 
 .login-content {
@@ -60,6 +83,21 @@
   height: 72px;
   padding: 0 32px;
   border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* light frosted bar — low blur tier, translucent so particles show through */
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+}
+
+.login-app.is-dark .login-header {
+  background: rgba(11, 12, 16, 0.22);
+}
+
+.login-app.is-dark.is-ultra .login-header {
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .login-header .brand-block {
@@ -153,17 +191,25 @@
   width: 100%;
   max-width: 380px;
   background: var(--bg-card);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 28px;
   padding: 32px 32px 28px;
-  box-shadow: 0 20px 60px rgba(18, 19, 23, 0.02);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  /* strong blur tier + layered shadow + specular rim = frosted glass depth */
+  box-shadow:
+    0 24px 70px rgba(18, 19, 23, 0.14),
+    0 4px 16px rgba(18, 19, 23, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .login-app.is-dark .login-card {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .login-card:hover {
@@ -178,47 +224,143 @@
 }
 
 .ant-input-affix-wrapper-lg {
-  padding: 8px 18px !important;
-  border-radius: 9999px !important;
-  border: 1px solid var(--color-border) !important;
-  background: rgba(255, 255, 255, 0.4) !important;
-  backdrop-filter: blur(4px);
+  padding: 10px 16px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(18, 19, 23, 0.1) !important;
+  background: rgba(255, 255, 255, 0.32) !important;
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 body.dark .ant-input-affix-wrapper-lg {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ant-input-affix-wrapper-lg:hover {
+  border-color: rgba(50, 121, 249, 0.5) !important;
+  /* canonical "reverse glow" hover — inner blue-tinted shadow reads as a soft lift */
+  box-shadow:
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 6px 14px rgba(50, 121, 249, 0.10),
+    0 2px 6px rgba(50, 121, 249, 0.10) !important;
 }
 
 .ant-input-affix-wrapper-lg:focus,
 .ant-input-affix-wrapper-lg-focused {
   border-color: #3279F9 !important;
-  box-shadow: 0 0 0 3px rgba(50, 121, 249, 0.15) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(50, 121, 249, 0.18) !important;
+}
+
+body.dark .ant-input-affix-wrapper-lg:focus,
+body.dark .ant-input-affix-wrapper-lg-focused {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* kill the browser's autofill colour so inputs keep the glass look */
+.login-card input:-webkit-autofill,
+.login-card input:-webkit-autofill:hover,
+.login-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.18) inset !important;
+  caret-color: var(--color-text);
+  transition: background-color 9999s ease-out 0s;
+}
+
+body.dark .login-card input:-webkit-autofill,
+body.dark .login-card input:-webkit-autofill:hover,
+body.dark .login-card input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(40, 42, 54, 0.55) inset !important;
 }
 
 .login-submit-btn {
-  height: 44px !important;
-  background: #121317 !important;
+  height: 46px !important;
+  /* vivid primary blue, but translucent like the input field */
+  background: linear-gradient(135deg, rgba(50, 121, 249, 0.68) 0%, rgba(37, 96, 210, 0.68) 100%) !important;
   color: #ffffff !important;
-  border: none !important;
-  border-radius: 9999px !important;
+  border: 1px solid rgba(50, 121, 249, 0.45) !important;
+  border-radius: 14px !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
-  transition: all 0.2s ease !important;
+  font-size: 14.5px !important;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px) saturate(170%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(170%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  transition: box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease !important;
 }
 
-body.dark .login-submit-btn {
-  background: #ffffff !important;
-  color: #121317 !important;
-}
+/* kill antd's rotating shine sweep — it caused the floating + double-edge artefacts */
+.login-submit-btn::after { display: none !important; }
 
 .login-submit-btn:hover {
-  background: #3279F9 !important;
-  color: #ffffff !important;
-  transform: translateY(-1px);
+  border-color: rgba(50, 121, 249, 0.75) !important;
+  background: linear-gradient(135deg, rgba(58, 132, 255, 0.8) 0%, rgba(42, 104, 224, 0.8) 100%) !important;
+  /* bright inner highlight = the field's "reverse glow", read on a blue base */
+  box-shadow:
+    inset 0 1px 6px rgba(255, 255, 255, 0.5),
+    inset 0 8px 18px rgba(255, 255, 255, 0.16),
+    0 4px 14px rgba(50, 121, 249, 0.28) !important;
+  transform: none !important;
+}
+
+.login-submit-btn:active {
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.22) !important;
 }
 
 .submit-row {
   margin-top: 8px;
   margin-bottom: 0;
+}
+
+/* ===== Frosted language dropdown (Popover + Menu) — canonical glass ===== */
+/* antd v6 paints the surface on .ant-popover-container (NOT .ant-popover-inner). */
+.ant-popover .ant-popover-arrow { display: none !important; }
+
+.ant-popover .ant-popover-container {
+  /* design transferred from the input field: same transparency / border / radius */
+  background: rgba(255, 255, 255, 0.32) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(18, 19, 23, 0.1) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 50px rgba(18, 19, 23, 0.16) !important;
+  overflow: hidden !important;
+  padding: 6px !important;
+}
+
+.ant-popover .ant-popover-content { background: transparent !important; }
+
+.ant-popover .ant-menu,
+.ant-popover .ant-menu-root,
+.ant-popover .ant-menu-vertical {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ant-popover .ant-menu-item {
+  border-radius: 10px !important;
+  margin: 2px 0 !important;
+  color: #121317 !important;
+}
+
+/* higher specificity (.ant-menu-root) to beat antd's own hover background */
+.ant-popover .ant-menu-root .ant-menu-item:hover,
+.ant-popover .ant-menu-root .ant-menu-item-active {
+  /* light frosted base + the field's exact inner blue glow = same hover as the input */
+  background-color: rgba(255, 255, 255, 0.55) !important;
+  color: #3279F9 !important;
+  box-shadow:
+    inset 0 1px 4px rgba(50, 121, 249, 0.22),
+    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    0 2px 6px rgba(50, 121, 249, 0.10) !important;
+}
+
+.ant-popover .ant-menu-item-selected {
+  background: rgba(50, 121, 249, 0.14) !important;
+  color: #3279F9 !important;
 }

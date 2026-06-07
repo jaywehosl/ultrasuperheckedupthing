@@ -15,7 +15,7 @@ import {
   Statistic,
   Tag,
   Tooltip,
-} from 'antd';
+} from '@/components/ui';
 import {
   BarsOutlined,
   ControlOutlined,
@@ -47,7 +47,7 @@ import ClientsPage from '@/pages/clients/ClientsPage';
 import GroupsPage from '@/pages/groups/GroupsPage';
 import NodesPage from '@/pages/nodes/NodesPage';
 import { setMessageInstance } from '@/utils/messageBus';
-import { TelemetryGuideOverlay, TerminalBootLoader } from '@/components/ui';
+import { TelemetryGuideOverlay } from '@/components/ui';
 import StatusCard from './StatusCard';
 import XrayStatusCard from './XrayStatusCard';
 import type { PanelUpdateInfo } from './PanelUpdateModal';
@@ -91,9 +91,6 @@ export default function IndexPage() {
   const [loading, setLoading] = useState(false);
   const [loadingTip, setLoadingTip] = useState(t('loading'));
   const [guideActive, setGuideActive] = useState(false);
-  const [booting, setBooting] = useState(() => {
-    return sessionStorage.getItem('antigravity_boot_loaded') !== 'true';
-  });
 
   useEffect(() => {
     HttpUtil.post<{ ipLimitEnable?: boolean }>('/panel/setting/defaultSettings').then((msg) => {
@@ -577,7 +574,6 @@ export default function IndexPage() {
           </Modal>
         </LazyMount>
         <TelemetryGuideOverlay active={guideActive} onClose={() => setGuideActive(false)} page="index" />
-        {booting && <TerminalBootLoader onComplete={() => setBooting(false)} />}
     </ConfigProvider>
   );
 }

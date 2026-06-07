@@ -1,0 +1,184 @@
+/* ============================================================================
+ * Ultra Uber Panel — design tokens (single source of truth)
+ * Language: Google Antigravity × Apple Vision OS / macOS 26 (frosted glass)
+ * Themes resolve off <html>: default = light, .is-dark, .is-dark.is-ultra
+ * ========================================================================== */
+
+:root {
+  /* ---- Brand: Antigravity blue ramp (--ag-blue-600 = #3279F9) ---- */
+  --ag-blue-50:  #eef4ff;
+  --ag-blue-100: #d8e6ff;
+  --ag-blue-200: #b3ccff;
+  --ag-blue-300: #84acff;
+  --ag-blue-400: #5a8eff;
+  --ag-blue-500: #3279f9;
+  --ag-blue-600: #2560d2;
+  --ag-blue-700: #1d4cab;
+
+  --color-primary:        var(--ag-blue-500);
+  --color-primary-strong: var(--ag-blue-600);
+  --color-primary-soft:   rgba(50, 121, 249, 0.10);
+  --color-primary-rgb:    50, 121, 249;
+
+  --color-success: #34a853;
+  --color-warning: #f5a524;
+  --color-error:   #ea4335;
+  --color-success-rgb: 52, 168, 83;
+  --color-warning-rgb: 245, 165, 36;
+  --color-error-rgb:   234, 67, 53;
+
+  /* ---- Accent hues used by the ambient backdrop ---- */
+  --aura-1: 50, 121, 249;   /* blue   */
+  --aura-2: 168, 85, 247;   /* violet */
+  --aura-3: 20, 184, 166;   /* teal   */
+
+  /* ---- Spacing (8-pt) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* ---- Radii ---- */
+  --radius-xs:   8px;
+  --radius-sm:   12px;
+  --radius-md:   16px;
+  --radius-lg:   20px;
+  --radius-xl:   24px;
+  --radius-2xl:  28px;
+  --radius-pill: 9999px;
+
+  /* ---- Frosted-glass blur tiers + saturation ---- */
+  --blur-xs: 8px;
+  --blur-sm: 14px;
+  --blur-md: 24px;
+  --blur-lg: 36px;
+  --blur-xl: 60px;
+  --glass-saturate: 180%;
+  /* Canonical glass = the login-card frost; reused panel-wide, with soft/strong
+     variants for layering (combine with --surface-1/2/3 for opacity variety). */
+  --glass-blur: 30px;
+  --glass-blur-soft: 18px;
+  --glass-blur-strong: 44px;
+
+  /* ---- Typography ---- */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Outfit', var(--font-sans);
+  --font-mono: 'Fira Code', 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+
+  /* ---- Surfaces (light) ---- */
+  --bg-page:        #eaeefb;
+  --bg-page-2:      #f3f5fc;
+  --surface-1:      rgba(255, 255, 255, 0.55);   /* resting glass        */
+  --surface-2:      rgba(255, 255, 255, 0.70);   /* raised glass         */
+  --surface-3:      rgba(255, 255, 255, 0.82);   /* popovers / dropdowns */
+  --surface-hover:  rgba(255, 255, 255, 0.66);
+  --surface-inset:  rgba(15, 23, 42, 0.03);      /* inputs / wells       */
+  --surface-border: rgba(255, 255, 255, 0.60);
+  --hairline:       rgba(17, 19, 28, 0.08);
+  --hairline-soft:  rgba(17, 19, 28, 0.05);
+
+  /* ---- Text ---- */
+  --text-1: #14151b;
+  --text-2: rgba(20, 21, 27, 0.66);
+  --text-3: rgba(20, 21, 27, 0.45);
+  --text-on-primary: #ffffff;
+
+  /* ---- Elevation: layered, perceptible depth ---- */
+  --elev-1:
+    0 1px 2px rgba(13, 18, 38, 0.06),
+    0 4px 12px rgba(13, 18, 38, 0.06);
+  --elev-2:
+    0 2px 6px rgba(13, 18, 38, 0.07),
+    0 12px 28px rgba(13, 18, 38, 0.10);
+  --elev-3:
+    0 8px 20px rgba(13, 18, 38, 0.10),
+    0 28px 56px rgba(13, 18, 38, 0.16);
+  --elev-4:
+    0 16px 40px rgba(13, 18, 38, 0.14),
+    0 40px 90px rgba(13, 18, 38, 0.22);
+
+  /* Specular rim that sells the "glass" read */
+  --specular: inset 0 1px 0 rgba(255, 255, 255, 0.70), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  --glow-primary: 0 10px 30px rgba(var(--color-primary-rgb), 0.35);
+
+  /* ---- Motion ---- */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.30, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 130ms;
+  --dur-mid:  220ms;
+  --dur-slow: 380ms;
+
+  /* ---- Canonical interactive hover: inner blue "reverse glow" (from login) ---- */
+  --hover-glow:
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 6px 14px rgba(var(--color-primary-rgb), 0.10),
+    0 2px 6px rgba(var(--color-primary-rgb), 0.10);
+
+  /* ---- Focus ---- */
+  --ring-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.28);
+  --ring-focus-strong: 0 0 0 3px rgba(var(--color-primary-rgb), 0.45);
+}
+
+/* ============================ DARK ======================================== */
+html.is-dark {
+  --bg-page:        #0a0b0f;
+  --bg-page-2:      #0e0f15;
+  --surface-1:      rgba(26, 28, 38, 0.52);
+  --surface-2:      rgba(28, 30, 41, 0.68);
+  --surface-3:      rgba(24, 26, 35, 0.86);
+  --surface-hover:  rgba(34, 37, 50, 0.66);
+  --surface-inset:  rgba(255, 255, 255, 0.04);
+  --surface-border: rgba(255, 255, 255, 0.09);
+  --hairline:       rgba(255, 255, 255, 0.09);
+  --hairline-soft:  rgba(255, 255, 255, 0.05);
+
+  --text-1: #f4f5f7;
+  --text-2: rgba(244, 245, 247, 0.66);
+  --text-3: rgba(244, 245, 247, 0.42);
+
+  --color-primary-soft: rgba(var(--color-primary-rgb), 0.16);
+
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.38);
+  --elev-2: 0 4px 12px rgba(0, 0, 0, 0.42), 0 16px 36px rgba(0, 0, 0, 0.46);
+  --elev-3: 0 10px 26px rgba(0, 0, 0, 0.5), 0 32px 64px rgba(0, 0, 0, 0.56);
+  --elev-4: 0 18px 44px rgba(0, 0, 0, 0.55), 0 48px 100px rgba(0, 0, 0, 0.66);
+
+  --specular: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* ============================ ULTRA DARK (OLED) =========================== */
+html.is-dark.is-ultra,
+html[data-theme="ultra-dark"] {
+  --bg-page:        #000000;
+  --bg-page-2:      #050507;
+  --surface-1:      rgba(12, 12, 15, 0.58);
+  --surface-2:      rgba(14, 14, 18, 0.72);
+  --surface-3:      rgba(10, 10, 13, 0.9);
+  --surface-hover:  rgba(22, 22, 28, 0.7);
+  --surface-border: rgba(255, 255, 255, 0.06);
+  --hairline:       rgba(255, 255, 255, 0.06);
+  --hairline-soft:  rgba(255, 255, 255, 0.035);
+}
+
+/* ============================ A11y: reduced motion ======================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================ Global focus-visible ring =================== */
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm);
+}
