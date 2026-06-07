@@ -25,10 +25,12 @@ import {
   TagsOutlined,
   TeamOutlined,
   ToolOutlined,
+  TranslationOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
+import { Menu, Popover, Space } from 'antd';
 
-import { HttpUtil } from '@/utils';
+import { HttpUtil, LanguageManager } from '@/utils';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import {
@@ -123,6 +125,49 @@ function ThemeCycleButton({ id, isDark, isUltra, onCycle, ariaLabel }: {
     >
       {icon}
     </button>
+  );
+}
+
+function LanguageSelector() {
+  const { t } = useTranslation();
+  const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
+  const items = useMemo(
+    () => (LanguageManager.supportedLanguages as { value: string; name: string; icon: string }[]).map((l) => ({
+      key: l.value,
+      label: (
+        <Space size={8}>
+          <span aria-hidden="true">{l.icon}</span>
+          <span>{l.name}</span>
+        </Space>
+      ),
+    })),
+    [],
+  );
+  return (
+    <Popover
+      placement="bottomRight"
+      trigger="click"
+      styles={{ content: { padding: 4 } }}
+      content={
+        <Menu
+          mode="vertical"
+          selectable
+          selectedKeys={[lang]}
+          items={items}
+          onClick={({ key }) => { setLang(key); LanguageManager.setLanguage(key); }}
+          style={{ border: 'none', minWidth: 160 }}
+        />
+      }
+    >
+      <button
+        type="button"
+        className="sidebar-theme-cycle"
+        aria-label={t('pages.settings.language')}
+        title={t('pages.settings.language')}
+      >
+        <TranslationOutlined />
+      </button>
+    </Popover>
   );
 }
 
@@ -282,7 +327,6 @@ export default function AppSidebar() {
         </div>
 
         <div className="header-right">
-          <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
           <ThemeCycleButton
             id="theme-cycle"
             isDark={isDark}
@@ -290,7 +334,7 @@ export default function AppSidebar() {
             onCycle={() => cycleTheme('theme-cycle')}
             ariaLabel={t('menu.theme')}
           />
-          <VersionBadge version={panelVersion} />
+          <LanguageSelector />
           <button
             type="button"
             className="logout-pill-btn"
@@ -317,7 +361,7 @@ export default function AppSidebar() {
                 <span className="drawer-brand">3X-UI</span>
               </div>
               <div className="drawer-header-actions">
-                <DonateButton ariaLabel={t('menu.donate') || 'Donate'} />
+                <LanguageSelector />
                 <ThemeCycleButton
                   id="theme-cycle-drawer"
                   isDark={isDark}
@@ -381,9 +425,6 @@ export default function AppSidebar() {
               </ul>
             </div>
 
-            <div className="drawer-footer">
-              <VersionBadge version={panelVersion} />
-            </div>
           </div>
         </div>
       )}

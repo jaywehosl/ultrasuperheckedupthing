@@ -20,9 +20,6 @@ export default function PanelLayout() {
         intensity={isDark ? 1.5 : 0.7}
         density={0.8}
       />
-      <div className="ambient-sphere ambient-sphere-1" />
-      <div className="ambient-sphere ambient-sphere-2" />
-      <div className="ambient-sphere ambient-sphere-3" />
       <AppSidebar />
       <div className="panel-main-content">
         <Outlet />
