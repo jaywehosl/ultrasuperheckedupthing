@@ -17,8 +17,8 @@ export default function PanelLayout() {
       <ParticleField
         className="panel-particle-canvas"
         additive={isDark}
-        intensity={isDark ? 1.5 : 0.7}
-        density={0.8}
+        intensity={isDark ? 1.7 : 0.95}
+        density={1}
       />
       <AppSidebar />
       <div className="panel-main-content">

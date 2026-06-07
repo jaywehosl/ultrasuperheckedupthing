@@ -327,6 +327,13 @@ export default function AppSidebar() {
         </div>
 
         <div className="header-right">
+          <button
+            type="button"
+            className="logout-pill-btn"
+            onClick={() => openLink(LOGOUT_KEY)}
+          >
+            {t('logout')}
+          </button>
           <ThemeCycleButton
             id="theme-cycle"
             isDark={isDark}
@@ -335,13 +342,6 @@ export default function AppSidebar() {
             ariaLabel={t('menu.theme')}
           />
           <LanguageSelector />
-          <button
-            type="button"
-            className="logout-pill-btn"
-            onClick={() => openLink(LOGOUT_KEY)}
-          >
-            {t('logout')}
-          </button>
           
           <button
             className="hamburger-menu-btn"
