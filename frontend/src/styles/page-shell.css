@@ -1,5 +1,10 @@
 @import './custom-ui.css';
 
+/* Always reserve the scrollbar gutter so locking body scroll (modals/drawers)
+   never changes content width — kills the few-px left/right jump + reflow flicker
+   when a dialog opens/closes. */
+html { scrollbar-gutter: stable; }
+
 .panel-app-wrapper {
   --bg-card: var(--surface-2);
   --bg-card-border: var(--surface-border);
@@ -887,8 +892,7 @@ body.dark .ant-tabs-tab {
 .ant-input-number,
 .ant-input-number-affix-wrapper,
 .ant-select:not(.ant-select-customize-input) .ant-select-selector,
-.ant-picker,
-.ds-input {
+.ant-picker {
   background: rgba(255, 255, 255, 0.30) !important;
   backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
   -webkit-backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate)) !important;
@@ -898,8 +902,7 @@ body.dark .ant-tabs-tab {
 .is-dark .ant-input-number,
 .is-dark .ant-input-number-affix-wrapper,
 .is-dark .ant-select:not(.ant-select-customize-input) .ant-select-selector,
-.is-dark .ant-picker,
-.is-dark .ds-input {
+.is-dark .ant-picker {
   background: rgba(20, 22, 30, 0.34) !important;
 }
 

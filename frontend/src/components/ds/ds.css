@@ -11,9 +11,10 @@
   gap: 8px;
   height: 38px;
   padding: 0 16px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  /* canonical action-button = the header "Log Out" pill (frosted glass) */
+  border: 1px solid rgba(18, 19, 23, 0.10);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.32);
   color: var(--text-1);
   font-family: var(--font-sans);
   font-size: 14px;
@@ -22,18 +23,21 @@
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(160%);
-  backdrop-filter: blur(var(--blur-sm)) saturate(160%);
-  transition: transform var(--dur-fast) var(--ease-out-quint),
-    box-shadow var(--dur-fast) var(--ease-out-quint),
-    background var(--dur-fast) var(--ease-out-quint),
-    border-color var(--dur-fast) var(--ease-out-quint);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
+  transition: box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+}
+.is-dark .ds-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 .ds-btn:hover:not(:disabled) {
-  background: var(--surface-hover);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
   box-shadow: var(--hover-glow);
 }
-.ds-btn:active:not(:disabled) { transform: translateY(1px); }
+.ds-btn:active:not(:disabled) {
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.18);
+}
 .ds-btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
 .ds-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -125,29 +129,40 @@
 
 /* ---- Input ---------------------------------------------------------------- */
 .ds-input {
+  /* canonical field = the login-screen input (frosted glass + reverse glow) */
   display: inline-flex;
   align-items: center;
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  background: var(--surface-inset);
+  height: 42px;
+  padding: 10px 16px;
+  border: 1px solid rgba(18, 19, 23, 0.10);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.32);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
   color: var(--text-1);
   font-family: var(--font-sans);
   font-size: 14px;
-  transition: border-color var(--dur-fast) var(--ease-out-quint),
-    box-shadow var(--dur-fast) var(--ease-out-quint);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
+.is-dark .ds-input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.10); }
 .ds-input::placeholder { color: var(--text-3); }
-.ds-input:hover { border-color: var(--color-primary-soft); }
+.ds-input:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  box-shadow:
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 6px 14px rgba(var(--color-primary-rgb), 0.10),
+    0 2px 6px rgba(var(--color-primary-rgb), 0.10);
+}
 .ds-input:focus, .ds-input:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: var(--ring-focus);
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
 }
+.is-dark .ds-input:focus, .is-dark .ds-input:focus-visible { background: rgba(255, 255, 255, 0.08); }
 .ds-input:disabled { opacity: 0.6; cursor: not-allowed; }
-textarea.ds-input { height: auto; min-height: 80px; padding: 10px 12px; resize: vertical; }
+textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 
 .ds-field { display: flex; flex-direction: column; gap: 6px; }
 .ds-field__label { font-size: 13px; font-weight: 600; color: var(--text-2); }
@@ -184,12 +199,14 @@ textarea.ds-input { height: auto; min-height: 80px; padding: 10px 12px; resize: 
 /* ---- Dialog (Radix) ------------------------------------------------------- */
 .ds-dialog__overlay {
   position: fixed; inset: 0;
-  background: rgba(18, 19, 23, 0.28);
-  -webkit-backdrop-filter: blur(var(--blur-sm));
-  backdrop-filter: blur(var(--blur-sm));
+  /* strong page blur with a neutral (not white) scrim for depth */
+  background: rgba(15, 17, 22, 0.18);
+  -webkit-backdrop-filter: blur(22px) saturate(115%);
+  backdrop-filter: blur(22px) saturate(115%);
   z-index: 1000;
-  animation: ds-fade-in var(--dur-mid) var(--ease-out-quint);
 }
+.ds-dialog__overlay[data-state='open'] { animation: ds-fade-in var(--dur-mid) var(--ease-out-quint); }
+.ds-dialog__overlay[data-state='closed'] { animation: ds-fade-out var(--dur-mid) var(--ease-out-quint) forwards; }
 .ds-dialog__content {
   position: fixed;
   top: 50%; left: 50%;
@@ -204,8 +221,9 @@ textarea.ds-input { height: auto; min-height: 80px; padding: 10px 12px; resize: 
   backdrop-filter: blur(var(--glass-blur-strong)) saturate(var(--glass-saturate));
   box-shadow: var(--elev-4), inset 0 1px 0 var(--specular);
   z-index: 1001;
-  animation: ds-pop-in var(--dur-mid) var(--ease-out-expo);
 }
+.ds-dialog__content[data-state='open'] { animation: ds-pop-in var(--dur-mid) var(--ease-out-expo); }
+.ds-dialog__content[data-state='closed'] { animation: ds-pop-out var(--dur-mid) var(--ease-out-expo) forwards; }
 .ds-dialog__header {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 18px 22px;
@@ -312,74 +330,121 @@ textarea.ds-input { height: auto; min-height: 80px; padding: 10px 12px; resize: 
 
 /* ---- Switch (Radix) ------------------------------------------------------- */
 .ds-switch {
+  /* thumb is absolutely positioned and animated via `left` (a layout property),
+     NOT transform — transform on a child inside a backdrop-filtered/animated
+     modal can render stale until a repaint (the "fixes itself on hover" bug). */
   position: relative;
-  width: 40px; height: 22px;
+  box-sizing: border-box;
+  width: 46px; height: 26px;
   border-radius: var(--radius-pill);
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
+  background: rgba(18, 19, 23, 0.14);
+  border: 1px solid rgba(18, 19, 23, 0.08);
+  box-shadow: inset 0 1px 3px rgba(18, 19, 23, 0.12);
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out-quint);
+  transition: background 0.22s var(--ease-out-quint), border-color 0.22s ease, box-shadow 0.22s ease;
   flex-shrink: 0;
 }
-.ds-switch[data-state='checked'] { background: var(--color-primary); border-color: var(--color-primary-strong); }
+.is-dark .ds-switch { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.1); }
+.ds-switch[data-state='checked'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary-strong);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(var(--color-primary-rgb), 0.35);
+}
+/* same reverse-glow hover as fields/buttons */
+.ds-switch:hover:not(:disabled) {
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  box-shadow:
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 6px 14px rgba(var(--color-primary-rgb), 0.10),
+    0 2px 6px rgba(var(--color-primary-rgb), 0.10);
+}
+.ds-switch[data-state='checked']:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.12),
+    0 2px 12px rgba(var(--color-primary-rgb), 0.5);
+}
 .ds-switch:disabled { opacity: 0.5; cursor: not-allowed; }
-.ds-switch:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+.ds-switch:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.25); }
 .ds-switch__thumb {
-  display: block;
-  width: 16px; height: 16px;
-  margin: 2px;
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
+  width: 20px; height: 20px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: transform var(--dur-fast) var(--ease-out-quint);
-  transform: translateX(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.2);
+  transition: left 0.22s var(--ease-out-quint);
 }
-.ds-switch__thumb[data-state='checked'] { transform: translateX(18px); }
+.ds-switch__thumb[data-state='checked'] { left: 23px; }
 
 /* ---- Select (Radix) ------------------------------------------------------- */
+/* trigger = the login-screen field */
 .ds-select {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.30);
-  -webkit-backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur-soft)) saturate(var(--glass-saturate));
+  height: 42px;
+  padding: 10px 16px;
+  border: 1px solid rgba(18, 19, 23, 0.10);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.32);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
   color: var(--text-1);
   font-family: var(--font-sans);
   font-size: 14px;
   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
-.is-dark .ds-select { background: rgba(20, 22, 30, 0.34); }
-.ds-select:hover { border-color: var(--color-primary-soft); }
-.ds-select:focus-visible { outline: none; border-color: var(--color-primary); box-shadow: var(--ring-focus); }
+.is-dark .ds-select { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.10); }
+.ds-select:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  box-shadow:
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 6px 14px rgba(var(--color-primary-rgb), 0.10),
+    0 2px 6px rgba(var(--color-primary-rgb), 0.10);
+}
+.ds-select:focus-visible,
+.ds-select[data-state='open'] { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18); }
 .ds-select[data-disabled] { opacity: 0.6; cursor: not-allowed; }
 .ds-select__icon { color: var(--text-3); font-size: 11px; }
+
+/* menu = identical to the header language dropdown (frosted popover) */
 .ds-select__content {
   min-width: var(--radix-select-trigger-width);
   max-height: var(--radix-select-content-available-height);
   padding: 6px;
-  background: var(--surface-1);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-lg);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  box-shadow: var(--elev-3), inset 0 1px 0 var(--specular);
+  background: rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 20px 50px rgba(18, 19, 23, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  overflow: hidden;
   z-index: 1100;
 }
+.is-dark .ds-select__content { background: rgba(21, 22, 29, 0.4); border-color: rgba(255, 255, 255, 0.1); }
 .ds-select__item {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 2px 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
   font-size: 14px; color: var(--text-1);
   cursor: pointer; user-select: none; outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.ds-select__item[data-highlighted] { background: var(--surface-hover); }
+.ds-select__item[data-highlighted] {
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  box-shadow:
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 7px 16px rgba(var(--color-primary-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.ds-select__item[data-state='checked'] { background: rgba(var(--color-primary-rgb), 0.14); color: var(--color-primary-strong); }
 .ds-select__item[data-disabled] { opacity: 0.45; pointer-events: none; }
 .ds-select__indicator { color: var(--color-primary); font-size: 12px; }
 
@@ -418,7 +483,12 @@ textarea.ds-input { height: auto; min-height: 80px; padding: 10px 12px; resize: 
 
 /* ---- shared animations ---------------------------------------------------- */
 @keyframes ds-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ds-fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes ds-pop-in {
   from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
   to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes ds-pop-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
 }
