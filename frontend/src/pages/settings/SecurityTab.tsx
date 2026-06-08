@@ -207,7 +207,7 @@ export default function SecurityTab({ allSetting, updateSetting }: SecurityTabPr
               <SettingListItem paddings="small" title={t('pages.settings.newPassword')}>
                 <Input type="password" value={user.newPassword} autoComplete="new-password" onChange={(e) => updateUserField('newPassword', e.target.value)} />
               </SettingListItem>
-              <div className="security-actions" style={{ padding: '0 20px' }}>
+              <div className="security-actions" style={{ padding: '12px 20px 0', display: 'flex', justifyContent: 'flex-end' }}>
                 <Button variant="primary" loading={updating} onClick={onUpdateUserClick}>
                   {t('confirm')}
                 </Button>
