@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Modal,
-  Space,
-  Tag,
-  message,
-} from '@/components/ui';
-import { Input, Table, Typography } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-
-import { HttpUtil } from '@/utils';
+import { DataTable, Dialog, Input, Tag, type ColumnDef } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
+import { clientsApi } from '@/generated/client';
 import { coerceInboundJsonField, type DBInbound } from '@/models/dbinbound';
 
 interface DetachClientsModalProps {
@@ -32,27 +25,16 @@ interface ClientRow {
 }
 
 function readClientRows(settings: unknown): ClientRow[] {
-  const parsed = coerceInboundJsonField(settings) as {
-    clients?: Array<{ email?: string; comment?: string; enable?: boolean }>;
-  };
+  const parsed = coerceInboundJsonField(settings) as { clients?: Array<{ email?: string; comment?: string; enable?: boolean }> };
   const clients = Array.isArray(parsed?.clients) ? parsed.clients : [];
   return clients
-    .map((c) => ({
-      email: (c?.email || '').trim(),
-      comment: (c?.comment || '').trim(),
-      enable: c?.enable !== false,
-    }))
+    .map((c) => ({ email: (c?.email || '').trim(), comment: (c?.comment || '').trim(), enable: c?.enable !== false }))
     .filter((r) => r.email);
 }
 
-export default function DetachClientsModal({
-  open,
-  source,
-  onClose,
-  onDetached,
-}: DetachClientsModalProps) {
+export default function DetachClientsModal({ open, source, onClose, onDetached }: DetachClientsModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
   const [saving, setSaving] = useState(false);
   const [clientRows, setClientRows] = useState<ClientRow[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
@@ -60,8 +42,7 @@ export default function DetachClientsModal({
 
   useEffect(() => {
     if (!open) return;
-    const rows = source ? readClientRows(source.settings) : [];
-    setClientRows(rows);
+    setClientRows(source ? readClientRows(source.settings) : []);
     setSelectedEmails([]);
     setSearch('');
   }, [open, source]);
@@ -69,63 +50,30 @@ export default function DetachClientsModal({
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return clientRows;
-    return clientRows.filter(
-      (r) => r.email.toLowerCase().includes(q) || r.comment.toLowerCase().includes(q),
-    );
+    return clientRows.filter((r) => r.email.toLowerCase().includes(q) || r.comment.toLowerCase().includes(q));
   }, [clientRows, search]);
 
-  const columns: ColumnsType<ClientRow> = useMemo(
-    () => [
-      {
-        title: t('pages.inbounds.email'),
-        dataIndex: 'email',
-        key: 'email',
-        ellipsis: true,
-      },
-      {
-        title: t('comment'),
-        dataIndex: 'comment',
-        key: 'comment',
-        ellipsis: true,
-      },
-      {
-        title: t('enable'),
-        dataIndex: 'enable',
-        key: 'enable',
-        width: 90,
-        render: (enabled: boolean) =>
-          enabled ? (
-            <Tag color="success">{t('enable')}</Tag>
-          ) : (
-            <Tag>{t('pages.inbounds.attachClientsStatusDisabled')}</Tag>
-          ),
-      },
-    ],
-    [t],
-  );
+  const columns = useMemo<ColumnDef<ClientRow, unknown>[]>(() => [
+    { id: 'email', header: () => t('pages.inbounds.email'), cell: ({ row }) => row.original.email },
+    { id: 'comment', header: () => t('comment'), cell: ({ row }) => row.original.comment },
+    {
+      id: 'enable', size: 100, header: () => t('enable'),
+      cell: ({ row }) => (row.original.enable ? <Tag tone="success">{t('enable')}</Tag> : <Tag>{t('pages.inbounds.attachClientsStatusDisabled')}</Tag>),
+    },
+  ], [t]);
 
   async function submit() {
     if (!source || selectedEmails.length === 0) return;
     setSaving(true);
     try {
-      const msg = await HttpUtil.post(
-        '/panel/api/clients/bulkDetach',
-        { emails: selectedEmails, inboundIds: [source.id] },
-        { headers: { 'Content-Type': 'application/json' } },
-      );
-      if (!msg?.success) {
-        messageApi.error(msg?.msg || t('somethingWentWrong'));
-        return;
-      }
-      const result = (msg.obj || {}) as BulkDetachResult;
+      const msg = await clientsApi.bulkDetach<BulkDetachResult>({ emails: selectedEmails, inboundIds: [source.id] }, { silent: true });
+      if (!msg?.success) { message.error(msg?.msg || t('somethingWentWrong')); return; }
+      const result = msg.obj || {};
       const detached = result.detached?.length ?? 0;
       const skipped = result.skipped?.length ?? 0;
       const errors = result.errors?.length ?? 0;
-      if (errors > 0) {
-        messageApi.warning(t('pages.inbounds.detachClientsResultMixed', { detached, skipped, errors }));
-      } else {
-        messageApi.success(t('pages.inbounds.detachClientsResult', { detached, skipped }));
-      }
+      if (errors > 0) message.warning(t('pages.inbounds.detachClientsResultMixed', { detached, skipped, errors }));
+      else message.success(t('pages.inbounds.detachClientsResult', { detached, skipped }));
       onDetached?.();
       onClose();
     } finally {
@@ -134,56 +82,32 @@ export default function DetachClientsModal({
   }
 
   return (
-    <Modal
+    <Dialog
       open={open}
-      onCancel={onClose}
-      onOk={submit}
-      okButtonProps={{
-        danger: true,
-        disabled: selectedEmails.length === 0,
-        loading: saving,
-      }}
-      okText={t('pages.inbounds.detachClients')}
-      cancelText={t('cancel')}
+      onOpenChange={(o) => !o && onClose()}
       title={t('pages.inbounds.detachClientsTitle', { remark: source?.tag ?? '' })}
+      okText={t('pages.inbounds.detachClients')}
+      okDanger
+      okDisabled={selectedEmails.length === 0}
+      confirmLoading={saving}
       width={680}
+      onOk={submit}
     >
-      {messageContextHolder}
-      <Typography.Paragraph type="secondary">
-        {t('pages.inbounds.detachClientsDesc', { count: clientRows.length })}
-      </Typography.Paragraph>
-
-      <Space direction="vertical" size="small" style={{ width: '100%' }}>
-        <Typography.Text strong>{t('pages.inbounds.detachClientsSelectLabel')}</Typography.Text>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }} wrap>
-          <Input.Search
-            allowClear
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('pages.inbounds.attachClientsSearchPlaceholder')}
-            style={{ maxWidth: 320 }}
-          />
-          <Typography.Text type="secondary">
-            {t('pages.inbounds.attachClientsSelectedCount', {
-              selected: selectedEmails.length,
-              total: clientRows.length,
-            })}
-          </Typography.Text>
-        </Space>
-        <Table<ClientRow>
-          size="small"
-          rowKey="email"
+      <p className="ds-muted" style={{ marginTop: 0 }}>{t('pages.inbounds.detachClientsDesc', { count: clientRows.length })}</p>
+      <div className="ds-toolbar" style={{ marginBottom: 12 }}>
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('pages.inbounds.attachClientsSearchPlaceholder')} style={{ maxWidth: 320 }} />
+        <span className="ds-muted">{t('pages.inbounds.attachClientsSelectedCount', { selected: selectedEmails.length, total: clientRows.length })}</span>
+      </div>
+      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+        <DataTable
+          data={filteredRows}
           columns={columns}
-          dataSource={filteredRows}
-          pagination={false}
-          scroll={{ y: 280 }}
-          rowSelection={{
-            selectedRowKeys: selectedEmails,
-            onChange: (keys) => setSelectedEmails(keys as string[]),
-            preserveSelectedRowKeys: true,
-          }}
+          getRowId={(r) => r.email}
+          sortable={false}
+          rowSelection={{ selectedIds: selectedEmails, onChange: setSelectedEmails }}
+          empty={t('noData')}
         />
-      </Space>
-    </Modal>
+      </div>
+    </Dialog>
   );
 }
