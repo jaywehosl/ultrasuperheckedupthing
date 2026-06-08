@@ -7,7 +7,7 @@ import {
   Tag,
   Tooltip,
 } from '@/components/ui';
-import { Divider, Tabs } from 'antd';
+import { Divider, Tabs } from '@/components/ds';
 import { CopyOutlined, SyncOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, IntlUtil, SizeFormatter, ColorUtils } from '@/utils';

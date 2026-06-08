@@ -1,9 +1,11 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, QRCode, Tag, Tooltip, message } from 'antd';
+import { QRCode } from 'antd';
+import { Button, Tag, Tooltip, TooltipProvider } from '@/components/ds';
 import { CopyOutlined, DownloadOutlined, PictureOutlined } from '@ant-design/icons';
 
 import { ClipboardManager, FileManager } from '@/utils';
+import { getMessage } from '@/utils/messageBus';
 import './QrPanel.css';
 
 interface QrPanelProps {
@@ -59,12 +61,11 @@ export default function QrPanel({
   showQr = true,
 }: QrPanelProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
   const qrRef = useRef<HTMLDivElement | null>(null);
 
   async function copy() {
     const ok = await ClipboardManager.copyText(value);
-    if (ok) messageApi.success(t('copied'));
+    if (ok) getMessage().success(t('copied'));
   }
 
   function download() {
@@ -78,7 +79,7 @@ export default function QrPanel({
     if (!blob) return;
     try {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      messageApi.success(t('copied'));
+      getMessage().success(t('copied'));
     } catch {
       downloadImageBlob(blob, remark);
     }
@@ -91,40 +92,41 @@ export default function QrPanel({
   }
 
   return (
-    <div className="qr-panel">
-      {messageContextHolder}
-      <div className="qr-panel-header">
-        <Tag color="green" className="qr-remark">{remark}</Tag>
-        <Tooltip title={t('copy')}>
-          <Button size="small" icon={<CopyOutlined />} onClick={copy} />
-        </Tooltip>
+    <TooltipProvider>
+      <div className="qr-panel">
+        <div className="qr-panel-header">
+          <Tag tone="success" className="qr-remark">{remark}</Tag>
+          <Tooltip title={t('copy')}>
+            <Button size="sm" icon={<CopyOutlined />} onClick={copy} />
+          </Tooltip>
+          {showQr && (
+            <Tooltip title={t('downloadImage') !== 'downloadImage' ? t('downloadImage') : 'Download Image'}>
+              <Button size="sm" icon={<PictureOutlined />} onClick={downloadImage} />
+            </Tooltip>
+          )}
+          {downloadName && (
+            <Tooltip title={t('download')}>
+              <Button size="sm" icon={<DownloadOutlined />} onClick={download} />
+            </Tooltip>
+          )}
+        </div>
         {showQr && (
-          <Tooltip title={t('downloadImage') !== 'downloadImage' ? t('downloadImage') : 'Download Image'}>
-            <Button size="small" icon={<PictureOutlined />} onClick={downloadImage} />
-          </Tooltip>
-        )}
-        {downloadName && (
-          <Tooltip title={t('download')}>
-            <Button size="small" icon={<DownloadOutlined />} onClick={download} />
-          </Tooltip>
+          <div ref={qrRef} className="qr-panel-canvas">
+            <Tooltip title={t('copy')}>
+              <QRCode
+                className="qr-code"
+                value={value}
+                size={size}
+                type="svg"
+                bordered={false}
+                color="#000000"
+                bgColor="#ffffff"
+                onClick={copyImage}
+              />
+            </Tooltip>
+          </div>
         )}
       </div>
-      {showQr && (
-        <div ref={qrRef} className="qr-panel-canvas">
-          <Tooltip title={t('copy')}>
-            <QRCode
-              className="qr-code"
-              value={value}
-              size={size}
-              type="svg"
-              bordered={false}
-              color="#000000"
-              bgColor="#ffffff"
-              onClick={copyImage}
-            />
-          </Tooltip>
-        </div>
-      )}
-    </div>
+    </TooltipProvider>
   );
 }

@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui';
-import { Collapse } from 'antd';
-import type { CollapseProps } from 'antd';
 
 import { Protocols } from '@/schemas/primitives';
 import {
@@ -134,22 +132,6 @@ export default function QrCodeModal({
     return items;
   }, [subLink, subJsonLink, links, wireguardConfigs, wireguardLinks, t]);
 
-  const collapseItems: CollapseProps['items'] = useMemo(
-    () => qrItems.map((item) => ({
-      key: item.key,
-      label: item.header,
-      children: (
-        <QrPanel
-          value={item.value}
-          remark={item.header}
-          downloadName={item.downloadName || ''}
-          showQr={!isPostQuantumLink(item.value)}
-        />
-      ),
-    })),
-    [qrItems],
-  );
-
   useEffect(() => {
     if (!open) {
       setActiveKey([]);
@@ -158,15 +140,33 @@ export default function QrCodeModal({
     setActiveKey(qrItems.length > 0 ? [qrItems[0].key] : []);
   }, [open, qrItems]);
 
+  function toggle(key: string, isOpen: boolean) {
+    setActiveKey((prev) => (isOpen ? [...new Set([...prev, key])] : prev.filter((k) => k !== key)));
+  }
+
   return (
     <Modal open={open} onCancel={onClose} title={t('qrCode')} footer={null} width={420} destroyOnHidden>
-      {dbInbound && collapseItems && collapseItems.length > 0 && (
-        <Collapse
-          ghost
-          activeKey={activeKey}
-          onChange={(keys) => setActiveKey(typeof keys === 'string' ? [keys] : (keys as string[]))}
-          items={collapseItems}
-        />
+      {dbInbound && qrItems.length > 0 && (
+        <div className="qr-collapse-list">
+          {qrItems.map((item) => (
+            <details
+              key={item.key}
+              className="ds-collapse"
+              open={activeKey.includes(item.key)}
+              onToggle={(e) => toggle(item.key, (e.currentTarget as HTMLDetailsElement).open)}
+            >
+              <summary>{item.header}</summary>
+              <div className="ds-collapse__body">
+                <QrPanel
+                  value={item.value}
+                  remark={item.header}
+                  downloadName={item.downloadName || ''}
+                  showQr={!isPostQuantumLink(item.value)}
+                />
+              </div>
+            </details>
+          ))}
+        </div>
       )}
     </Modal>
   );
