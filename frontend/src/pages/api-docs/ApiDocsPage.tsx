@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { ConfigProvider, Layout } from 'antd';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 
@@ -10,7 +9,7 @@ const basePath = window.X_UI_BASE_PATH || '';
 const openApiUrl = `${basePath}panel/api/openapi.json`;
 
 export default function ApiDocsPage() {
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra } = useTheme();
 
   const pageClass = useMemo(() => {
     const classes = ['api-docs-page'];
@@ -20,21 +19,19 @@ export default function ApiDocsPage() {
   }, [isDark, isUltra]);
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
-      <div className={pageClass}>
-        <Layout className="content-shell">
-          <Layout.Content className="content-area">
-            <div className="docs-wrapper">
-              <SwaggerUI
-                url={openApiUrl}
-                docExpansion="list"
-                deepLinking={false}
-                tryItOutEnabled
-              />
-            </div>
-          </Layout.Content>
-        </Layout>
+    <div className={pageClass}>
+      <div className="content-shell">
+        <div className="content-area">
+          <div className="docs-wrapper">
+            <SwaggerUI
+              url={openApiUrl}
+              docExpansion="list"
+              deepLinking={false}
+              tryItOutEnabled
+            />
+          </div>
+        </div>
       </div>
-    </ConfigProvider>
+    </div>
   );
 }

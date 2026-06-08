@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { QRCode } from 'antd';
-import { Button, Tag, Tooltip, TooltipProvider } from '@/components/ds';
+import { Button, QrCode, Tag, Tooltip, TooltipProvider } from '@/components/ds';
 import { CopyOutlined, DownloadOutlined, PictureOutlined } from '@ant-design/icons';
 
 import { ClipboardManager, FileManager } from '@/utils';
@@ -113,16 +112,9 @@ export default function QrPanel({
         {showQr && (
           <div ref={qrRef} className="qr-panel-canvas">
             <Tooltip title={t('copy')}>
-              <QRCode
-                className="qr-code"
-                value={value}
-                size={size}
-                type="svg"
-                bordered={false}
-                color="#000000"
-                bgColor="#ffffff"
-                onClick={copyImage}
-              />
+              <span className="qr-code" role="button" tabIndex={0} onClick={copyImage} style={{ cursor: 'pointer', display: 'inline-flex' }}>
+                <QrCode value={value} size={size} />
+              </span>
             </Tooltip>
           </div>
         )}

@@ -28,7 +28,8 @@ import {
   TranslationOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { Menu, Popover, Space } from 'antd';
+import { DropdownMenu } from '@/components/ds';
+import type { MenuEntry } from '@/components/ds';
 
 import { HttpUtil, LanguageManager } from '@/utils';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
@@ -130,44 +131,35 @@ function ThemeCycleButton({ id, isDark, isUltra, onCycle, ariaLabel }: {
 
 function LanguageSelector() {
   const { t } = useTranslation();
-  const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
-  const items = useMemo(
+  const [, setLang] = useState<string>(() => LanguageManager.getLanguage());
+  const items = useMemo<MenuEntry[]>(
     () => (LanguageManager.supportedLanguages as { value: string; name: string; icon: string }[]).map((l) => ({
       key: l.value,
       label: (
-        <Space size={8}>
+        <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
           <span aria-hidden="true">{l.icon}</span>
           <span>{l.name}</span>
-        </Space>
+        </span>
       ),
+      onSelect: () => { setLang(l.value); LanguageManager.setLanguage(l.value); },
     })),
     [],
   );
   return (
-    <Popover
-      placement="bottomRight"
-      trigger="click"
-      styles={{ content: { padding: 4 } }}
-      content={
-        <Menu
-          mode="vertical"
-          selectable
-          selectedKeys={[lang]}
-          items={items}
-          onClick={({ key }) => { setLang(key); LanguageManager.setLanguage(key); }}
-          style={{ border: 'none', minWidth: 160 }}
-        />
-      }
-    >
-      <button
-        type="button"
-        className="sidebar-theme-cycle"
-        aria-label={t('pages.settings.language')}
-        title={t('pages.settings.language')}
-      >
-        <TranslationOutlined />
-      </button>
-    </Popover>
+    <DropdownMenu
+      align="end"
+      items={items}
+      trigger={(
+        <button
+          type="button"
+          className="sidebar-theme-cycle"
+          aria-label={t('pages.settings.language')}
+          title={t('pages.settings.language')}
+        >
+          <TranslationOutlined />
+        </button>
+      )}
+    />
   );
 }
 

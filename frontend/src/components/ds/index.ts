@@ -58,3 +58,6 @@ export type { SegmentedProps, SegmentedOption } from './Segmented';
 
 export { ToastViewport, toast } from './Toast';
 export type { ToastApi, ToastType } from './Toast';
+
+export { QrCode } from './QrCode';
+export type { QrCodeProps } from './QrCode';

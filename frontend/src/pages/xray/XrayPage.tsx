@@ -50,7 +50,7 @@ type AdvKey = 'xraySetting' | 'inboundSettings' | 'outboundSettings' | 'routingR
 
 export default function XrayPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra } = useTheme();
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
@@ -308,7 +308,7 @@ export default function XrayPage() {
   })();
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider>
       {messageContextHolder}
       {modalContextHolder}
       <div className={pageClass}>

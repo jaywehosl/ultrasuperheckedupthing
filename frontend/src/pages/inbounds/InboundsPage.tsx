@@ -26,7 +26,6 @@ import { createDefaultInboundSettings } from '@/lib/xray/inbound-defaults';
 import { genInboundLinks, preferPublicHost } from '@/lib/xray/inbound-link';
 import { inboundFromDb } from '@/lib/xray/inbound-from-db';
 import { coerceInboundJsonField, type DBInbound } from '@/models/dbinbound';
-import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
@@ -71,7 +70,6 @@ interface ClientMatchTarget {
 
 export default function InboundsPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
 
   const {
@@ -551,7 +549,7 @@ export default function InboundsPage() {
   }, [hydrateInbound, openEdit, checkFallback, findClientIndex, exportInboundLinks, exportInboundSubs, exportInboundClipboard, confirmDelete, confirmResetTraffic, confirmDelAllClients, confirmClone, messageApi]);
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider>
       {messageContextHolder}
       {modalContextHolder}
       <div className="section-content-wrapper inbounds-section-wrapper">

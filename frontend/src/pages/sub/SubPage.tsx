@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { QRCode } from 'antd';
 import {
   AndroidOutlined,
   AppleOutlined,
@@ -13,7 +12,7 @@ import {
   TranslationOutlined,
 } from '@ant-design/icons';
 
-import { Button, Card, Divider, DropdownMenu, Popover, Tag, Tooltip, TooltipProvider } from '@/components/ds';
+import { Button, Card, Divider, DropdownMenu, Popover, QrCode, Tag, Tooltip, TooltipProvider } from '@/components/ds';
 import type { MenuEntry } from '@/components/ds';
 import { ClipboardManager, IntlUtil, LanguageManager } from '@/utils';
 import { isPostQuantumLink } from '@/lib/xray/inbound-link';
@@ -66,7 +65,7 @@ function QrButton({ value, label, tone }: { value: string; label: React.ReactNod
       content={(
         <div className="sub-link-qr-popover">
           <Tag tone={tone ?? 'neutral'} className="qr-tag">{label}</Tag>
-          <QRCode value={value} size={QR_SIZE} type="svg" bordered={false} color="#000000" bgColor="#ffffff" />
+          <QrCode value={value} size={QR_SIZE} />
         </div>
       )}
       trigger={<Button size="sm" icon={<QrcodeOutlined />} aria-label="QR" title="QR" />}

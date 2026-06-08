@@ -360,24 +360,30 @@ For each subsystem (a modal + its field tree):
      antd `DatePicker` gone.
    - ✅ **9.5 z-index/layering** — coherent DS scale: overlay 1000 → dialog/drawer
      1001 → menu/popover/select 1200 → tooltip 1400 → toast 2000.
-   - ⏳ **9.3 drop `antd/dist/reset.css`** — BLOCKED, bigger than it looks. reset.css
-     is required by every remaining antd component, namely the **un-migrated shell
-     pages**: `layouts/AppSidebar.tsx` (Menu/Popover/Space), `pages/login/LoginPage.tsx`
-     (full antd canon screen: Form/Input/Button/Layout/Menu/Popover/Space/Spin),
-     `pages/api-docs/ApiDocsPage.tsx` (ConfigProvider/Layout), `hooks/useTheme.tsx`
-     (antd ThemeConfig for `antdThemeConfig`), plus antd `QRCode` leaf (SubPage,
-     QrPanel, TwoFactorModal — needs a qr lib; none installed). **Needs a user
-     decision** (install a QR dep? migrate the canon login screen?) before reset.css
-     can go. Until then antd stays a dep; that's fine.
+   - ✅ **9.3 drop `antd/dist/reset.css` + remove antd entirely** — DONE.
+     Migrated the last antd shell pages: `AppSidebar` (lang Menu/Popover/Space →
+     DS `DropdownMenu`), `LoginPage` (antd Form/Input/Button/Layout/Popover/Spin →
+     DS controlled form + `DropdownMenu` + leading-icon `.login-field`; zod
+     validate-on-submit; CustomUI `Spin`), `ApiDocsPage` (ConfigProvider/Layout →
+     divs), `useTheme` (dropped antd ThemeConfig + `antdThemeConfig` + all the
+     antd token builders; the 3 no-op `ConfigProvider` consumers lost the `theme`
+     prop). Added `qrcode.react` + DS `QrCode` wrapper; replaced antd `QRCode` in
+     SubPage/QrPanel/TwoFactorModal. Deleted dead `utils/zodForm.ts` (last antd
+     type import). Removed `antd/dist/reset.css` from all 3 entries and
+     **uninstalled the `antd` package**. `grep "from 'antd'" src` = ZERO; antd is
+     absent from node_modules; `vite build` succeeds.
    - Residual `@ant-design/icons` everywhere is the accepted convention (low pri).
+     The build's `vendor-antd` chunk is just the @ant-design/icons family (the
+     secret vite.config's manualChunks name is a misnomer), not antd proper.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> All feature pages/modals off raw antd. §5 items 1–8 + item 9 sub-tasks
-> 9.1 (CSS sweep), 9.2 (DS toast), 9.4 (DS date), 9.5 (z-index) all done.
-> antd `message` backend, antd `DatePicker`, and all `--ant-*` CSS vars are GONE.
-> **Only 9.3 (drop reset.css) remains** — blocked on migrating the antd shell
-> pages (AppSidebar, LoginPage canon, ApiDocsPage, useTheme ThemeConfig) +
-> replacing antd `QRCode` leaf (needs a qr lib). `tsc` = 0 non-TS6133 errors.
-> Suite green at 397/25 files.
+> 🎉 **ZERO antd.** §5 items 1–8 AND all of item 9 (9.1 CSS sweep, 9.2 DS toast,
+> 9.3 drop reset.css + uninstall antd, 9.4 DS date, 9.5 z-index) are DONE. The
+> `antd` package is uninstalled; `grep "from 'antd'" src` is empty; only
+> `@ant-design/icons` remains (accepted convention). `tsc` = 0 non-TS6133 errors;
+> `vite build` succeeds; suite green at 397/25 files.
+> What's left is pure polish: the ~25 baseline TS6133 unused-import warnings
+> (mostly AppSidebar dead icon imports + CustomUI), and any visual QA on the
+> newly-migrated LoginPage / AppSidebar lang menu / toasts that needs a running app.

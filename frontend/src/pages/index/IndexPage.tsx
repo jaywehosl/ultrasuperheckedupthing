@@ -62,7 +62,7 @@ import './IndexPage.css';
 
 export default function IndexPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra } = useTheme();
   const { status, fetched, fetchError, refresh } = useStatusQuery();
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -173,7 +173,7 @@ export default function IndexPage() {
   const pageClass = `index-page ${isDark ? 'is-dark' : ''} ${isUltra ? 'is-ultra' : ''}`.trim();
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider>
       {messageContextHolder}
       <div className={`content-shell index-page-shell ${pageClass}`}>
         <div className="content-area index-page-area">

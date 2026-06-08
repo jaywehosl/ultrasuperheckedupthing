@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { QRCode } from 'antd'; // leaf QR renderer — no DS equivalent
 import * as OTPAuth from 'otpauth';
 
-import { Button, Dialog, Divider, Input } from '@/components/ds';
+import { Button, Dialog, Divider, Input, QrCode } from '@/components/ds';
 import { ClipboardManager } from '@/utils';
 import { getMessage } from '@/utils/messageBus';
 import { TotpCodeSchema } from '@/schemas/login';
@@ -105,18 +104,9 @@ export default function TwoFactorModal({
           <Divider />
           <p>{t('pages.settings.security.twoFactorModalFirstStep')}</p>
           <div className="qr-wrap">
-            <QRCode
-              className="qr-code"
-              value={qrValue}
-              size={180}
-              type="svg"
-              bordered={false}
-              color="#000000"
-              bgColor="#ffffff"
-              errorLevel="L"
-              title={t('copy')}
-              onClick={copyToken}
-            />
+            <span className="qr-code" role="button" tabIndex={0} title={t('copy')} onClick={copyToken} style={{ cursor: 'pointer', display: 'inline-flex' }}>
+              <QrCode value={qrValue} size={180} level="L" />
+            </span>
             <span className="qr-token">{token}</span>
           </div>
           <Divider />
