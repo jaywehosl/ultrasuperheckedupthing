@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Modal, Select, Tabs, Tag } from 'antd';
+import { Alert, Dialog, Segmented, Select, Tag } from '@/components/ds';
 import {
   BlockOutlined,
   CloudServerOutlined,
@@ -271,92 +271,90 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
   }, [open, obsActiveTag, isObservatory, fetchObsBucket]);
 
   return (
-    <Modal
+    <Dialog
       open={open}
       footer={null}
       width={isMobile ? '95vw' : 900}
-      onCancel={onClose}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={
         <div className="metric-modal-title">
           <span>{t('pages.index.xrayMetricsTitle')}</span>
-          <Select
-            value={bucket}
-            size="small"
-            className="bucket-select"
-            onChange={setBucket}
-            options={[
-              { value: 2, label: '2m' },
-              { value: 30, label: '30m' },
-              { value: 60, label: '1h' },
-              { value: 120, label: '2h' },
-              { value: 180, label: '3h' },
-              { value: 300, label: '5h' },
-            ]}
-          />
+          <div className="bucket-select">
+            <Select
+              value={String(bucket)}
+              onChange={(v) => setBucket(Number(v))}
+              options={[
+                { value: '2', label: '2m' },
+                { value: '30', label: '30m' },
+                { value: '60', label: '1h' },
+                { value: '120', label: '2h' },
+                { value: '180', label: '3h' },
+                { value: '300', label: '5h' },
+              ]}
+            />
+          </div>
         </div>
       }
     >
       {!state.enabled && (
         <Alert
-          type="warning"
-          showIcon
+          tone="warning"
           className="metrics-alert"
           title={t('pages.index.xrayMetricsDisabled')}
           description={state.reason || t('pages.index.xrayMetricsHint')}
         />
       )}
 
-      <Tabs
-        activeKey={activeKey}
-        onChange={setActiveKey}
-        size="small"
-        className="history-tabs"
-        items={METRICS.map((m) => {
-          const tabLabel = m.tabKey ? t(m.tabKey) : m.tab;
-          return {
-            key: m.key,
-            label: isMobile ? <span title={tabLabel} aria-label={tabLabel}>{m.icon}</span> : tabLabel,
-          };
-        })}
-      />
+      <div className="history-tabs">
+        <Segmented
+          value={activeKey}
+          onChange={setActiveKey}
+          options={METRICS.map((m) => {
+            const tabLabel = m.tabKey ? t(m.tabKey) : m.tab;
+            return {
+              value: m.key,
+              label: isMobile ? <span title={tabLabel} aria-label={tabLabel}>{m.icon}</span> : tabLabel,
+            };
+          })}
+        />
+      </div>
 
       {isObservatory && (
         <div className="obs-pane">
           {state.enabled && obsTags.length === 0 ? (
             <Alert
-              type="info"
-              showIcon
+              tone="info"
               className="metrics-alert"
               title={t('pages.index.xrayObservatoryEmpty')}
               description={t('pages.index.xrayObservatoryHint')}
             />
           ) : (
             <div className="obs-controls">
-              <Select
-                value={obsActiveTag}
-                size="small"
-                className="obs-select"
-                placeholder={t('pages.index.xrayObservatoryTagPlaceholder')}
-                onChange={setObsActiveTag}
-                options={obsTags.map((tg) => ({
-                  value: tg.tag,
-                  label: (
-                    <>
-                      <span className={`obs-dot ${tg.alive ? 'is-alive' : 'is-dead'}`} />
-                      {tg.tag}
-                    </>
-                  ),
-                }))}
-              />
+              <div className="obs-select">
+                <Select
+                  value={obsActiveTag}
+                  placeholder={t('pages.index.xrayObservatoryTagPlaceholder')}
+                  onChange={setObsActiveTag}
+                  options={obsTags.map((tg) => ({
+                    value: tg.tag,
+                    label: (
+                      <>
+                        <span className={`obs-dot ${tg.alive ? 'is-alive' : 'is-dead'}`} />
+                        {tg.tag}
+                      </>
+                    ),
+                  }))}
+                />
+              </div>
 
               {activeObsTag && (
                 <div className="obs-stats">
-                  <Tag color={activeObsTag.alive ? 'green' : 'red'}>
+                  <Tag tone={activeObsTag.alive ? 'success' : 'danger'}>
                     {activeObsTag.alive
                       ? t('pages.index.xrayObservatoryAlive')
                       : t('pages.index.xrayObservatoryDead')}
                   </Tag>
-                  <Tag color="blue">{activeObsTag.delay} ms</Tag>
+                  <Tag tone="primary">{activeObsTag.delay} ms</Tag>
                   <span className="obs-stamp">
                     {t('pages.index.xrayObservatoryLastSeen')}: {fmtTimestamp(activeObsTag.lastSeenTime)}
                   </span>
@@ -392,6 +390,6 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
           extrema={{ show: true, formatter: yFormatter }}
         />
       </div>
-    </Modal>
+    </Dialog>
   );
 }

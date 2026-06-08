@@ -10,7 +10,7 @@
   margin-left: 4px;
   padding: 2px 8px;
   border-radius: 10px;
-  background: var(--ant-color-fill-tertiary);
+  background: var(--surface-2);
   font-size: 12px;
   opacity: 0.75;
 }
@@ -40,12 +40,12 @@
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: var(--ant-color-fill-tertiary);
+  background: var(--surface-2);
   user-select: all;
 }
 
 .custom-geo-copyable:hover {
-  background: var(--ant-color-fill-secondary);
+  background: var(--surface-inset);
 }
 
 .custom-geo-muted {

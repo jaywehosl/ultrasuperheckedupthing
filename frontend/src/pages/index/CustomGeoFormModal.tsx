@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Form, Input, message, Modal, Select } from 'antd';
+import { Dialog, Field, Input, Select } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 
 import { HttpUtil } from '@/utils';
 import { CustomGeoFormSchema } from '@/schemas/xray';
@@ -26,7 +27,6 @@ export default function CustomGeoFormModal({
   onSaved,
 }: CustomGeoFormModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
   const [type, setType] = useState<'geosite' | 'geoip'>('geosite');
   const [alias, setAlias] = useState('');
   const [url, setUrl] = useState('');
@@ -50,7 +50,7 @@ export default function CustomGeoFormModal({
   async function submit() {
     const validated = CustomGeoFormSchema.safeParse({ type, alias, url });
     if (!validated.success) {
-      messageApi.error(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
+      getMessage().error(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
       return;
     }
     setSaving(true);
@@ -69,46 +69,44 @@ export default function CustomGeoFormModal({
   }
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={editing ? t('pages.index.customGeoModalEdit') : t('pages.index.customGeoModalAdd')}
+    <Dialog
+      open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
+      title={editing ? t('pages.index.customGeoModalEdit') : t('pages.index.customGeoModalAdd')}
       confirmLoading={saving}
       okText={t('pages.index.customGeoModalSave')}
       cancelText={t('close')}
       onOk={submit}
-      onCancel={onClose}
+      width={460}
     >
-      <Form layout="vertical">
-        <Form.Item label={t('pages.index.customGeoType')}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Field label={t('pages.index.customGeoType')}>
           <Select
             value={type}
             disabled={editing}
-            onChange={(v) => setType(v)}
+            onChange={(v) => setType(v as 'geosite' | 'geoip')}
             options={[
               { value: 'geosite', label: 'geosite' },
               { value: 'geoip', label: 'geoip' },
             ]}
           />
-        </Form.Item>
-        <Form.Item label={t('pages.index.customGeoAlias')}>
+        </Field>
+        <Field label={t('pages.index.customGeoAlias')}>
           <Input
             value={alias}
             disabled={editing}
             placeholder={t('pages.index.customGeoAliasPlaceholder')}
             onChange={(e) => setAlias(e.target.value)}
           />
-        </Form.Item>
-        <Form.Item label={t('pages.index.customGeoUrl')}>
+        </Field>
+        <Field label={t('pages.index.customGeoUrl')}>
           <Input
             value={url}
             placeholder="https://"
             onChange={(e) => setUrl(e.target.value)}
           />
-        </Form.Item>
-      </Form>
-      </Modal>
-    </>
+        </Field>
+      </div>
+    </Dialog>
   );
 }

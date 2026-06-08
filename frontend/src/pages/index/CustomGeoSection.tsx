@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, message, Modal, Space, Table, Tag, Tooltip } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+import { Alert, Button, Dialog, Tag, Tooltip, TooltipProvider } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 import {
   PlusOutlined,
   ReloadOutlined,
@@ -50,14 +50,13 @@ function extDisplay(record: CustomGeoListRecord): string {
 
 export default function CustomGeoSection({ active }: CustomGeoSectionProps) {
   const { t } = useTranslation();
-  const [modal, modalContextHolder] = Modal.useModal();
-  const [messageApi, messageContextHolder] = message.useMessage();
   const [list, setList] = useState<CustomGeoListRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingAll, setUpdatingAll] = useState(false);
   const [actionId, setActionId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<CustomGeoListRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CustomGeoListRecord | null>(null);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -86,21 +85,12 @@ export default function CustomGeoSection({ active }: CustomGeoSectionProps) {
   async function copyExt(record: CustomGeoListRecord) {
     const text = extDisplay(record);
     const ok = await ClipboardManager.copyText(text);
-    if (ok) messageApi.success(`${t('copied')}: ${text}`);
+    if (ok) getMessage().success(`${t('copied')}: ${text}`);
   }
 
-  function confirmDelete(record: CustomGeoListRecord) {
-    modal.confirm({
-      title: t('pages.index.customGeoDelete'),
-      content: t('pages.index.customGeoDeleteConfirm'),
-      okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: async () => {
-        const msg = await HttpUtil.post(`/panel/api/custom-geo/delete/${record.id}`);
-        if (msg?.success) await loadList();
-      },
-    });
+  async function doDelete(record: CustomGeoListRecord) {
+    const msg = await HttpUtil.post(`/panel/api/custom-geo/delete/${record.id}`);
+    if (msg?.success) await loadList();
   }
 
   async function downloadOne(id: number) {
@@ -121,163 +111,136 @@ export default function CustomGeoSection({ active }: CustomGeoSectionProps) {
       const failed = msg?.obj?.failed?.length || 0;
       if (msg?.success || ok > 0) {
         await loadList();
-        if (failed > 0) messageApi.warning(`Updated ${ok}, failed ${failed}`);
+        if (failed > 0) getMessage().warning(`Updated ${ok}, failed ${failed}`);
       }
     } finally {
       setUpdatingAll(false);
     }
   }
 
-  const columns = useMemo<ColumnsType<CustomGeoListRecord>>(
-    () => [
-      {
-        title: t('pages.index.customGeoAlias'),
-        key: 'alias',
-        width: 200,
-        render: (_v, record) => (
-          <div className="custom-geo-alias-cell">
-            <Tag color={record.type === 'geoip' ? 'cyan' : 'purple'} className="custom-geo-type-tag">
-              {record.type}
-            </Tag>
-            <span className="custom-geo-alias">{record.alias}</span>
-          </div>
-        ),
-      },
-      {
-        title: t('pages.index.customGeoUrl'),
-        key: 'url',
-        ellipsis: true,
-        render: (_v, record) => (
-          <Tooltip placement="topLeft" title={record.url}>
-            <a
-              href={record.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="custom-geo-url"
-            >
-              {record.url}
-            </a>
-          </Tooltip>
-        ),
-      },
-      {
-        title: t('pages.index.customGeoExtColumn'),
-        key: 'extDat',
-        width: 220,
-        render: (_v, record) => (
-          <Tooltip title={t('copy')}>
-            <code
-              className="custom-geo-ext-code custom-geo-copyable"
-              onClick={() => copyExt(record)}
-            >
-              {extDisplay(record)}
-            </code>
-          </Tooltip>
-        ),
-      },
-      {
-        title: t('pages.index.customGeoLastUpdated'),
-        key: 'lastUpdatedAt',
-        width: 140,
-        render: (_v, record) =>
-          record.lastUpdatedAt ? (
-            <Tooltip title={formatTime(record.lastUpdatedAt)}>
-              <span>{relativeTime(record.lastUpdatedAt)}</span>
-            </Tooltip>
-          ) : (
-            <span className="custom-geo-muted">—</span>
-          ),
-      },
-      {
-        title: t('pages.index.customGeoActions'),
-        key: 'action',
-        width: 120,
-        render: (_v, record) => (
-          <Space size="small">
-            <Tooltip title={t('pages.index.customGeoEdit')}>
-              <Button
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => openEdit(record)}
-              />
-            </Tooltip>
-            <Tooltip title={t('pages.index.customGeoDownload')}>
-              <Button
-                type="link"
-                size="small"
-                loading={actionId === record.id}
-                icon={<ReloadOutlined />}
-                onClick={() => downloadOne(record.id)}
-              />
-            </Tooltip>
-            <Tooltip title={t('pages.index.customGeoDelete')}>
-              <Button
-                type="link"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => confirmDelete(record)}
-              />
-            </Tooltip>
-          </Space>
-        ),
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, actionId],
-  );
-
   return (
-    <div className="custom-geo-section">
-      {messageContextHolder}
-      {modalContextHolder}
-      <Alert
-        type="info"
-        showIcon
-        className="mb-10"
-        title={t('pages.index.customGeoRoutingHint')}
-      />
+    <TooltipProvider>
+      <div className="custom-geo-section">
+        <Alert
+          tone="info"
+          className="mb-10"
+          title={t('pages.index.customGeoRoutingHint')}
+        />
 
-      <div className="toolbar">
-        <Button type="primary" loading={loading} onClick={openAdd} icon={<PlusOutlined />}>
-          {t('pages.index.customGeoAdd')}
-        </Button>
-        <Button
-          loading={updatingAll}
-          disabled={list.length === 0}
-          onClick={updateAll}
-          icon={<ReloadOutlined />}
+        <div className="toolbar">
+          <Button variant="primary" loading={loading} onClick={openAdd} icon={<PlusOutlined />}>
+            {t('pages.index.customGeoAdd')}
+          </Button>
+          <Button
+            loading={updatingAll}
+            disabled={list.length === 0}
+            onClick={updateAll}
+            icon={<ReloadOutlined />}
+          >
+            {t('pages.index.geofilesUpdateAll')}
+          </Button>
+          {list.length > 0 && <span className="custom-geo-count">{list.length}</span>}
+        </div>
+
+        {list.length === 0 ? (
+          <div className="custom-geo-empty">
+            <InboxOutlined className="custom-geo-empty-icon" />
+            <div>{t('pages.index.customGeoEmpty')}</div>
+          </div>
+        ) : (
+          <div className="ds-table-wrap">
+            <table className="ds-table">
+              <thead>
+                <tr>
+                  <th>{t('pages.index.customGeoAlias')}</th>
+                  <th>{t('pages.index.customGeoUrl')}</th>
+                  <th>{t('pages.index.customGeoExtColumn')}</th>
+                  <th>{t('pages.index.customGeoLastUpdated')}</th>
+                  <th>{t('pages.index.customGeoActions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((record) => (
+                  <tr key={record.id}>
+                    <td>
+                      <div className="custom-geo-alias-cell">
+                        <Tag tone={record.type === 'geoip' ? 'primary' : 'success'} className="custom-geo-type-tag">
+                          {record.type}
+                        </Tag>
+                        <span className="custom-geo-alias">{record.alias}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <Tooltip title={record.url}>
+                        <a
+                          href={record.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="custom-geo-url"
+                        >
+                          {record.url}
+                        </a>
+                      </Tooltip>
+                    </td>
+                    <td>
+                      <Tooltip title={t('copy')}>
+                        <code
+                          className="custom-geo-ext-code custom-geo-copyable"
+                          onClick={() => copyExt(record)}
+                        >
+                          {extDisplay(record)}
+                        </code>
+                      </Tooltip>
+                    </td>
+                    <td>
+                      {record.lastUpdatedAt ? (
+                        <Tooltip title={formatTime(record.lastUpdatedAt)}>
+                          <span>{relativeTime(record.lastUpdatedAt)}</span>
+                        </Tooltip>
+                      ) : (
+                        <span className="custom-geo-muted">—</span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        <Tooltip title={t('pages.index.customGeoEdit')}>
+                          <Button variant="text" size="sm" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+                        </Tooltip>
+                        <Tooltip title={t('pages.index.customGeoDownload')}>
+                          <Button variant="text" size="sm" loading={actionId === record.id} icon={<ReloadOutlined />} onClick={() => downloadOne(record.id)} />
+                        </Tooltip>
+                        <Tooltip title={t('pages.index.customGeoDelete')}>
+                          <Button variant="text" size="sm" danger icon={<DeleteOutlined />} onClick={() => setPendingDelete(record)} />
+                        </Tooltip>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <CustomGeoFormModal
+          open={formOpen}
+          record={editingRecord}
+          onClose={() => setFormOpen(false)}
+          onSaved={loadList}
+        />
+
+        <Dialog
+          open={pendingDelete != null}
+          onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+          title={t('pages.index.customGeoDelete')}
+          okText={t('delete')}
+          cancelText={t('cancel')}
+          okDanger
+          onOk={() => { if (pendingDelete) doDelete(pendingDelete); setPendingDelete(null); }}
+          width={440}
         >
-          {t('pages.index.geofilesUpdateAll')}
-        </Button>
-        {list.length > 0 && <span className="custom-geo-count">{list.length}</span>}
+          <p style={{ margin: 0 }}>{t('pages.index.customGeoDeleteConfirm')}</p>
+        </Dialog>
       </div>
-
-      <Table
-        columns={columns}
-        dataSource={list}
-        pagination={false}
-        rowKey={(r) => r.id}
-        loading={loading}
-        size="small"
-        scroll={{ x: 760 }}
-        locale={{
-          emptyText: (
-            <div className="custom-geo-empty">
-              <InboxOutlined className="custom-geo-empty-icon" />
-              <div>{t('pages.index.customGeoEmpty')}</div>
-            </div>
-          ),
-        }}
-      />
-
-      <CustomGeoFormModal
-        open={formOpen}
-        record={editingRecord}
-        onClose={() => setFormOpen(false)}
-        onSaved={loadList}
-      />
-    </div>
+    </TooltipProvider>
   );
 }

@@ -2,6 +2,20 @@
   margin-bottom: 10px;
 }
 
+.metric-modal-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.bucket-select { width: 90px; }
+
+.history-tabs {
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+.history-tabs .ds-segmented { flex-wrap: nowrap; }
+
 .obs-pane {
   padding: 4px 16px 0;
 }
@@ -40,23 +54,23 @@
   border-radius: 50%;
   margin-right: 6px;
   vertical-align: middle;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ant-color-success) 18%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 18%, transparent);
 }
 
 .obs-dot.is-alive {
-  background: var(--ant-color-success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ant-color-success) 22%, transparent);
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 22%, transparent);
   animation: obs-dot-pulse 2.2s ease-in-out infinite;
 }
 
 .obs-dot.is-dead {
-  background: var(--ant-color-error);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ant-color-error) 22%, transparent);
+  background: var(--color-error);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 22%, transparent);
 }
 
 @keyframes obs-dot-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ant-color-success) 22%, transparent); }
-  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ant-color-success) 6%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 22%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-success) 6%, transparent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
