@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Form, Input, Modal, Select, Space, Tooltip } from 'antd';
 import { PlusOutlined, MinusOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import { InputAddon } from '@/components/ui';
+
+import { Button, Dialog, Field, Input, Select, Tag, Tooltip, TooltipProvider } from '@/components/ds';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { RuleFormSchema, type RuleFormValues } from '@/schemas/xray';
 
@@ -37,19 +38,8 @@ interface RuleFormModalProps {
 type FormState = RuleFormValues;
 
 const initialForm = (): FormState => ({
-  domain: '',
-  ip: '',
-  port: '',
-  sourcePort: '',
-  vlessRoute: '',
-  network: '',
-  sourceIP: '',
-  user: '',
-  inboundTag: [],
-  protocol: [],
-  attrs: [],
-  outboundTag: '',
-  balancerTag: '',
+  domain: '', ip: '', port: '', sourcePort: '', vlessRoute: '', network: '',
+  sourceIP: '', user: '', inboundTag: [], protocol: [], attrs: [], outboundTag: '', balancerTag: '',
 });
 
 const NETWORKS = ['', 'TCP', 'UDP', 'TCP,UDP'];
@@ -61,13 +51,7 @@ function csv(value: string): string[] {
 }
 
 export default function RuleFormModal({
-  open,
-  rule,
-  inboundTags,
-  outboundTags,
-  balancerTags,
-  onClose,
-  onConfirm,
+  open, rule, inboundTags, outboundTags, balancerTags, onClose, onConfirm,
 }: RuleFormModalProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState<FormState>(initialForm);
@@ -76,9 +60,7 @@ export default function RuleFormModal({
   const { data: inboundOptions } = useInboundOptions();
   const remarkByTag = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const ib of inboundOptions || []) {
-      if (ib.tag) map[ib.tag] = ib.remark?.trim() || ib.tag;
-    }
+    for (const ib of inboundOptions || []) if (ib.tag) map[ib.tag] = ib.remark?.trim() || ib.tag;
     return map;
   }, [inboundOptions]);
 
@@ -105,8 +87,10 @@ export default function RuleFormModal({
     }
   }, [open, rule]);
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((prev) => ({ ...prev, [key]: value }));
+  function toggle(key: 'protocol' | 'inboundTag', v: string) {
+    update(key, (form[key].includes(v) ? form[key].filter((x) => x !== v) : [...form[key], v]) as FormState[typeof key]);
+  }
 
   function submit() {
     const validated = RuleFormSchema.safeParse(form);
@@ -114,197 +98,94 @@ export default function RuleFormModal({
     const v = validated.data;
     const built: Record<string, unknown> = {
       type: 'field',
-      domain: csv(v.domain),
-      ip: csv(v.ip),
-      port: v.port,
-      sourcePort: v.sourcePort,
-      vlessRoute: v.vlessRoute,
-      network: v.network,
-      sourceIP: csv(v.sourceIP),
-      user: csv(v.user),
-      inboundTag: v.inboundTag,
-      protocol: v.protocol,
+      domain: csv(v.domain), ip: csv(v.ip), port: v.port, sourcePort: v.sourcePort, vlessRoute: v.vlessRoute,
+      network: v.network, sourceIP: csv(v.sourceIP), user: csv(v.user), inboundTag: v.inboundTag, protocol: v.protocol,
       attrs: Object.fromEntries(v.attrs.filter(([k]) => k)),
       outboundTag: v.outboundTag === '' ? undefined : v.outboundTag,
       balancerTag: v.balancerTag === '' ? undefined : v.balancerTag,
     };
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(built)) {
-      if (v == null) continue;
-      if (Array.isArray(v) && v.length === 0) continue;
-      if (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0) continue;
-      if (v === '') continue;
-      out[k] = v;
+    for (const [k, val] of Object.entries(built)) {
+      if (val == null) continue;
+      if (Array.isArray(val) && val.length === 0) continue;
+      if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val).length === 0) continue;
+      if (val === '') continue;
+      out[k] = val;
     }
     onConfirm(out);
   }
 
-  const title = isEdit
-    ? `${t('edit')} ${t('pages.xray.Routings')}`
-    : `+ ${t('pages.xray.Routings')}`;
+  const hint = (text: ReactNode, tip: string): ReactNode => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {text}
+      <Tooltip title={tip}><QuestionCircleOutlined style={{ opacity: 0.5 }} /></Tooltip>
+    </span>
+  );
+  const comma = t('pages.xray.rules.useComma');
+
+  const title = isEdit ? `${t('edit')} ${t('pages.xray.Routings')}` : `+ ${t('pages.xray.Routings')}`;
   const okText = isEdit ? t('pages.clients.submitEdit') : t('create');
 
+  function chips(key: 'protocol' | 'inboundTag', options: { value: string; label: string }[]) {
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {options.map((o) => (
+          <Tag key={o.value} tone={form[key].includes(o.value) ? 'primary' : 'neutral'} onClick={() => toggle(key, o.value)} style={{ cursor: 'pointer' }}>{o.label}</Tag>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <Modal
-      open={open}
-      title={title}
-      okText={okText}
-      cancelText={t('close')}
-      mask={{ closable: false }}
-      width={640}
-      onOk={submit}
-      onCancel={onClose}
-    >
-      <Form colon={false} labelCol={{ md: { span: 8 } }} wrapperCol={{ md: { span: 14 } }}>
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              {t('pages.xray.ruleForm.sourceIps')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.sourceIP} onChange={(e) => update('sourceIP', e.target.value)} placeholder="0.0.0.0/8, fc00::/7, geoip:ir" />
-        </Form.Item>
+    <TooltipProvider>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => !o && onClose()}
+        title={title}
+        okText={okText}
+        cancelText={t('close')}
+        width={640}
+        onOk={submit}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label={hint(t('pages.xray.ruleForm.sourceIps'), comma)}><Input value={form.sourceIP} onChange={(e) => update('sourceIP', e.target.value)} placeholder="0.0.0.0/8, fc00::/7, geoip:ir" /></Field>
+          <Field label={hint(t('pages.xray.ruleForm.sourcePort'), comma)}><Input value={form.sourcePort} onChange={(e) => update('sourcePort', e.target.value)} placeholder="53,443,1000-2000" /></Field>
+          <Field label={hint(t('pages.xray.ruleForm.vlessRoute'), comma)}><Input value={form.vlessRoute} onChange={(e) => update('vlessRoute', e.target.value)} placeholder="53,443,1000-2000" /></Field>
 
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              {t('pages.xray.ruleForm.sourcePort')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.sourcePort} onChange={(e) => update('sourcePort', e.target.value)} placeholder="53,443,1000-2000" />
-        </Form.Item>
+          <Field label={t('pages.inbounds.network')}>
+            <Select value={form.network} onChange={(v) => update('network', v)} options={NETWORKS.map((n) => ({ value: n, label: n || '(any)' }))} />
+          </Field>
+          <Field label={t('pages.inbounds.protocol')}>{chips('protocol', PROTOCOLS.map((p) => ({ value: p, label: p })))}</Field>
 
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              {t('pages.xray.ruleForm.vlessRoute')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.vlessRoute} onChange={(e) => update('vlessRoute', e.target.value)} placeholder="53,443,1000-2000" />
-        </Form.Item>
+          <Field label={t('pages.xray.ruleForm.attributes')}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Button size="sm" icon={<PlusOutlined />} onClick={() => update('attrs', [...form.attrs, ['', '']])} style={{ alignSelf: 'flex-start' }} />
+              {form.attrs.map((attr, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span className="ds-muted" style={{ width: 18 }}>{idx + 1}</span>
+                  <Input value={attr[0]} placeholder={t('pages.nodes.name')} onChange={(e) => update('attrs', form.attrs.map((a, i) => (i === idx ? [e.target.value, a[1]] as [string, string] : a)))} />
+                  <Input value={attr[1]} placeholder={t('pages.xray.ruleForm.value')} onChange={(e) => update('attrs', form.attrs.map((a, i) => (i === idx ? [a[0], e.target.value] as [string, string] : a)))} />
+                  <Button size="sm" icon={<MinusOutlined />} onClick={() => update('attrs', form.attrs.filter((_, i) => i !== idx))} />
+                </div>
+              ))}
+            </div>
+          </Field>
 
-        <Form.Item label={t('pages.inbounds.network')}>
-          <Select
-            value={form.network}
-            onChange={(v) => update('network', v)}
-            options={NETWORKS.map((n) => ({ value: n, label: n || '(any)' }))}
-          />
-        </Form.Item>
+          <Field label={hint('IP', comma)}><Input value={form.ip} onChange={(e) => update('ip', e.target.value)} placeholder="0.0.0.0/8, fc00::/7, geoip:ir" /></Field>
+          <Field label={hint(t('domainName'), comma)}><Input value={form.domain} onChange={(e) => update('domain', e.target.value)} placeholder="google.com, geosite:cn" /></Field>
+          <Field label={hint(t('pages.xray.ruleForm.user'), comma)}><Input value={form.user} onChange={(e) => update('user', e.target.value)} placeholder="email address" /></Field>
+          <Field label={hint(t('pages.inbounds.port'), comma)}><Input value={form.port} onChange={(e) => update('port', e.target.value)} placeholder="53,443,1000-2000" /></Field>
 
-        <Form.Item label={t('pages.inbounds.protocol')}>
-          <Select
-            mode="multiple"
-            value={form.protocol}
-            onChange={(v) => update('protocol', v)}
-            options={PROTOCOLS.map((p) => ({ value: p, label: p }))}
-          />
-        </Form.Item>
+          <Field label={t('pages.xray.ruleForm.inboundTags')}>{chips('inboundTag', inboundTags.map((tag) => ({ value: tag, label: remarkByTag[tag] || tag })))}</Field>
 
-        <Form.Item label={t('pages.xray.ruleForm.attributes')}>
-          <Button size="small" icon={<PlusOutlined />} onClick={() => update('attrs', [...form.attrs, ['', '']])} />
-        </Form.Item>
-        <Form.Item wrapperCol={{ span: 24 }}>
-          {form.attrs.map((attr, idx) => (
-            <Space.Compact key={idx} block className="mb-8">
-              <InputAddon>{`${idx + 1}`}</InputAddon>
-              <Input
-                value={attr[0]}
-                placeholder={t('pages.nodes.name')}
-                onChange={(e) => {
-                  const next = form.attrs.map((a, i) => (i === idx ? ([e.target.value, a[1]] as [string, string]) : a));
-                  update('attrs', next);
-                }}
-              />
-              <Input
-                value={attr[1]}
-                placeholder={t('pages.xray.ruleForm.value')}
-                onChange={(e) => {
-                  const next = form.attrs.map((a, i) => (i === idx ? ([a[0], e.target.value] as [string, string]) : a));
-                  update('attrs', next);
-                }}
-              />
-              <Button
-                icon={<MinusOutlined />}
-                onClick={() => update('attrs', form.attrs.filter((_, i) => i !== idx))}
-              />
-            </Space.Compact>
-          ))}
-        </Form.Item>
-
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              IP <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.ip} onChange={(e) => update('ip', e.target.value)} placeholder="0.0.0.0/8, fc00::/7, geoip:ir" />
-        </Form.Item>
-
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              {t('domainName')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.domain} onChange={(e) => update('domain', e.target.value)} placeholder="google.com, geosite:cn" />
-        </Form.Item>
-
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              {t('pages.xray.ruleForm.user')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.user} onChange={(e) => update('user', e.target.value)} placeholder="email address" />
-        </Form.Item>
-
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.rules.useComma')}>
-              {t('pages.inbounds.port')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Input value={form.port} onChange={(e) => update('port', e.target.value)} placeholder="53,443,1000-2000" />
-        </Form.Item>
-
-        <Form.Item label={t('pages.xray.ruleForm.inboundTags')}>
-          <Select
-            mode="multiple"
-            value={form.inboundTag}
-            onChange={(v) => update('inboundTag', v)}
-            options={inboundTags.map((tag) => ({ value: tag, label: remarkByTag[tag] || tag }))}
-          />
-        </Form.Item>
-
-        <Form.Item label={t('pages.xray.ruleForm.outboundTag')}>
-          <Select
-            value={form.outboundTag}
-            onChange={(v) => update('outboundTag', v)}
-            options={outboundTags.map((tag) => ({ value: tag, label: tag || '(none)' }))}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label={
-            <Tooltip title={t('pages.xray.ruleForm.balancerTagTooltip')}>
-              {t('pages.xray.ruleForm.balancerTag')} <QuestionCircleOutlined />
-            </Tooltip>
-          }
-        >
-          <Select
-            value={form.balancerTag}
-            onChange={(v) => update('balancerTag', v)}
-            options={balancerTags.map((tag) => ({ value: tag, label: tag || '(none)' }))}
-          />
-        </Form.Item>
-      </Form>
-    </Modal>
+          <Field label={t('pages.xray.ruleForm.outboundTag')}>
+            <Select value={form.outboundTag} onChange={(v) => update('outboundTag', v)} options={outboundTags.map((tag) => ({ value: tag, label: tag || '(none)' }))} />
+          </Field>
+          <Field label={hint(t('pages.xray.ruleForm.balancerTag'), t('pages.xray.ruleForm.balancerTagTooltip'))}>
+            <Select value={form.balancerTag} onChange={(v) => update('balancerTag', v)} options={balancerTags.map((tag) => ({ value: tag, label: tag || '(none)' }))} />
+          </Field>
+        </div>
+      </Dialog>
+    </TooltipProvider>
   );
 }
