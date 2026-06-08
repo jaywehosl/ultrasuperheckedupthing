@@ -25,10 +25,16 @@ page shift ✅, switch thumb first-paint position (animate `left`, not transform
 asymmetric/flickering open-close ✅.
 
 ## NEXT: continue page migration
-- **Panel Settings** next (forms + tabs — likely add DS `Tabs` on Radix).
-- Then **clients**, then **inbounds** / **xray** (the monsters).
-- Modal canon (fields=login, buttons=logout, Select=header language dropdown,
-  switch=standard toggle, overlay=blur) is locked — reuse it everywhere.
+- ✅ nodes (full), ✅ groups (pilot), ✅ Panel Settings (full).
+- **clients** next, then **inbounds** / **xray** (the monsters).
+- `SubJsonFinalMaskForm` (settings) still rides the shared xray transport `Form`
+  lib (`@/lib/xray/forms`) — migrate it together with the inbounds/xray forms.
+- DS library now: Button, Card, Input/Field, Tag, Stat, Dialog, DropdownMenu,
+  Tooltip, Switch, Select, Alert, Divider, Tabs, DataTable(sort/select/expand).
+- Canon locked & reuse everywhere: modal (flex-viewport + scale anim), fields=
+  login, buttons=header Log Out pill, Select menu=header language dropdown,
+  tabs=header-nav pills (no underline, instant content swap — NEVER animate a
+  container holding glass children), switch=standard toggle, overlay=plain blur.
 
 ## Notes / gotchas (learned this session)
 - `backdrop-filter` dies if ANY ancestor has transform / opacity<1 / filter / animation /
