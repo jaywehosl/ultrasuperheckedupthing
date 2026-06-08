@@ -289,6 +289,9 @@ html.is-dark .panel-app-wrapper::after { opacity: 0.06; mix-blend-mode: soft-lig
   flex: 1;
   display: flex;
   flex-direction: column;
+  /* the topbar shell (header) is now position:fixed (out of flow), so offset
+     content by the header height; the metrics bar overlays on top when open. */
+  padding-top: 72px;
 }
 
 .section-content-wrapper {

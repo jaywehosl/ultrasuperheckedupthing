@@ -410,20 +410,41 @@ body.dark .drawer-utility-list {
   }
 }
 
-/* === Header as the full-width login-bar template (overrides the floating pill) === */
+/* === Header + metrics bar share ONE fixed glass shell (.topbar-shell) ===
+   The shell carries the only backdrop-filter + glass background + bottom edge,
+   so the two rows read as a single continuous surface (no seam). The header and
+   the bar are transparent in-flow rows inside it. */
+.topbar-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  backdrop-filter: blur(16px) saturate(170%);
+  border-bottom: 1px solid rgba(18, 19, 23, 0.05);
+}
+body.dark .topbar-shell {
+  background: rgba(21, 22, 29, 0.45);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+html[data-theme="ultra-dark"] body.dark .topbar-shell {
+  background: rgba(0, 0, 0, 0.65);
+}
+
 .antigravity-header {
-  position: sticky !important;
-  top: 0 !important;
+  position: relative !important;
+  top: auto !important;
   width: 100% !important;
   max-width: none !important;
   height: 72px !important;
   margin: 0 !important;
-  border-radius: 0 !important;
   border: none !important;
-  border-bottom: 1px solid rgba(18, 19, 23, 0.05) !important;
-  background: rgba(255, 255, 255, 0.16) !important;
-  backdrop-filter: blur(16px) saturate(170%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
 }
 .header-container { padding: 0 32px !important; max-width: none !important; }
@@ -454,9 +475,18 @@ body.dark .drawer-utility-list {
    centered 8-column band, so each header button sits exactly above its
    status-bar counterpart and nothing reflows when values change width.
    ========================================================================== */
-:root { --nav-band-w: 760px; }
+:root {
+  --nav-btn-w: 98px;   /* fixed width of every header/bar control */
+  --nav-gap: 8px;      /* single uniform gap between them */
+  --nav-btn-h: 46px;   /* fixed height (fits a 2-line centered label) */
+  --nav-band-w: calc(8 * var(--nav-btn-w) + 7 * var(--nav-gap)); /* 840px */
+  --side-zone-w: 212px; /* logo zone == gauge band, so gauges span the logo */
+}
 
 .header-container { position: relative !important; }
+
+/* logo zone — fixed width so the gauges below line up under it */
+.header-left { width: var(--side-zone-w); }
 
 .header-center {
   position: absolute !important;
@@ -465,7 +495,7 @@ body.dark .drawer-utility-list {
   top: 0;
   bottom: 0;
   width: var(--nav-band-w);
-  max-width: calc(100% - 480px);
+  max-width: calc(100% - 460px);
   flex: none !important;
   display: flex !important;
   align-items: center;
@@ -474,13 +504,20 @@ body.dark .drawer-utility-list {
 .header-nav-list-container { width: 100% !important; max-width: none !important; }
 .header-nav-list {
   display: grid !important;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 0 !important;
+  grid-template-columns: repeat(8, var(--nav-btn-w));
+  gap: var(--nav-gap) !important;
+  justify-content: center;
   width: 100%;
 }
 .header-nav-item-wrapper { display: flex; justify-content: center; }
-.header-nav-list .nav-menu-item { justify-content: center; text-align: center; }
+.header-nav-list .nav-menu-item {
+  width: 100%;
+  height: var(--nav-btn-h);
+  justify-content: center;
+  text-align: center;
+  padding: 4px 6px !important;
+  line-height: 1.15;
+  white-space: normal;
+}
 
-/* When the metrics bar is open, drop the header divider so the two frosted
-   surfaces read as one continuous glass panel (no seam). */
-.antigravity-header.metrics-open { border-bottom-color: transparent !important; }
+/* (seam handled by the single .topbar-shell backdrop-filter; no per-row divider) */

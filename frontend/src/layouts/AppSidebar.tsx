@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -106,9 +106,25 @@ export default function AppSidebar() {
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
-  const { open: metricsOpen, setOpen: setMetricsOpen, toggle: toggleMetrics } = useMetricsPanel();
+  const { open: metricsOpen, toggle: toggleMetrics } = useMetricsPanel();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Active nav highlight. Hash-section clicks (/#clients …) use history.pushState
+  // (so the page can smooth-scroll without a router nav) which does NOT update
+  // react-router's `hash` — so we track the clicked key explicitly and fall back
+  // to a route-derived key for cross-page navigation. clickedKey resets whenever
+  // the actual route (pathname) changes.
+  const [clickedKey, setClickedKey] = useState<string | null>(null);
+  useEffect(() => { setClickedKey(null); }, [pathname]);
+  const routeKey = useMemo(() => {
+    if (pathname === '/settings') return '/settings';
+    if (pathname === '/xray') return '/xray';
+    if (pathname === '/api-docs') return '/api-docs';
+    if (pathname === '/') return hash ? `/${hash}` : '/#dashboard';
+    return '';
+  }, [pathname, hash]);
+  const activeKey = clickedKey ?? routeKey;
 
   // The brand logo is the (slightly hidden) metrics status-bar toggle — it only
   // opens/closes the bar and never navigates.
@@ -137,18 +153,19 @@ export default function AppSidebar() {
       window.location.href = window.X_UI_BASE_PATH || '/';
       return;
     }
-    
+
+    setClickedKey(key);
+
     if (key.startsWith('/#')) {
       const parts = key.substring(2).split('#'); // e.g. ["inbounds"] or ["xray", "basic"]
       const targetSectionId = parts[0];
 
       // "Overview" (#dashboard) goes to the very top of the page (not just the
-      // section — the fixed header would otherwise leave it ~80px short) and
-      // pops the metrics status-bar open.
+      // section — the fixed header would otherwise leave it ~80px short).
+      // It does NOT touch the metrics bar — only the logo toggles that.
       if (targetSectionId === 'dashboard') {
         if (pathname !== '/') navigate('/');
         else window.scrollTo({ top: 0, behavior: 'smooth' });
-        setMetricsOpen(true);
         return;
       }
 
@@ -167,7 +184,7 @@ export default function AppSidebar() {
     }
     
     navigate(key);
-  }, [navigate, pathname, setMetricsOpen]);
+  }, [navigate, pathname]);
 
   const cycleTheme = useCallback((id: string) => {
     pauseAnimationsUntilLeave(id);
@@ -200,7 +217,7 @@ export default function AppSidebar() {
             <ul className="header-nav-list">
               {navItems.map((tab) => {
                 const Icon = iconByName[tab.icon];
-                const isActive = pathname === tab.key || (tab.key.startsWith('/#') && pathname === '/' && hash === tab.key.substring(1));
+                const isActive = tab.key === activeKey;
                 return (
                   <li key={tab.key} className="header-nav-item-wrapper">
                     <button

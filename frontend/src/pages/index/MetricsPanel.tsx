@@ -148,25 +148,27 @@ export default function MetricsPanel() {
             </div>
           </div>
 
-          {/* ---- RIGHT: categorized text data (under theme/lang/logout) ---- */}
+          {/* ---- RIGHT: 6 uniform pills (speed×2, conn×2, uptime×2) ---- */}
           <div className="mb-right">
-            <div className="mb-stats">
-              <div className="mb-stat-row mb-speed">
-                <span className="mb-speed__up"><ArrowUpOutlined /> {SizeFormatter.sizeFormat(status.netIO.up)}/s</span>
-                <span className="mb-speed__down"><ArrowDownOutlined /> {SizeFormatter.sizeFormat(status.netIO.down)}/s</span>
-              </div>
-              <div className="mb-stat-row mb-conn">
-                <span className="mb-conn__cell"><ApiOutlined /> TCP {status.tcpCount}</span>
-                <span className="mb-conn__cell">UDP {status.udpCount}</span>
-              </div>
-              <div className="mb-stat-row mb-uptime">
-                <span className="mb-pill mb-pill--xray" title={`Xray ${t('pages.index.operationHours')}`}>
-                  <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.appStats.uptime)}
-                </span>
-                <span className="mb-pill mb-pill--os" title={`OS ${t('pages.index.operationHours')}`}>
-                  <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.uptime)}
-                </span>
-              </div>
+            <div className="mb-pills">
+              <span className="mb-pill mb-pill--up" title={t('pages.index.networkSpeed') || 'Upload'}>
+                <ArrowUpOutlined /> {SizeFormatter.sizeFormat(status.netIO.up)}/s
+              </span>
+              <span className="mb-pill mb-pill--down" title={t('pages.index.networkSpeed') || 'Download'}>
+                <ArrowDownOutlined /> {SizeFormatter.sizeFormat(status.netIO.down)}/s
+              </span>
+              <span className="mb-pill mb-pill--conn" title="TCP">
+                <ApiOutlined /> TCP {status.tcpCount}
+              </span>
+              <span className="mb-pill mb-pill--conn" title="UDP">
+                <SwapOutlined /> UDP {status.udpCount}
+              </span>
+              <span className="mb-pill mb-pill--xray" title={`Xray ${t('pages.index.operationHours')}`}>
+                <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.appStats.uptime)}
+              </span>
+              <span className="mb-pill mb-pill--os" title={`OS ${t('pages.index.operationHours')}`}>
+                <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.uptime)}
+              </span>
             </div>
             <div className={`mb-ipcol ${showIp ? '' : 'ip-hidden'}`}>
               <button

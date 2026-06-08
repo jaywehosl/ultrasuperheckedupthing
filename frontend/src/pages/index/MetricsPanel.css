@@ -6,27 +6,18 @@
    exactly under its header button.
    ========================================================================== */
 
+/* In-flow transparent row inside .topbar-shell — the shell owns the single
+   backdrop-filter/glass, so the bar adds NO blur of its own (that's what killed
+   the seam). Still animates via max-height only (glass-rule safe). */
 .metrics-bar {
-  position: fixed;
-  top: 72px;
-  left: 0;
-  right: 0;
-  z-index: 999;
+  position: relative;
   max-height: 0;
   overflow: hidden;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.16);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  backdrop-filter: blur(16px) saturate(170%);
-  border-bottom: 1px solid rgba(18, 19, 23, 0.06);
+  background: transparent;
   transition: max-height 0.42s var(--ease-out-quint);
 }
 .metrics-bar.is-open { max-height: 132px; pointer-events: auto; }
-body.dark .metrics-bar {
-  background: rgba(21, 22, 29, 0.45);
-  border-bottom-color: rgba(255, 255, 255, 0.07);
-}
-html[data-theme="ultra-dark"] body.dark .metrics-bar { background: rgba(0, 0, 0, 0.65); }
 
 .mb-container {
   position: relative;
@@ -52,7 +43,7 @@ html[data-theme="ultra-dark"] body.dark .metrics-bar { background: rgba(0, 0, 0,
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  width: 212px; /* ≈ the "3X-UI Antigravity" logo width */
+  width: var(--side-zone-w, 212px); /* == the logo zone, so gauges span it */
 }
 .mb-gauge {
   width: 40px;
@@ -97,22 +88,24 @@ body.dark .mb-gauge__track { background: rgba(255, 255, 255, 0.1); }
   transform: translateX(-50%);
   top: 0;
   bottom: 0;
-  width: var(--nav-band-w, 760px);
-  max-width: calc(100% - 480px);
+  width: var(--nav-band-w, 840px);
+  max-width: calc(100% - 460px);
   display: flex;
   align-items: center;
 }
 .mb-controls {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(8, var(--nav-btn-w, 98px));
+  gap: var(--nav-gap, 8px);
+  justify-content: center;
   width: 100%;
-  gap: 0;
 }
-.mb-controls > * { justify-self: center; }
 .mb-controls .nav-menu-item {
-  padding: 6px 8px;
+  width: 100%;
+  height: var(--nav-btn-h, 46px);
+  padding: 4px 6px;
   font-size: 11.5px;
-  line-height: 1.2;
+  line-height: 1.15;
   text-align: center;
   justify-content: center;
   white-space: normal;
@@ -129,33 +122,26 @@ body.dark .mb-state { background: rgba(255, 255, 255, 0.05) !important; }
   box-shadow: 0 0 6px currentColor;
 }
 
-/* ---- RIGHT: categorized text data --------------------------------------- */
-.mb-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+/* ---- RIGHT: 6 uniform pills (speed×2, conn×2, uptime×2) in a 2-col grid -- */
+.mb-pills {
+  display: grid;
+  grid-template-columns: repeat(2, var(--mb-pill-w, 112px));
   gap: 6px;
 }
-.mb-stat-row { display: flex; align-items: center; gap: 10px; }
-
-.mb-speed { font-weight: 700; font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); }
-.mb-speed__up { color: #2f6fed; display: inline-flex; align-items: center; gap: 4px; }
-.mb-speed__down { color: #0fa8a0; display: inline-flex; align-items: center; gap: 4px; }
-.is-dark .mb-speed__up { color: #6ea8ff; }
-.is-dark .mb-speed__down { color: #38d6cd; }
-
-.mb-conn { font-weight: 600; font-size: 11.5px; color: var(--text-2); font-family: var(--font-mono, ui-monospace, monospace); }
-.mb-conn__cell { display: inline-flex; align-items: center; gap: 5px; }
-.mb-conn__cell .anticon { opacity: 0.65; font-size: 11px; }
-
 .mb-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 11px; border-radius: 99px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  width: 100%; height: 24px; padding: 0 10px; border-radius: 99px;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 11px; font-weight: 700; cursor: default;
+  font-size: 11px; font-weight: 700; cursor: default; white-space: nowrap;
   transition: background 0.18s ease, color 0.18s ease;
 }
-.mb-pill .anticon { font-size: 11px; opacity: 0.8; }
+.mb-pill .anticon { font-size: 11px; opacity: 0.85; }
+.mb-pill--up { background: rgba(47, 111, 237, 0.12); color: #2f6fed; }
+.is-dark .mb-pill--up { color: #6ea8ff; background: rgba(110, 168, 255, 0.16); }
+.mb-pill--down { background: rgba(15, 168, 160, 0.12); color: #0fa8a0; }
+.is-dark .mb-pill--down { color: #38d6cd; background: rgba(56, 214, 205, 0.16); }
+.mb-pill--conn { background: rgba(18, 19, 23, 0.05); color: var(--text-2); }
+.is-dark .mb-pill--conn { background: rgba(255, 255, 255, 0.06); }
 .mb-pill--xray { background: rgba(var(--color-primary-rgb), 0.12); color: var(--color-primary-strong); }
 .mb-pill--xray:hover { background: rgba(var(--color-primary-rgb), 0.2); }
 .mb-pill--os { background: rgba(15, 168, 160, 0.14); color: #0c8a83; }
@@ -187,7 +173,6 @@ body.dark .mb-state { background: rgba(255, 255, 255, 0.05) !important; }
   .mb-center { display: none; }
 }
 @media (max-width: 768px) {
-  .metrics-bar { top: 64px; }
   .mb-container { padding: 0 16px; }
   .mb-right { padding-right: 16px; }
 }

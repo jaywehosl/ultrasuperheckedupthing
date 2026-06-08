@@ -23,8 +23,12 @@ export default function PanelLayout() {
         density={1}
       />
       <MetricsPanelProvider>
-        <AppSidebar />
-        <MetricsPanel />
+        {/* Header + metrics bar share ONE fixed glass shell (single
+            backdrop-filter) so there's no seam between the two surfaces. */}
+        <div className="topbar-shell">
+          <AppSidebar />
+          <MetricsPanel />
+        </div>
         <div className="panel-main-content">
           <Outlet />
         </div>
