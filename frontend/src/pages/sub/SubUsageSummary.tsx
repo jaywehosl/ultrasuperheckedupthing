@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Progress, Tag } from 'antd';
+import { Tag } from '@/components/ds';
+import type { TagTone } from '@/components/ds';
 import { ClockCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
 import './SubUsageSummary.css';
@@ -21,14 +22,14 @@ function pickStrokeColor(pct: number): { from: string; to: string } {
   return { from: '#5fc983', to: '#36b37e' };
 }
 
-function formatExpiryChip(expireMs: number): { label: string; color: string } | null {
+function formatExpiryChip(expireMs: number): { label: string; tone: TagTone } | null {
   if (expireMs <= 0) return null;
   const diff = expireMs - Date.now();
-  if (diff <= 0) return { label: 'Expired', color: 'red' };
+  if (diff <= 0) return { label: 'Expired', tone: 'danger' };
   const days = Math.floor(diff / 86400000);
-  if (days >= 1) return { label: `${days}d`, color: days <= 3 ? 'orange' : 'blue' };
+  if (days >= 1) return { label: `${days}d`, tone: days <= 3 ? 'warning' : 'primary' };
   const hours = Math.max(1, Math.floor(diff / 3600000));
-  return { label: `${hours}h`, color: 'orange' };
+  return { label: `${hours}h`, tone: 'warning' };
 }
 
 export default function SubUsageSummary({
@@ -62,26 +63,24 @@ export default function SubUsageSummary({
         </div>
         <div className="usage-summary-chips">
           {isUnlimited && (
-            <Tag color="purple" icon={<ThunderboltOutlined />}>
+            <Tag tone="primary" icon={<ThunderboltOutlined />}>
               {t('subscription.unlimited')}
             </Tag>
           )}
           {expiry && (
-            <Tag color={expiry.color} icon={<ClockCircleOutlined />}>
+            <Tag tone={expiry.tone} icon={<ClockCircleOutlined />}>
               {expiry.label}
             </Tag>
           )}
         </div>
       </div>
       {!isUnlimited && (
-        <Progress
-          percent={pct}
-          showInfo={false}
-          strokeColor={{ '0%': stroke.from, '100%': stroke.to }}
-          trailColor="var(--ant-color-fill-secondary)"
-          strokeWidth={10}
-          className="usage-summary-bar"
-        />
+        <div className="usage-summary-bar" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+          <div
+            className="usage-summary-bar-fill"
+            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${stroke.from}, ${stroke.to})` }}
+          />
+        </div>
       )}
       <div className="usage-summary-foot">
         {!isUnlimited && (

@@ -1,14 +1,14 @@
 .usage-summary {
   margin-top: 12px;
   padding: 14px 16px;
-  background: var(--ant-color-fill-alter);
-  border: 1px solid var(--ant-color-border-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline-soft);
   border-radius: 12px;
 }
 
 .usage-summary.is-inactive {
   opacity: 0.7;
-  border-color: var(--ant-color-error-border);
+  border-color: rgba(var(--color-error-rgb), 0.4);
 }
 
 .usage-summary-head {
@@ -30,17 +30,17 @@
 .usage-summary-used {
   font-size: 18px;
   font-weight: 700;
-  color: var(--ant-color-text);
+  color: var(--text-1);
 }
 
 .usage-summary-sep {
-  color: var(--ant-color-text-quaternary);
+  color: var(--text-3);
   font-size: 16px;
 }
 
 .usage-summary-total {
   font-size: 14px;
-  color: var(--ant-color-text-secondary);
+  color: var(--text-2);
   font-weight: 500;
 }
 
@@ -51,20 +51,19 @@
   flex-shrink: 0;
 }
 
-.usage-summary-chips .ant-tag {
-  margin: 0;
-}
-
-.usage-summary-bar.ant-progress {
+.usage-summary-bar {
+  position: relative;
+  height: 10px;
   margin-bottom: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  overflow: hidden;
 }
 
-.usage-summary-bar .ant-progress-outer {
-  padding-inline-end: 0;
-}
-
-.usage-summary-bar .ant-progress-inner {
-  background: var(--ant-color-fill-secondary);
+.usage-summary-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.4s var(--ease-out-quint);
 }
 
 .usage-summary-foot {
@@ -72,7 +71,7 @@
   align-items: center;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--ant-color-text-tertiary);
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
   min-height: 16px;
 }
@@ -83,5 +82,5 @@
 
 .usage-summary-pct {
   font-weight: 600;
-  color: var(--ant-color-text-secondary);
+  color: var(--text-2);
 }

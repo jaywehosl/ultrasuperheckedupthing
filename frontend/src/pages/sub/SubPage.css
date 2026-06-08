@@ -15,13 +15,15 @@
   --bg-card: #101013;
 }
 
-.subscription-page .ant-layout,
-.subscription-page .ant-layout-content {
-  background: transparent;
-}
-
 .subscription-page .content {
   padding: 24px 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.sub-card-wrap {
+  width: 100%;
+  max-width: 680px;
 }
 
 .subscription-card {
@@ -34,8 +36,35 @@
   margin: 0;
 }
 
+/* definition list replacing antd Descriptions */
 .info-table {
-  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin: 4px 0 4px;
+}
+.info-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 38%) 1fr;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.info-row:last-child { border-bottom: 0; }
+.info-label {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-right: 1px solid var(--hairline-soft);
+}
+.info-value {
+  padding: 8px 12px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-1);
+  word-break: break-all;
 }
 
 .links-section {
@@ -110,10 +139,14 @@
 
 .apps-row {
   margin-top: 24px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
 }
+.apps-row > * { flex: 1; }
 
-.app-col {
-  text-align: center;
+@media (max-width: 576px) {
+  .apps-row { flex-direction: column; }
 }
 
 .toolbar-btn {
