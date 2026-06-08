@@ -6,7 +6,6 @@ import {
   Col,
   ConfigProvider,
   message,
-  Modal,
   Result,
   Row,
   Space,
@@ -15,6 +14,7 @@ import {
   Tag,
   Tooltip,
 } from '@/components/ui';
+import { Dialog as DSDialog, Button as DSButton } from '@/components/ds';
 import {
   BarsOutlined,
   ControlOutlined,
@@ -533,42 +533,30 @@ export default function IndexPage() {
         </LazyMount>
 
         <LazyMount when={configTextOpen}>
-          <Modal
+          <DSDialog
             open={configTextOpen}
+            onOpenChange={(o) => { if (!o) setConfigTextOpen(false); }}
             title={t('pages.index.config')}
             width={isMobile ? '100%' : 900}
-            style={isMobile
-              ? { top: 20, maxWidth: 'calc(100vw - 16px)' }
-              : { top: 20 }}
-            onCancel={() => setConfigTextOpen(false)}
-            footer={[
-              <Button
-                key="download"
-                onClick={downloadConfig}
-                size={isMobile ? 'small' : 'middle'}
-                icon={<CloudDownloadOutlined />}
-              >
-                {isMobile ? 'Download' : 'config.json'}
-              </Button>,
-              <Button
-                key="copy"
-                type="primary"
-                onClick={copyConfig}
-                size={isMobile ? 'small' : 'middle'}
-                icon={<CopyOutlined />}
-              >
-                Copy
-              </Button>,
-            ]}
+            footer={(
+              <>
+                <DSButton onClick={downloadConfig} size={isMobile ? 'sm' : 'md'} icon={<CloudDownloadOutlined />}>
+                  {isMobile ? 'Download' : 'config.json'}
+                </DSButton>
+                <DSButton variant="primary" onClick={copyConfig} size={isMobile ? 'sm' : 'md'} icon={<CopyOutlined />}>
+                  Copy
+                </DSButton>
+              </>
+            )}
           >
             <JsonEditor
               value={configText}
               onChange={setConfigText}
-              minHeight={isMobile ? '300px' : 'calc(100vh - 220px)'}
-              maxHeight={isMobile ? '70vh' : 'calc(100vh - 220px)'}
+              minHeight={isMobile ? '300px' : '60vh'}
+              maxHeight={isMobile ? '70vh' : '60vh'}
               readOnly
             />
-          </Modal>
+          </DSDialog>
         </LazyMount>
     </ConfigProvider>
   );

@@ -21,6 +21,16 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Radix dialogs (react-remove-scroll) pad the body to compensate for the hidden
+   scrollbar; but scrollbar-gutter:stable already reserves that space, so the
+   extra padding double-shifts the centered header/content ~2px on modal open.
+   Cancel it. Higher specificity (html body…) beats Radix's runtime-injected
+   `body[data-scroll-locked]{padding-right:…!important}` rule. */
+html body[data-scroll-locked] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
 body {
   min-height: 100vh;
   font-family: var(--font-sans);

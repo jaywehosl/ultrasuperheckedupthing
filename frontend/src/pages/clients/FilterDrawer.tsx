@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 
-import { Button, Drawer, Field, Input, Segmented, Tag } from '@/components/ds';
+import { Button, Dialog, Field, Input, Segmented, Tag } from '@/components/ds';
 import type { InboundOption } from '@/hooks/useClients';
 import { emptyFilters, type ClientFilters } from './filters';
 
@@ -63,11 +63,11 @@ export default function FilterDrawer({
   ];
 
   return (
-    <Drawer
+    <Dialog
       open={open}
       onOpenChange={onOpenChange}
       title={t('pages.clients.filterTitle')}
-      width={440}
+      width={520}
       footer={(
         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <Button danger onClick={() => onChange(emptyFilters())}>{t('pages.clients.clearAllFilters')}</Button>
@@ -152,6 +152,6 @@ export default function FilterDrawer({
           <Segmented value={filters.hasComment} onChange={(v) => patch('hasComment', v as ClientFilters['hasComment'])} options={triState} />
         </Field>
       </div>
-    </Drawer>
+    </Dialog>
   );
 }
