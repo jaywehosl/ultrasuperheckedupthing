@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Divider, Input, Modal, QRCode, message } from 'antd';
+import { QRCode } from 'antd'; // leaf QR renderer — no DS equivalent
 import * as OTPAuth from 'otpauth';
 
+import { Button, Dialog, Divider, Input } from '@/components/ds';
 import { ClipboardManager } from '@/utils';
+import { getMessage } from '@/utils/messageBus';
 import { TotpCodeSchema } from '@/schemas/login';
 import './TwoFactorModal.css';
 
@@ -29,14 +31,13 @@ export default function TwoFactorModal({
   onOpenChange,
 }: TwoFactorModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
   const [enteredCode, setEnteredCode] = useState('');
   const [qrValue, setQrValue] = useState('');
   const totpRef = useRef<OTPAuth.TOTP | null>(null);
 
   useEffect(() => {
     if (!open) return;
-     
     setEnteredCode('');
     totpRef.current = null;
     setQrValue('');
@@ -52,7 +53,6 @@ export default function TwoFactorModal({
       totpRef.current = totp;
       setQrValue(totp.toString());
     }
-     
   }, [open, token]);
 
   function close(success: boolean, code = '') {
@@ -64,7 +64,7 @@ export default function TwoFactorModal({
   function onOk() {
     const codeOk = TotpCodeSchema.safeParse(enteredCode);
     if (!codeOk.success) {
-      messageApi.error(t(codeOk.error.issues[0]?.message ?? 'pages.settings.security.twoFactorModalError'));
+      message.error(t(codeOk.error.issues[0]?.message ?? 'pages.settings.security.twoFactorModalError'));
       return;
     }
     if (type === 'confirm' && !token) {
@@ -72,11 +72,8 @@ export default function TwoFactorModal({
       return;
     }
     if (!totpRef.current) return;
-    if (totpRef.current.generate() === codeOk.data) {
-      close(true);
-    } else {
-      messageApi.error(t('pages.settings.security.twoFactorModalError'));
-    }
+    if (totpRef.current.generate() === codeOk.data) close(true);
+    else message.error(t('pages.settings.security.twoFactorModalError'));
   }
 
   function onCancel() {
@@ -85,23 +82,22 @@ export default function TwoFactorModal({
 
   async function copyToken() {
     const ok = await ClipboardManager.copyText(token);
-    if (ok) messageApi.success(t('copied'));
+    if (ok) message.success(t('copied'));
   }
 
+  const codeValid = TotpCodeSchema.safeParse(enteredCode).success;
+
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={title}
-        closable
-        onCancel={onCancel}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>{t('cancel')}</Button>,
-        <Button key="ok" type="primary" disabled={!TotpCodeSchema.safeParse(enteredCode).success} onClick={onOk}>
-          {t('confirm')}
-        </Button>,
-      ]}
+    <Dialog
+      open={open}
+      onOpenChange={(o) => { if (!o) onCancel(); }}
+      title={title}
+      footer={(
+        <>
+          <Button onClick={onCancel}>{t('cancel')}</Button>
+          <Button variant="primary" disabled={!codeValid} onClick={onOk}>{t('confirm')}</Button>
+        </>
+      )}
     >
       {type === 'set' ? (
         <>
@@ -125,15 +121,14 @@ export default function TwoFactorModal({
           </div>
           <Divider />
           <p>{t('pages.settings.security.twoFactorModalSecondStep')}</p>
-          <Input value={enteredCode} onChange={(e) => setEnteredCode(e.target.value)} style={{ width: '100%' }} />
+          <Input value={enteredCode} onChange={(e) => setEnteredCode(e.target.value)} />
         </>
       ) : (
         <>
           <p>{description}</p>
-          <Input value={enteredCode} onChange={(e) => setEnteredCode(e.target.value)} style={{ width: '100%' }} />
+          <Input value={enteredCode} onChange={(e) => setEnteredCode(e.target.value)} />
         </>
       )}
-      </Modal>
-    </>
+    </Dialog>
   );
 }
