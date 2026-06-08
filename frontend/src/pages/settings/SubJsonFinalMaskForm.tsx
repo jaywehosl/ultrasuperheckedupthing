@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Form } from 'antd';
 
 import { FinalMaskForm } from '@/lib/xray/forms/transport';
+import { FormProvider } from '@/lib/form/FormContext';
+import { useFormState } from '@/lib/form/useFormState';
 import type { FinalMaskStreamSettings } from '@/schemas/protocols/stream/finalmask';
 
 interface SubJsonFinalMaskFormProps {
@@ -27,12 +28,12 @@ function parseFinalMask(raw: string): FinalMaskStreamSettings {
 }
 
 export default function SubJsonFinalMaskForm({ value, onChange }: SubJsonFinalMaskFormProps) {
-  const [form] = Form.useForm();
   const [initial] = useState(() => parseFinalMask(value));
+  const ctl = useFormState<{ finalmask: FinalMaskStreamSettings }>(() => ({ finalmask: initial }));
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const finalmask = Form.useWatch('finalmask', form) as FinalMaskStreamSettings | undefined;
+  const finalmask = ctl.get<FinalMaskStreamSettings>(['finalmask']);
 
   useEffect(() => {
     if (finalmask === undefined) return;
@@ -41,15 +42,8 @@ export default function SubJsonFinalMaskForm({ value, onChange }: SubJsonFinalMa
   }, [finalmask, value]);
 
   return (
-    <Form
-      form={form}
-      layout="horizontal"
-      labelCol={{ flex: '160px' }}
-      wrapperCol={{ flex: 'auto' }}
-      colon={false}
-      initialValues={{ finalmask: initial }}
-    >
-      <FinalMaskForm name="finalmask" network="" protocol="" form={form} showAll />
-    </Form>
+    <FormProvider ctl={ctl}>
+      <FinalMaskForm name="finalmask" network="" protocol="" showAll />
+    </FormProvider>
   );
 }

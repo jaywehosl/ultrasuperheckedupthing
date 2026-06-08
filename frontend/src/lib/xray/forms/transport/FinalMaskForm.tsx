@@ -1,8 +1,3 @@
-import { useMemo } from 'react';
-import { Form } from 'antd';
-import type { FormInstance } from 'antd/es/form';
-import type { NamePath } from 'antd/es/form/interface';
-
 import { Button, Divider, Field, Input, Select, Switch } from '@/components/ds';
 import { TagListEditor } from '@/components/form';
 import { useFormCtl } from '@/lib/form/FormContext';
@@ -18,10 +13,6 @@ export interface FinalMaskFormProps {
   // When true, all sections (TCP / UDP / QUIC) are shown regardless of
   // network/protocol. Used by the global sub-JSON finalmask editor.
   showAll?: boolean;
-  // Legacy antd callers (OutboundFormModal, SubJsonFinalMaskForm) pass an
-  // antd FormInstance; the inbound subsystem omits it and relies on the
-  // controlled FormProvider context instead.
-  form?: FormInstance;
 }
 
 const TCP_NETWORKS = ['raw', 'tcp', 'httpupgrade', 'ws', 'grpc', 'xhttp'];
@@ -131,31 +122,9 @@ function SectionHead({ title, onRemove }: { title: string; onRemove: () => void 
 
 // ---- root --------------------------------------------------------------
 
-export default function FinalMaskForm({ name, network, protocol, showAll = false, form }: FinalMaskFormProps) {
-  // Stable branch: a given call site always passes `form` or never does, so
-  // each child component's hook order stays consistent across renders.
-  if (form) return <FinalMaskFormAntd name={name} network={network} protocol={protocol} showAll={showAll} form={form} />;
-  return <FinalMaskFormCtx name={name} network={network} protocol={protocol} showAll={showAll} />;
-}
-
-function FinalMaskFormCtx({ name, network, protocol, showAll }: Omit<FinalMaskFormProps, 'form'>) {
+export default function FinalMaskForm({ name, network, protocol, showAll = false }: FinalMaskFormProps) {
   const ctl = useFormCtl() as unknown as Ctl;
-  return <FinalMaskBody ctl={ctl} base={asPath(name)} network={network} protocol={protocol} showAll={!!showAll} />;
-}
-
-function FinalMaskFormAntd({ name, network, protocol, showAll, form }: FinalMaskFormProps & { form: FormInstance }) {
-  const base = asPath(name);
-  // Subscribe to the base subtree so antd-mode edits re-render the body.
-  const watched = Form.useWatch(base as NamePath, { form, preserve: true });
-  const ctl = useMemo<Ctl>(() => ({
-    values: form.getFieldsValue(true),
-    get: ((path: FieldPath) => form.getFieldValue(path as NamePath)) as Ctl['get'],
-    set: (path: FieldPath, value: unknown) => form.setFieldValue(path as NamePath, value),
-    unset: () => {},
-    reset: () => {},
-    setValues: () => {},
-  }), [form, watched]);
-  return <FinalMaskBody ctl={ctl} base={base} network={network} protocol={protocol} showAll={!!showAll} />;
+  return <FinalMaskBody ctl={ctl} base={asPath(name)} network={network} protocol={protocol} showAll={showAll} />;
 }
 
 function FinalMaskBody({ ctl, base, network, protocol, showAll }: { ctl: Ctl; base: FieldPath; network: string; protocol: string; showAll: boolean }) {
