@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Collapse, Modal, Spin } from 'antd';
+import { Dialog } from '@/components/ds';
+import { Spin } from '@/components/ui';
 import { HttpUtil } from '@/utils';
 import { isPostQuantumLink } from '@/lib/xray/inbound-link';
 import { LinkTags, linkMetaText, parseLinkParts } from '@/lib/xray/link-label';
@@ -123,14 +124,17 @@ export default function ClientQrModal({
     setActiveKey(items.length > 0 ? [items[0].key] : []);
   }, [open, items]);
 
+  function toggle(key: string, isOpen: boolean) {
+    setActiveKey((prev) => (isOpen ? [...new Set([...prev, key])] : prev.filter((k) => k !== key)));
+  }
+
   return (
-    <Modal
+    <Dialog
       open={open}
+      onOpenChange={(o) => { if (!o) onOpenChange(false); }}
       title={client ? `${t('qrCode')} — ${client.email}` : t('qrCode')}
       footer={null}
       width={520}
-      centered
-      onCancel={() => onOpenChange(false)}
     >
       <Spin spinning={loading}>
         {!client?.subId && !loading && (
@@ -140,13 +144,21 @@ export default function ClientQrModal({
           <div style={{ padding: 24, textAlign: 'center', opacity: 0.6 }}>{t('pages.clients.noLinks')}</div>
         )}
         {hasAnything && (
-          <Collapse
-            activeKey={activeKey}
-            onChange={(keys) => setActiveKey(typeof keys === 'string' ? [keys] : (keys as string[]))}
-            items={items}
-          />
+          <div className="qr-collapse-list">
+            {items.map((item) => (
+              <details
+                key={item.key}
+                className="ds-collapse"
+                open={activeKey.includes(item.key)}
+                onToggle={(e) => toggle(item.key, (e.currentTarget as HTMLDetailsElement).open)}
+              >
+                <summary>{item.label}</summary>
+                <div className="ds-collapse__body">{item.children}</div>
+              </details>
+            ))}
+          </div>
         )}
       </Spin>
-    </Modal>
+    </Dialog>
   );
 }
