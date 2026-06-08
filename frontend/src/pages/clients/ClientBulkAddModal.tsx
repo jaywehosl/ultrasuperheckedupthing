@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Modal, Space, message } from '@/components/ui';
-import { AutoComplete, Form, Input, InputNumber, Select, Switch } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 
+import { Button, Dialog, Field, Input, Select, Switch, Tag } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 import { RandomUtil, SizeFormatter } from '@/utils';
 import { TLS_FLOW_CONTROL } from '@/schemas/primitives';
 import { DateTimePicker } from '@/components/form';
@@ -13,10 +13,7 @@ import { useClients, type InboundOption } from '@/hooks/useClients';
 import { ClientBulkAddFormSchema, type ClientBulkAddFormValues } from '@/schemas/client';
 
 const FLOW_OPTIONS = Object.values(TLS_FLOW_CONTROL);
-
-const MULTI_CLIENT_PROTOCOLS = new Set([
-  'shadowsocks', 'vless', 'vmess', 'trojan', 'hysteria',
-]);
+const MULTI_CLIENT_PROTOCOLS = new Set(['shadowsocks', 'vless', 'vmess', 'trojan', 'hysteria']);
 
 interface ClientBulkAddModalProps {
   open: boolean;
@@ -31,21 +28,9 @@ type FormState = ClientBulkAddFormValues;
 
 function emptyForm(): FormState {
   return {
-    emailMethod: 0,
-    firstNum: 1,
-    lastNum: 1,
-    emailPrefix: '',
-    emailPostfix: '',
-    quantity: 1,
-    subId: '',
-    group: '',
-    comment: '',
-    flow: '',
-    limitIp: 0,
-    totalGB: 0,
-    expiryTime: 0,
-    reset: 0,
-    inboundIds: [],
+    emailMethod: 0, firstNum: 1, lastNum: 1, emailPrefix: '', emailPostfix: '',
+    quantity: 1, subId: '', group: '', comment: '', flow: '', limitIp: 0,
+    totalGB: 0, expiryTime: 0, reset: 0, inboundIds: [],
   };
 }
 
@@ -58,8 +43,9 @@ export default function ClientBulkAddModal({
   onSaved,
 }: ClientBulkAddModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
   const { bulkCreate } = useClients();
+  const groupListId = useId();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [delayedStart, setDelayedStart] = useState(false);
@@ -67,10 +53,8 @@ export default function ClientBulkAddModal({
 
   useEffect(() => {
     if (!open) return;
-
     setForm(emptyForm());
     setDelayedStart(false);
-
   }, [open]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -79,53 +63,35 @@ export default function ClientBulkAddModal({
 
   const flowCapableIds = useMemo(() => {
     const ids = new Set<number>();
-    for (const row of inbounds || []) {
-      if (row?.tlsFlowCapable) ids.add(row.id);
-    }
+    for (const row of inbounds || []) if (row?.tlsFlowCapable) ids.add(row.id);
     return ids;
   }, [inbounds]);
 
-  const showFlow = useMemo(
-    () => (form.inboundIds || []).some((id) => flowCapableIds.has(id)),
-    [form.inboundIds, flowCapableIds],
-  );
+  const showFlow = useMemo(() => (form.inboundIds || []).some((id) => flowCapableIds.has(id)), [form.inboundIds, flowCapableIds]);
 
   useEffect(() => {
-    if (!showFlow && form.flow) {
-
-      update('flow', '');
-    }
+    if (!showFlow && form.flow) update('flow', '');
   }, [showFlow, form.flow]);
 
   const inboundOptions = useMemo(
     () => (inbounds || [])
       .filter((ib) => MULTI_CLIENT_PROTOCOLS.has(ib.protocol || ''))
-      .map((ib) => ({
-        label: ib.remark?.trim() || ib.tag || '',
-        value: ib.id,
-      })),
+      .map((ib) => ({ label: ib.remark?.trim() || ib.tag || '', value: ib.id })),
     [inbounds],
   );
 
-  const expiryDate = useMemo<Dayjs | null>(
-    () => (form.expiryTime > 0 ? dayjs(form.expiryTime) : null),
-    [form.expiryTime],
-  );
+  function toggleInbound(id: number) {
+    update('inboundIds', form.inboundIds.includes(id) ? form.inboundIds.filter((x) => x !== id) : [...form.inboundIds, id]);
+  }
 
+  const expiryDate = useMemo<Dayjs | null>(() => (form.expiryTime > 0 ? dayjs(form.expiryTime) : null), [form.expiryTime]);
   const delayedExpireDays = form.expiryTime < 0 ? form.expiryTime / -86400000 : 0;
 
   function buildEmails(): string[] {
     const method = form.emailMethod;
     const out: string[] = [];
-    let start: number;
-    let end: number;
-    if (method > 1) {
-      start = form.firstNum;
-      end = form.lastNum + 1;
-    } else {
-      start = 0;
-      end = form.quantity;
-    }
+    let start: number; let end: number;
+    if (method > 1) { start = form.firstNum; end = form.lastNum + 1; } else { start = 0; end = form.quantity; }
     const prefix = method > 0 && form.emailPrefix.length > 0 ? form.emailPrefix : '';
     const useNum = method > 1;
     const postfix = method > 2 && form.emailPostfix.length > 0 ? form.emailPostfix : '';
@@ -141,7 +107,7 @@ export default function ClientBulkAddModal({
   async function submit() {
     const validated = ClientBulkAddFormSchema.safeParse(form);
     if (!validated.success) {
-      messageApi.error(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
+      message.error(t(validated.error.issues[0]?.message ?? 'somethingWentWrong'));
       return;
     }
     const emails = buildEmails();
@@ -173,9 +139,9 @@ export default function ClientBulkAddModal({
       const failed = skipped.length;
       const firstError = skipped[0]?.reason ?? msg?.msg ?? '';
       if (failed === 0 && msg?.success) {
-        messageApi.success(t('pages.clients.toasts.bulkCreated', { count: ok }));
+        message.success(t('pages.clients.toasts.bulkCreated', { count: ok }));
       } else {
-        messageApi.warning(firstError
+        message.warning(firstError
           ? `${t('pages.clients.toasts.bulkCreatedMixed', { ok, failed })} — ${firstError}`
           : t('pages.clients.toasts.bulkCreatedMixed', { ok, failed }));
       }
@@ -187,165 +153,129 @@ export default function ClientBulkAddModal({
   }
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={t('pages.clients.bulk')}
-        okText={t('create')}
-        cancelText={t('close')}
-        confirmLoading={saving}
-        mask={{ closable: false }}
-        width={640}
-        onOk={submit}
-        onCancel={() => onOpenChange(false)}
-      >
-        <Form colon={false} labelCol={{ sm: { span: 8 } }} wrapperCol={{ sm: { span: 14 } }}>
-          <Form.Item label={t('pages.clients.attachedInbounds')} required>
-            <Select
-              mode="multiple"
-              value={form.inboundIds}
-              onChange={(v) => update('inboundIds', v)}
-              options={inboundOptions}
-              placeholder={t('pages.clients.selectInbound')}
-              showSearch={{
-                filterOption: (input, option) => ((option?.label as string) || '').toLowerCase().includes(input.toLowerCase()),
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item label={t('pages.clients.method')}>
-            <Select
-              value={form.emailMethod}
-              onChange={(v) => update('emailMethod', v)}
-              options={[
-                { value: 0, label: 'Random' },
-                { value: 1, label: 'Random + Prefix' },
-                { value: 2, label: 'Random + Prefix + Num' },
-                { value: 3, label: 'Random + Prefix + Num + Postfix' },
-                { value: 4, label: 'Prefix + Num + Postfix' },
-              ]}
-            />
-          </Form.Item>
-
-          {form.emailMethod > 1 && (
-            <>
-              <Form.Item label={t('pages.clients.first')}>
-                <InputNumber value={form.firstNum} min={1} onChange={(v) => update('firstNum', Number(v) || 1)} />
-              </Form.Item>
-              <Form.Item label={t('pages.clients.last')}>
-                <InputNumber value={form.lastNum} min={form.firstNum} onChange={(v) => update('lastNum', Number(v) || 1)} />
-              </Form.Item>
-            </>
-          )}
-          {form.emailMethod > 0 && (
-            <Form.Item label={t('pages.clients.prefix')}>
-              <Input value={form.emailPrefix} onChange={(e) => update('emailPrefix', e.target.value)} />
-            </Form.Item>
-          )}
-          {form.emailMethod > 2 && (
-            <Form.Item label={t('pages.clients.postfix')}>
-              <Input value={form.emailPostfix} onChange={(e) => update('emailPostfix', e.target.value)} />
-            </Form.Item>
-          )}
-          {form.emailMethod < 2 && (
-            <Form.Item label={t('pages.clients.clientCount')}>
-              <InputNumber value={form.quantity} min={1} max={1000} onChange={(v) => update('quantity', Number(v) || 1)} />
-            </Form.Item>
-          )}
-
-          <Form.Item label={t('pages.clients.subId')}>
-            <Space.Compact style={{ display: 'flex' }}>
-              <Input
-                value={form.subId}
-                onChange={(e) => update('subId', e.target.value)}
-                style={{ flex: 1 }}
-              />
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={() => update('subId', RandomUtil.randomLowerAndNum(16))}
-              />
-            </Space.Compact>
-          </Form.Item>
-
-          <Form.Item label={t('pages.clients.group')} tooltip={t('pages.clients.groupDesc')}>
-            <AutoComplete
-              value={form.group}
-              placeholder={t('pages.clients.groupPlaceholder')}
-              options={groups.map((g) => ({ value: g }))}
-              onChange={(v) => update('group', v ?? '')}
-              filterOption={(input, option) =>
-                String(option?.value ?? '').toLowerCase().includes((input || '').toLowerCase())
-              }
-              allowClear
-              style={{ width: '100%' }}
-            />
-          </Form.Item>
-
-          <Form.Item label={t('comment')}>
-            <Input value={form.comment} onChange={(e) => update('comment', e.target.value)} />
-          </Form.Item>
-
-          {showFlow && (
-            <Form.Item label={t('pages.clients.flow')}>
-              <Select
-                value={form.flow}
-                onChange={(v) => update('flow', v)}
-                style={{ width: 220 }}
-                options={[
-                  { value: '', label: t('none') },
-                  ...FLOW_OPTIONS.map((k) => ({ value: k, label: k })),
-                ]}
-              />
-            </Form.Item>
-          )}
-
-          {ipLimitEnable && (
-            <Form.Item label={t('pages.clients.limitIp')}>
-              <InputNumber value={form.limitIp} min={0} onChange={(v) => update('limitIp', Number(v) || 0)} />
-            </Form.Item>
-          )}
-
-          <Form.Item label={t('pages.clients.totalGB')}>
-            <InputNumber value={form.totalGB} min={0} step={1} onChange={(v) => update('totalGB', Number(v) || 0)} />
-          </Form.Item>
-
-          <Form.Item label={t('pages.clients.delayedStart')}>
-            <Switch
-              checked={delayedStart}
-              onClick={() => { setDelayedStart(!delayedStart); update('expiryTime', 0); }}
-            />
-          </Form.Item>
-
-          {delayedStart ? (
-            <Form.Item label={t('pages.clients.expireDays')}>
-              <InputNumber
-                value={delayedExpireDays}
-                min={0}
-                onChange={(v) => update('expiryTime', -86400000 * (Number(v) || 0))}
-              />
-            </Form.Item>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => { if (!o && !saving) onOpenChange(false); }}
+      title={t('pages.clients.bulk')}
+      okText={t('create')}
+      confirmLoading={saving}
+      width={640}
+      onOk={submit}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Field label={t('pages.clients.attachedInbounds')}>
+          {inboundOptions.length === 0 ? (
+            <span className="ds-muted">—</span>
           ) : (
-            <Form.Item label={t('pages.inbounds.expireDate')}>
-              <DateTimePicker
-                value={expiryDate}
-                onChange={(next) => update('expiryTime', next ? next.valueOf() : 0)}
-              />
-            </Form.Item>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {inboundOptions.map((o) => (
+                <Tag key={o.value} tone={form.inboundIds.includes(o.value) ? 'primary' : 'neutral'} onClick={() => toggleInbound(o.value)} style={{ cursor: 'pointer' }}>
+                  {o.label}
+                </Tag>
+              ))}
+            </div>
           )}
+        </Field>
 
-          <Form.Item
-            label={t('pages.clients.renew')}
-            tooltip={t('pages.clients.renewDesc')}
-          >
-            <InputNumber
-              value={form.reset}
-              min={0}
-              onChange={(v) => update('reset', Number(v) || 0)}
+        <Field label={t('pages.clients.method')}>
+          <Select
+            value={String(form.emailMethod)}
+            onChange={(v) => update('emailMethod', Number(v))}
+            options={[
+              { value: '0', label: 'Random' },
+              { value: '1', label: 'Random + Prefix' },
+              { value: '2', label: 'Random + Prefix + Num' },
+              { value: '3', label: 'Random + Prefix + Num + Postfix' },
+              { value: '4', label: 'Prefix + Num + Postfix' },
+            ]}
+          />
+        </Field>
+
+        {form.emailMethod > 1 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <Field label={t('pages.clients.first')}>
+              <Input type="number" min={1} value={form.firstNum} onChange={(e) => update('firstNum', Number(e.target.value) || 1)} />
+            </Field>
+            <Field label={t('pages.clients.last')}>
+              <Input type="number" min={form.firstNum} value={form.lastNum} onChange={(e) => update('lastNum', Number(e.target.value) || 1)} />
+            </Field>
+          </div>
+        )}
+        {form.emailMethod > 0 && (
+          <Field label={t('pages.clients.prefix')}>
+            <Input value={form.emailPrefix} onChange={(e) => update('emailPrefix', e.target.value)} />
+          </Field>
+        )}
+        {form.emailMethod > 2 && (
+          <Field label={t('pages.clients.postfix')}>
+            <Input value={form.emailPostfix} onChange={(e) => update('emailPostfix', e.target.value)} />
+          </Field>
+        )}
+        {form.emailMethod < 2 && (
+          <Field label={t('pages.clients.clientCount')}>
+            <Input type="number" min={1} max={1000} value={form.quantity} onChange={(e) => update('quantity', Number(e.target.value) || 1)} />
+          </Field>
+        )}
+
+        <Field label={t('pages.clients.subId')}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Input value={form.subId} onChange={(e) => update('subId', e.target.value)} style={{ flex: 1 }} />
+            <Button icon={<ReloadOutlined />} onClick={() => update('subId', RandomUtil.randomLowerAndNum(16))} />
+          </div>
+        </Field>
+
+        <Field label={t('pages.clients.group')}>
+          <Input
+            list={groupListId}
+            value={form.group}
+            placeholder={t('pages.clients.groupPlaceholder')}
+            onChange={(e) => update('group', e.target.value)}
+          />
+          <datalist id={groupListId}>{groups.map((g) => <option key={g} value={g} />)}</datalist>
+        </Field>
+
+        <Field label={t('comment')}>
+          <Input value={form.comment} onChange={(e) => update('comment', e.target.value)} />
+        </Field>
+
+        {showFlow && (
+          <Field label={t('pages.clients.flow')}>
+            <Select
+              value={form.flow}
+              onChange={(v) => update('flow', v)}
+              options={[{ value: '', label: t('none') }, ...FLOW_OPTIONS.map((k) => ({ value: k, label: k }))]}
             />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </>
+          </Field>
+        )}
+
+        {ipLimitEnable && (
+          <Field label={t('pages.clients.limitIp')}>
+            <Input type="number" min={0} value={form.limitIp} onChange={(e) => update('limitIp', Number(e.target.value) || 0)} />
+          </Field>
+        )}
+
+        <Field label={t('pages.clients.totalGB')}>
+          <Input type="number" min={0} step={1} value={form.totalGB} onChange={(e) => update('totalGB', Number(e.target.value) || 0)} />
+        </Field>
+
+        <Field label={t('pages.clients.delayedStart')}>
+          <Switch checked={delayedStart} onChange={() => { setDelayedStart(!delayedStart); update('expiryTime', 0); }} />
+        </Field>
+
+        {delayedStart ? (
+          <Field label={t('pages.clients.expireDays')}>
+            <Input type="number" min={0} value={delayedExpireDays} onChange={(e) => update('expiryTime', -86400000 * (Number(e.target.value) || 0))} />
+          </Field>
+        ) : (
+          <Field label={t('pages.inbounds.expireDate')}>
+            <DateTimePicker value={expiryDate} onChange={(next) => update('expiryTime', next ? next.valueOf() : 0)} />
+          </Field>
+        )}
+
+        <Field label={t('pages.clients.renew')}>
+          <Input type="number" min={0} value={form.reset} onChange={(e) => update('reset', Number(e.target.value) || 0)} />
+        </Field>
+      </div>
+    </Dialog>
   );
 }
