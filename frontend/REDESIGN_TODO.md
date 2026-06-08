@@ -32,9 +32,32 @@ asymmetric/flickering open-close ✅.
   tooltip 1200) + nested portals inside Dialog; fix stacking order. Reported by user.
 - General "more organic" spacing/composition pass across migrated pages.
 
-## NEXT: continue page migration
+## INBOUNDS / XRAY (the monsters) — in progress
+~75 antd files. Decision (user): **full controlled-state rewrite, no antd Form
+abstraction.** Keystone built: `src/lib/form/useFormState.ts` — nested-path
+get/set controller (`getIn/setIn/unsetIn` + `useFormState`) that replaces antd
+`Form` (useForm/getFieldValue/setFieldValue) and `useWatch`/`shouldUpdate`
+(plain React state is already reactive). Form-field components take a
+`FormController` instead of antd `FormInstance` and render DS `Field`+inputs,
+reading/writing via `ctl.get/ctl.set`.
+
+Rollout order (smallest standalone first to lock the pattern, then the giants):
+1. Standalone xray modals: balancers/BalancerFormModal, dns/DnsServerModal,
+   routing/RuleFormModal — validate the controller pattern end-to-end.
+2. inbounds form-field components: form/protocols/*, form/transport/*,
+   form/security/* (each: FormInstance -> FormController, DS fields).
+3. Orchestrators: InboundFormModal (973), xray OutboundFormModal (612) +
+   useInbounds / adapters wiring.
+4. InboundInfoModal (839), list pages (InboundList/useInboundColumns), xray tabs.
+5. `@/components/form` DateTimePicker + HeaderMapEditor + JsonEditor -> DS.
+6. lib/xray/forms/transport/FinalMaskForm (782) -> controller (used by settings
+   SubJsonFinalMaskForm too).
+7. QR: QrPanel + QrCodeModal + ClientQrModal + TwoFactorModal (needs DS Accordion).
+
+✅ Done so far in this block: lib/xray/link-label -> DS Tag.
+
+## DONE pages
 - ✅ nodes (full), ✅ groups (pilot), ✅ Panel Settings (full), ✅ clients (full).
-- **inbounds** / **xray** (the monsters) next.
 - Deferred QR work (user): `ClientQrModal` still on antd Modal/Collapse + `QrPanel`;
   `TwoFactorModal` keeps antd `QRCode`; `QrPanel` (@/pages/inbounds/qr) is the QR
   renderer. Tackle all QR together. Needs a DS Accordion (no Radix accordion
