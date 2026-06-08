@@ -339,6 +339,21 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 .ds-menu__item--danger { color: var(--color-error); }
 .ds-menu__sep { height: 1px; margin: 6px 4px; background: var(--hairline-soft); }
 
+/* ---- Popover (Radix, arbitrary content) ----------------------------------- */
+.ds-popover {
+  min-width: 120px;
+  max-width: min(360px, calc(100vw - 24px));
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--elev-3), inset 0 1px 0 var(--specular);
+  z-index: 1100;
+  animation: ds-fade-in var(--dur-fast) var(--ease-out-quint);
+}
+.ds-popover--padded { padding: 12px; }
+
 /* ---- Tooltip (Radix) ------------------------------------------------------ */
 .ds-tooltip {
   padding: 6px 10px;

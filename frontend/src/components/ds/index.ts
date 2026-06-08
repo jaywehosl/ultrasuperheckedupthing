@@ -26,6 +26,9 @@ export type { DropdownMenuProps, MenuItem, MenuEntry } from './DropdownMenu';
 export { Tooltip, TooltipProvider } from './Tooltip';
 export type { TooltipProps } from './Tooltip';
 
+export { Popover } from './Popover';
+export type { PopoverProps } from './Popover';
+
 export { DataTable } from './DataTable';
 export type { DataTableProps, DataTableRowSelection, DataTableExpandable, ColumnDef } from './DataTable';
 
