@@ -218,9 +218,14 @@ Big clusters, roughly in dependency order:
 1. ~~**Outbounds**~~ ✅ **DONE** (commits `cddac16`, `b1533ba`) — see §4.
    Note: `FinalMaskForm`'s antd adapter still can't be removed yet because
    `SubJsonFinalMaskForm` (settings) still uses it.
-2. **Inbound list + info + QR:** `src/pages/inbounds/list/` (`InboundList`,
-   `RowActions`, `useInboundColumns`), `inbounds/info/InboundInfoModal.tsx` (~839
-   lines), `inbounds/qr/` (`QrCodeModal`, `QrPanel`).
+2. ~~**Inbound list + info + QR**~~ ✅ **DONE** (commits `6d48899`, `3fccd58`).
+   List layer → DS `DataTable`/`DropdownMenu`/`ColumnDef`; `InboundInfoModal`
+   Divider/Tabs → DS; `QrCodeModal` Collapse → `.ds-collapse`; `QrPanel` → DS.
+   **Exceptions left on purpose:** antd `QRCode` stays in `QrPanel` (no DS QR
+   renderer / no qrcode lib installed — infra exception like `messageBus`); and
+   `InboundInfoModal`/`QrCodeModal` still use the CustomUI `Modal` shell + a few
+   CustomUI shims (Button/Space/Tag/Tooltip) — those belong to the §8 shim layer,
+   not raw antd.
 3. **Xray page tabs:** `src/pages/xray/` — `XrayPage`, `basics/BasicsTab`,
    `routing/*` (RoutingTab, RuleFormModal, RuleCardList, CriterionRow,
    RoutingBasic, useRoutingColumns), `dns/*` (DnsTab, DnsServerModal,
@@ -316,12 +321,14 @@ For each subsystem (a modal + its field tree):
    `ds.css` and `NodeFormModal.tsx`/`InboundFormModal.tsx`.
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
-3. Pick the next subsystem from §5 (Outbounds is now done — recommended next:
-   **Inbound list/info/QR** or **Xray page tabs**), apply §6 recipe.
+3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR are now
+   done — recommended next: **Xray page tabs** routing/dns/balancers/overrides),
+   apply §6 recipe.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `b1533ba` (outbounds display layer) on
-> `redesign/ds-foundation`. Inbound modal + **Outbounds** subsystems = done;
-> §5 items 2–9 = open. Suite green at 397/25 files.
+> Current branch tip: `3fccd58` (inbound info+QR) on `redesign/ds-foundation`.
+> Inbound modal + **Outbounds** + **Inbound list/info/QR** = done;
+> §5 items 3–9 = open (next recommended: **Xray page tabs** — routing/dns/
+> balancers/overrides). Suite green at 397/25 files.
