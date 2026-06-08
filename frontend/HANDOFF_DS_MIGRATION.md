@@ -387,3 +387,125 @@ For each subsystem (a modal + its field tree):
 > What's left is pure polish: the ~25 baseline TS6133 unused-import warnings
 > (mostly AppSidebar dead icon imports + CustomUI), and any visual QA on the
 > newly-migrated LoginPage / AppSidebar lang menu / toasts that needs a running app.
+
+---
+
+## 10. Dashboard → "metrics status-bar" redesign (IN PROGRESS — read this)
+
+> antd migration is 100% done. This section is a **post-migration product
+> redesign** of the home dashboard, driven interactively by the user. It is
+> **not finished** — there are open visual requirements (§10.4) the user just
+> gave. A second agent should continue from here.
+
+### 10.1 What the dashboard became (the concept the user signed off on)
+
+The old `IndexPage` had ~12 antd-ish tiles (one stat per tile) — the user called
+it bloated. We replaced it with:
+
+- **A landing hero.** The `#dashboard` feed section is now just the login-style
+  tagline ("Experience liftoff with next-gen connection management" / "A clean,
+  spacious, …"), reusing the exact login typography (`.dash-hero-title/subtitle`
+  copy the `.login-hero-*` rules 1:1). The page is now: hero → inbounds →
+  clients → groups → nodes.
+- **A pull-down metrics status-bar.** A full-width bar that drops down *below the
+  header*, mirroring the header's glass + 3-zone layout. It is the *only* place
+  telemetry lives now. Opens/closes; stays open until toggled (no auto-dismiss).
+
+### 10.2 Architecture (files + how it's wired)
+
+- **`src/layouts/MetricsPanelContext.tsx`** — tiny context: `{ open, setOpen,
+  toggle }`. Provider mounted in `PanelLayout` so the header and the bar share
+  one open-state.
+- **`src/layouts/PanelLayout.tsx`** — wraps `<AppSidebar/>` + `<MetricsPanel/>` +
+  `<Outlet/>` in `<MetricsPanelProvider>`. The bar is **global** (every route).
+- **`src/layouts/AppSidebar.tsx` / `.css`** — the header.
+  - The **brand logo is the bar toggle** (`onLogoClick = toggleMetrics`) — it
+    NO LONGER navigates anywhere (deliberate, slightly-hidden feature).
+  - The **"Overview" nav item** = `window.scrollTo({top:0})` (or navigate home
+    from another route) **+ open the bar**. (Plain `scrollIntoView` left it ~80px
+    short under the fixed header — that's why it's `scrollTo(0)`.)
+  - Header gets `.metrics-open` class while the bar is open → its bottom divider
+    is hidden so header+bar read as one glass surface (see §10.4 — NOT fully
+    solved).
+  - Header nav + bar controls share an **absolute-centered 8-column grid**
+    (`--nav-band-w: 760px`, defined in AppSidebar.css) so each header button sits
+    above its bar control. `.header-center` and `.mb-center` are both
+    `position:absolute; left:50%; translateX(-50%); width:var(--nav-band-w)`.
+- **`src/pages/index/MetricsPanel.tsx` / `.css`** — the bar. **Self-contained**:
+  owns `useStatusQuery` (status is warm because the query is global/polled — no
+  empty flash on open), `ipLimit`-free action set, the lazy action modals
+  (Log/Backup/SystemHistory/XrayMetrics/Version), the busy overlay, and the
+  `message.useMessage()`+`setMessageInstance` toast wiring. Three zones:
+  - **LEFT (`.mb-left`, under the logo):** 4 **vertical equalizer gauges**
+    (CPU/RAM/Swap/Storage) — icon on top, load-colored vertical fill, % below,
+    NO labels, NO per-tile frames. Fill color from `status.*.color` mapped via
+    `dialColor()`.
+  - **CENTER (`.mb-center`, under the nav):** 8 controls styled as
+    `.nav-menu-item`: an Xray **state indicator** (dot + Running/Stopped) +
+    Stop · Restart · Backup&Restore · Logs · System History · Xray Metrics ·
+    Xray Version (opens the version-switch modal).
+  - **RIGHT (`.mb-right`, under theme/lang/logout):** categorized text — colored
+    ↑/↓ speed, a TCP/UDP row, two colored **uptime pills** (Xray / OS, the label
+    is only in `title`), and a stacked **IPv4/IPv6 column** (unlabeled, blurred,
+    with the eye-toggle button where the old × used to be).
+- **`src/pages/index/IndexPage.tsx` / `.css`** — now just the hero + the 5 feed
+  sections. No status, no modals, no panel (all moved to MetricsPanel).
+- **Deleted:** `StatusCard.{tsx,css}`, `XrayStatusCard.{tsx,css}` (the old dial
+  cockpit + xray card — superseded by the bar).
+
+### 10.3 Hard constraints already baked in
+
+- **GLASS RULE (§2.4) for the bar:** it animates via **`max-height` only**
+  (+ `overflow:hidden`), never transform/opacity — otherwise the frosted glass on
+  the bar dies. Keep it that way.
+- **Content pruned per the user (do NOT re-add):** Telegram link, GitHub link,
+  Config viewer, 3X-UI panel version + panel-update feature, Threads, numeric
+  app-RAM, total sent/received. (It's a fork → upstream version/update is moot.)
+- Commits so far: `c50bd10` (first DS-tile consolidation, since superseded),
+  `0ec3f72` (pull-down panel + hero), `74a6a77` (full-width header-mirrored bar),
+  `9c7b6d7` (alignment + seam attempt + right-zone categories). tsc 0, suite
+  397/25, `vite build` OK at each.
+
+### 10.4 OPEN requirements the user just gave (DO THESE NEXT)
+
+The user reviewed `9c7b6d7` and asked for the following (no code was written for
+these yet — this is the to-do):
+
+1. **Fixed-size buttons + logo zone, regardless of text.** The 8-col grid still
+   doesn't line up and the gauges still don't span the logo width. The user wants
+   **every header/bar button to be a fixed identical size** (text centered
+   inside), with a **single uniform gap** between them; and the **logo zone /
+   gauge band to be a fixed width** too. Type the sizes explicitly rather than
+   relying on content width. Goal: header button N pixel-aligned over bar control
+   N, gauges exactly spanning the logo width.
+2. **Header active state is broken.** Clicking a real page button (Clients,
+   Groups, …) does NOT keep it highlighted. The `is-active` logic in
+   `AppSidebar.tsx` only matches hash routes on `/`; fix it so the active
+   route/page button stays selected (route-based `is-active`).
+3. **Right zone → 6 uniform pills.** Wrap the ↑ speed, ↓ speed, TCP, UDP into
+   pills as well (like the uptime pills), so there are **6 pills total** (speed×2,
+   conn×2, uptime×2), **all the same fixed size**, aligned in a tidy grid (under
+   each other). Give each pill a shared fixed size.
+4. **The blur seam is still visible (the real problem).** Even with the header
+   divider removed, screenshot shows a clear render boundary between the header
+   glass and the bar glass — "like a mirror made of two mirrors". Two separate
+   `backdrop-filter` layers composite independently, so the seam shows. The
+   border-bottom trick did NOT solve it. **Needs a real fix** — ideas to explore:
+   render header + bar as ONE element / one shared backdrop-filter surface (e.g.,
+   the bar is a child of the header, or a single wrapper carries the only
+   backdrop-filter and both rows are non-blurred children over it), or drop the
+   bar's own backdrop-filter and let it sit over a single continuous blurred
+   layer. This is the priority visual bug.
+
+### 10.5 Phase 2 (notifications — NOT started)
+
+The user wants the bar to also host actionable notifications (separate phase):
+- An **"unsaved changes / restart needed"** banner with **Save** + **Restart
+  panel** buttons (needs a global "dirty" state + the relevant endpoints).
+- **Security warnings** sourced from `…/panel/settings`.
+- Xray-core crash errors (already available via `status.xray.errorMsg` — the bar
+  already shows the state dot; a full error surface can live here too).
+
+> Next agent: tackle §10.4 (esp. #4 the seam, and #1/#3 the fixed-size grid +
+> pills) before phase 2. Keep the glass-rule max-height animation. tsc/suite/
+> build must stay green; never stage `vite.config.js`.
