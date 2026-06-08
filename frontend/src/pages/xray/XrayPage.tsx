@@ -279,7 +279,7 @@ export default function XrayPage() {
               buttonStyle="solid"
               size={isMobile ? 'small' : 'middle'}
               style={{ margin: '12px 0' }}
-              onChange={(e) => setAdvSettings(e.target.value)}
+              onChange={(e: { target: { value: string } }) => setAdvSettings(e.target.value as typeof advSettings)}
             >
               <Radio.Button value="xraySetting">{t('pages.xray.completeTemplate')}</Radio.Button>
               <Radio.Button value="inboundSettings">{t('pages.xray.Inbounds')}</Radio.Button>

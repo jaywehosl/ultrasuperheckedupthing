@@ -19,7 +19,7 @@
 .danger-icon {
   margin-left: 8px;
   cursor: pointer;
-  color: var(--ant-color-error);
+  color: var(--color-error);
 }
 
 .online-dot {
@@ -29,7 +29,7 @@
   border-radius: 50%;
   margin-inline-end: 5px;
   vertical-align: middle;
-  background: var(--ant-color-success);
+  background: var(--color-success);
   animation: online-blink 1.1s ease-in-out infinite;
 }
 

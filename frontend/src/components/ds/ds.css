@@ -327,7 +327,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow: var(--elev-3), inset 0 1px 0 var(--specular);
-  z-index: 1100;
+  z-index: 1200;
   animation: ds-fade-in var(--dur-fast) var(--ease-out-quint);
 }
 .ds-menu__item {
@@ -352,7 +352,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow: var(--elev-3), inset 0 1px 0 var(--specular);
-  z-index: 1100;
+  z-index: 1200;
   animation: ds-fade-in var(--dur-fast) var(--ease-out-quint);
 }
 .ds-popover--padded { padding: 12px; }
@@ -365,7 +365,9 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   border-radius: var(--radius-sm);
   font-size: 12px; font-weight: 500;
   box-shadow: var(--elev-2);
-  z-index: 1200;
+  /* tooltips always sit above every other floating layer (menus, popovers,
+     selects at 1200) so a tooltip inside a QR popover/menu never hides behind it */
+  z-index: 1400;
   animation: ds-fade-in var(--dur-fast) var(--ease-out-quint);
 }
 
@@ -632,7 +634,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   backdrop-filter: blur(30px) saturate(180%);
   box-shadow: 0 20px 50px rgba(18, 19, 23, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   overflow: hidden;
-  z-index: 1100;
+  z-index: 1200;
 }
 .is-dark .ds-select__content { background: rgba(21, 22, 29, 0.4); border-color: rgba(255, 255, 255, 0.1); }
 .ds-select__item {
@@ -688,6 +690,50 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 .ds-table__expand-btn:hover { background: var(--surface-hover); color: var(--text-1); }
 .ds-table__expand-btn.is-open { transform: rotate(90deg); }
 .ds-table__expanded-cell { padding: 0 !important; background: var(--surface-inset); }
+
+/* ---- Toast (DS message system) -------------------------------------------- */
+.ds-toast-viewport {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+.ds-toast {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: var(--elev-3), inset 0 1px 0 var(--specular);
+  color: var(--text-1);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  animation: ds-toast-in var(--dur-mid) var(--ease-out-expo);
+}
+.ds-toast__icon { font-size: 15px; line-height: 1; display: inline-flex; }
+.ds-toast__text { min-width: 0; overflow-wrap: anywhere; }
+.ds-toast--success .ds-toast__icon { color: var(--color-success); }
+.ds-toast--error .ds-toast__icon { color: var(--color-error); }
+.ds-toast--warning .ds-toast__icon { color: var(--color-warning); }
+.ds-toast--info .ds-toast__icon { color: var(--color-primary); }
+@keyframes ds-toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* ---- shared animations ---------------------------------------------------- */
 @keyframes ds-fade-in { from { opacity: 0; } to { opacity: 1; } }

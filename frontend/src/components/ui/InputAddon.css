@@ -5,12 +5,12 @@
   height: 32px;
   font-size: 14px;
   line-height: 30px;
-  background-color: var(--ant-color-fill-tertiary);
-  border: 1px solid var(--ant-color-border);
+  background-color: var(--surface-2);
+  border: 1px solid var(--surface-border);
   border-radius: 6px;
   position: relative;
   z-index: 1;
-  color: var(--ant-color-text);
+  color: var(--text-1);
   white-space: nowrap;
 }
 

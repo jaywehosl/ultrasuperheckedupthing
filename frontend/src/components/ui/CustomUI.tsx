@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { toast as dsToast } from '@/components/ds/Toast';
 
 // Generate responsive grid styles dynamically at runtime to support all standard breakpoints and layout spans
 if (typeof document !== 'undefined') {
@@ -315,7 +316,7 @@ Modal.useModal = function useModal() {
     </>
   );
 
-  return [modalApi, contextHolder];
+  return [modalApi, contextHolder] as const;
 };
 
 
@@ -432,40 +433,15 @@ export function ConfigProvider({ children }: any) {
   return children;
 }
 
-// Custom Toast notification singleton
-let toastContainer: HTMLDivElement | null = null;
-function createToastContainer() {
-  if (toastContainer) return toastContainer;
-  toastContainer = document.createElement('div');
-  toastContainer.className = 'custom-toast-container';
-  document.body.appendChild(toastContainer);
-  return toastContainer;
-}
-
+// Toast — delegate to the unified DS toaster (single message system).
 export const message = {
-  success: (msg: string) => showToast('success', msg),
-  error: (msg: string) => showToast('error', msg),
-  warning: (msg: string) => showToast('warning', msg),
-  info: (msg: string) => showToast('info', msg),
-  useMessage: () => {
-    return [message, <div key="message-placeholder" />];
-  },
+  success: (msg: React.ReactNode) => dsToast.success(msg),
+  error: (msg: React.ReactNode) => dsToast.error(msg),
+  warning: (msg: React.ReactNode) => dsToast.warning(msg),
+  info: (msg: React.ReactNode) => dsToast.info(msg),
+  config: (_opts?: unknown) => { void _opts; },
+  useMessage: () => [message, null] as const,
 };
-
-function showToast(type: 'success' | 'error' | 'warning' | 'info', msg: string) {
-  const container = createToastContainer();
-  const toast = document.createElement('div');
-  toast.className = `custom-toast toast-${type}`;
-  toast.innerHTML = `
-    <span class="toast-indicator"></span>
-    <span class="toast-text">${msg}</span>
-  `;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add('toast-fade-out');
-    setTimeout(() => toast.remove(), 400);
-  }, 3000);
-}
 
 // Tooltip replacement
 export function Tooltip({ title, children, placement = 'top' }: any) {

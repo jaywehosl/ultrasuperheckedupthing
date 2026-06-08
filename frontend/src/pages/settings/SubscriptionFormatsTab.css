@@ -1,6 +1,6 @@
 .format-settings {
   margin-bottom: 8px;
-  border: 1px solid var(--ant-color-border-secondary);
+  border: 1px solid var(--hairline-soft);
   border-radius: 8px;
   overflow: hidden;
 }

@@ -1,6 +1,6 @@
 .version-list {
   width: 100%;
-  border: 1px solid var(--ant-color-border-secondary);
+  border: 1px solid var(--hairline-soft);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -10,7 +10,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 24px;
-  border-bottom: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--hairline-soft);
 }
 
 .version-list-item:last-child {

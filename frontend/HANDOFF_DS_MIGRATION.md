@@ -346,27 +346,38 @@ For each subsystem (a modal + its field tree):
    `ds.css` and `NodeFormModal.tsx`/`InboundFormModal.tsx`.
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
-3. §5 items 1–8 are all done. What's left is **item 9 (deferred / cross-cutting)**:
-   - The `--ant-color-*` CSS sweep (many `src/pages/index/*.css` + scattered
-     others still reference antd CSS vars — grep `--ant-` across `src`).
-   - A DS toast system to replace the antd `message` backend (`utils/messageBus.ts`,
-     `entries/*` `message.config`, `main.tsx`) → then drop `antd/dist/reset.css`.
-   - A DS QR renderer to retire the antd `QRCode` leaf (SubPage, QrPanel,
-     TwoFactorModal).
-   - A DS date input to replace `DateTimePicker` (antd DatePicker + persian).
-   - Modal z-index / layering polish (user-flagged "баги слоями").
-   - Clean residual `@ant-design/icons` only once a DS icon set exists (low pri —
-     icons are the accepted convention for now).
-   Confirm with the user which of these to tackle; several are cross-cutting infra.
+3. §5 items 1–8 done. **Item 9 (cross-cutting infra) progress:**
+   - ✅ **9.1 `--ant-color-*` CSS sweep** — all 107 refs across 28 files mapped to
+     DS tokens (theme-aware); `grep --ant- src` is now clean.
+   - ✅ **9.2 DS toast system** — new `components/ds/Toast.tsx` (`toast` API +
+     `ToastViewport`). `messageBus` + CustomUI `message` both delegate to it;
+     antd `message` removed from `main.tsx`/`entries/*` (+ `<ToastViewport/>`
+     mounted in all 3 entries); LoginPage stopped registering an antd message.
+     **Bonus:** fixed the pre-red baseline (`Modal.useModal` `as const`, XrayPage
+     implicit-any) → `tsc` now has **0 non-TS6133 errors**.
+   - ✅ **9.4 DS date input** — `DateTimePicker` gregorian branch = DS-styled
+     native `datetime-local`/`date`; jalali still via `persian-calendar-suite`.
+     antd `DatePicker` gone.
+   - ✅ **9.5 z-index/layering** — coherent DS scale: overlay 1000 → dialog/drawer
+     1001 → menu/popover/select 1200 → tooltip 1400 → toast 2000.
+   - ⏳ **9.3 drop `antd/dist/reset.css`** — BLOCKED, bigger than it looks. reset.css
+     is required by every remaining antd component, namely the **un-migrated shell
+     pages**: `layouts/AppSidebar.tsx` (Menu/Popover/Space), `pages/login/LoginPage.tsx`
+     (full antd canon screen: Form/Input/Button/Layout/Menu/Popover/Space/Spin),
+     `pages/api-docs/ApiDocsPage.tsx` (ConfigProvider/Layout), `hooks/useTheme.tsx`
+     (antd ThemeConfig for `antdThemeConfig`), plus antd `QRCode` leaf (SubPage,
+     QrPanel, TwoFactorModal — needs a qr lib; none installed). **Needs a user
+     decision** (install a QR dep? migrate the canon login screen?) before reset.css
+     can go. Until then antd stays a dep; that's fine.
+   - Residual `@ant-design/icons` everywhere is the accepted convention (low pri).
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `164c128` (sub pages) on `redesign/ds-foundation`.
-> Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** +
-> **Settings** + **Clients leftovers/QR** + **Index/dashboard modals** +
-> **Sub pages** + **Shared shims** = done; `FinalMaskForm` is context-only.
-> **All feature pages/modals are off raw antd** — only documented leaf/infra
-> exceptions remain (antd `QRCode`, antd `message` backend, `@ant-design/icons`,
-> `DateTimePicker`). §5 items 1–8 done; only **item 9 (cross-cutting infra)** open.
+> All feature pages/modals off raw antd. §5 items 1–8 + item 9 sub-tasks
+> 9.1 (CSS sweep), 9.2 (DS toast), 9.4 (DS date), 9.5 (z-index) all done.
+> antd `message` backend, antd `DatePicker`, and all `--ant-*` CSS vars are GONE.
+> **Only 9.3 (drop reset.css) remains** — blocked on migrating the antd shell
+> pages (AppSidebar, LoginPage canon, ApiDocsPage, useTheme ThemeConfig) +
+> replacing antd `QRCode` leaf (needs a qr lib). `tsc` = 0 non-TS6133 errors.
 > Suite green at 397/25 files.

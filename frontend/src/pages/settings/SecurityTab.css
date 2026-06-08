@@ -22,7 +22,7 @@
 }
 
 .api-token-row {
-  border: 1px solid var(--ant-color-border-secondary);
+  border: 1px solid var(--hairline-soft);
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
@@ -78,7 +78,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   padding: 4px 8px;
-  background: var(--ant-color-fill-tertiary);
+  background: var(--surface-2);
   border-radius: 4px;
   word-break: break-all;
 }

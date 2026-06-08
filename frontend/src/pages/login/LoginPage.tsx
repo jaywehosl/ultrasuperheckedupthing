@@ -10,7 +10,6 @@ import {
   Popover,
   Space,
   Spin,
-  message,
 } from 'antd';
 import {
   KeyOutlined,
@@ -23,7 +22,6 @@ import {
 
 import { HttpUtil, LanguageManager } from '@/utils';
 import { antdRule } from '@/utils/zodForm';
-import { setMessageInstance } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { LoginFormSchema, TwoFactorCodeSchema, type LoginFormValues } from '@/schemas/login';
 import './LoginPage.css';
@@ -38,11 +36,6 @@ const basePath = window.X_UI_BASE_PATH || '';
 export default function LoginPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig } = useTheme();
-  const [messageApi, messageContextHolder] = message.useMessage();
-
-  useEffect(() => {
-    setMessageInstance(messageApi);
-  }, [messageApi]);
 
   const [fetched, setFetched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -104,7 +97,6 @@ export default function LoginPage() {
 
   return (
     <ConfigProvider theme={antdThemeConfig}>
-      {messageContextHolder}
       <Layout className={pageClass}>
         <ParticleField
           className="kinetic-canvas"

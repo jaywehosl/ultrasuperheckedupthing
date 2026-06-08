@@ -230,7 +230,7 @@ export default function Sparkline({
           <XAxis
             dataKey="label"
             hide={!showAxes}
-            tick={{ fontSize: 10, fill: 'var(--ant-color-text-tertiary)' }}
+            tick={{ fontSize: 10, fill: 'var(--text-3)' }}
             axisLine={false}
             tickLine={false}
             tickMargin={14}
@@ -240,7 +240,7 @@ export default function Sparkline({
           <YAxis
             domain={yDomain}
             hide={!showAxes}
-            tick={{ fontSize: 10, fill: 'var(--ant-color-text-tertiary)', dx: -4 }}
+            tick={{ fontSize: 10, fill: 'var(--text-3)', dx: -4 }}
             axisLine={false}
             tickLine={false}
             tickMargin={8}
@@ -250,17 +250,17 @@ export default function Sparkline({
           />
           {showTooltip && (
             <Tooltip
-              cursor={{ stroke: 'var(--ant-color-border)', strokeDasharray: '2 4' }}
+              cursor={{ stroke: 'var(--surface-border)', strokeDasharray: '2 4' }}
               contentStyle={{
-                background: 'var(--ant-color-bg-elevated)',
-                border: '1px solid var(--ant-color-border-secondary)',
+                background: 'var(--surface-3)',
+                border: '1px solid var(--hairline-soft)',
                 borderRadius: 6,
                 fontSize: 12,
                 padding: '6px 10px',
                 boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)',
               }}
-              labelStyle={{ color: 'var(--ant-color-text-tertiary)', marginBottom: 4, fontSize: 11 }}
-              itemStyle={{ color: 'var(--ant-color-text)', padding: 0, fontWeight: 500 }}
+              labelStyle={{ color: 'var(--text-3)', marginBottom: 4, fontSize: 11 }}
+              itemStyle={{ color: 'var(--text-1)', padding: 0, fontWeight: 500 }}
               formatter={(v, name) => [fmtTooltip(Number(v) || 0), multiSeries && typeof name === 'string' ? name : '']}
               labelFormatter={(label) => (tooltipLabelFormatter ? tooltipLabelFormatter(String(label)) : String(label))}
               separator={multiSeries ? ': ' : ''}
@@ -290,7 +290,7 @@ export default function Sparkline({
                 y={extremaPoints.max.value}
                 r={4.5}
                 fill={maxColor}
-                stroke="var(--ant-color-bg-elevated)"
+                stroke="var(--surface-3)"
                 strokeWidth={2}
                 ifOverflow="extendDomain"
               />
@@ -299,7 +299,7 @@ export default function Sparkline({
                 y={extremaPoints.min.value}
                 r={4.5}
                 fill={minColor}
-                stroke="var(--ant-color-bg-elevated)"
+                stroke="var(--surface-3)"
                 strokeWidth={2}
                 ifOverflow="extendDomain"
               />

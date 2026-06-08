@@ -55,3 +55,6 @@ export type { DrawerProps } from './Drawer';
 
 export { Segmented } from './Segmented';
 export type { SegmentedProps, SegmentedOption } from './Segmented';
+
+export { ToastViewport, toast } from './Toast';
+export type { ToastApi, ToastType } from './Toast';

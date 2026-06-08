@@ -17,14 +17,14 @@
   margin-bottom: 12px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--ant-color-text);
+  color: var(--text-1);
 }
 
 .cpu-chart-wrap {
   margin: 8px 8px 16px;
   padding: 16px 18px 18px;
   border-radius: 14px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ant-color-primary) 6%, transparent), transparent);
-  border: 1px solid var(--ant-color-border-secondary);
-  box-shadow: 0 2px 12px var(--ant-color-fill-quaternary);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 6%, transparent), transparent);
+  border: 1px solid var(--hairline-soft);
+  box-shadow: 0 2px 12px var(--surface-inset);
 }

@@ -9,9 +9,9 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 1px solid var(--ant-color-border-secondary);
+  border: 1px solid var(--hairline-soft);
   border-radius: 10px;
-  background: var(--ant-color-fill-quaternary);
+  background: var(--surface-inset);
 }
 
 .ext-proxy-card__head {
@@ -57,7 +57,7 @@
   gap: 10px;
   margin-top: 2px;
   padding-top: 10px;
-  border-top: 1px dashed var(--ant-color-border-secondary);
+  border-top: 1px dashed var(--hairline-soft);
 }
 
 .ext-proxy-add {

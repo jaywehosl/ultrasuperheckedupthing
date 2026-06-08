@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { PersianDateTimePicker } from 'persian-calendar-suite';
@@ -12,6 +11,7 @@ interface DateTimePickerProps {
   value: Dayjs | null;
   onChange: (next: Dayjs | null) => void;
   showTime?: boolean;
+  /** Retained for API compatibility; the gregorian native input formats itself. */
   format?: string;
   placeholder?: string;
   disabled?: boolean;
@@ -48,7 +48,6 @@ export default function DateTimePicker({
   value,
   onChange,
   showTime = true,
-  format = 'YYYY-MM-DD HH:mm:ss',
   placeholder = '',
   disabled = false,
 }: DateTimePickerProps) {
@@ -84,15 +83,23 @@ export default function DateTimePicker({
     );
   }
 
+  const nativeFormat = showTime ? 'YYYY-MM-DDTHH:mm:ss' : 'YYYY-MM-DD';
+  const localValue = value && value.isValid() ? value.format(nativeFormat) : '';
+
   return (
-    <DatePicker
-      value={value}
-      onChange={(next) => onChange(next || null)}
-      showTime={showTime ? { format: 'HH:mm:ss' } : false}
-      format={format}
+    <input
+      type={showTime ? 'datetime-local' : 'date'}
+      className="ds-input"
+      step={showTime ? 1 : undefined}
+      value={localValue}
       placeholder={placeholder}
       disabled={disabled}
-      style={{ width: '100%' }}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (!v) { onChange(null); return; }
+        const d = dayjs(v);
+        onChange(d.isValid() ? d : null);
+      }}
     />
   );
 }
