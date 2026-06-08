@@ -13,6 +13,7 @@ export interface DialogProps {
   cancelText?: ReactNode;
   onOk?: () => void;
   okDanger?: boolean;
+  okDisabled?: boolean;
   confirmLoading?: boolean;
   width?: number | string;
   /** Hide the default header close button. */
@@ -33,6 +34,7 @@ export function Dialog({
   cancelText = 'Cancel',
   onOk,
   okDanger,
+  okDisabled,
   confirmLoading,
   width,
   hideClose,
@@ -44,7 +46,7 @@ export function Dialog({
         ? (
             <>
               <Button onClick={() => onOpenChange(false)}>{cancelText}</Button>
-              <Button variant="primary" danger={okDanger} loading={confirmLoading} onClick={onOk}>
+              <Button variant="primary" danger={okDanger} disabled={okDisabled} loading={confirmLoading} onClick={onOk}>
                 {okText}
               </Button>
             </>

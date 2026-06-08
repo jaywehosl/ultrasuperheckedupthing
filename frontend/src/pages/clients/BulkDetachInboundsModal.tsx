@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Modal, message } from '@/components/ui';
-import { Select, Typography } from 'antd';
-
+import { Alert, Dialog, Tag } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 import type { InboundOption } from '@/hooks/useClients';
 import type { BulkDetachResult } from '@/schemas/client';
 
@@ -24,7 +23,7 @@ export default function BulkDetachInboundsModal({
   onSubmit,
 }: BulkDetachInboundsModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
   const [targetIds, setTargetIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,14 +31,16 @@ export default function BulkDetachInboundsModal({
     if (open) setTargetIds([]);
   }, [open]);
 
-  const targetOptions = useMemo(() => {
-    return (inbounds || [])
+  const targetOptions = useMemo(
+    () => (inbounds || [])
       .filter((ib) => MULTI_USER_PROTOCOLS.has((ib.protocol || '').toLowerCase()))
-      .map((ib) => ({
-        value: ib.id,
-        label: ib.remark?.trim() || ib.tag || '',
-      }));
-  }, [inbounds]);
+      .map((ib) => ({ value: ib.id, label: ib.remark?.trim() || ib.tag || '' })),
+    [inbounds],
+  );
+
+  function toggle(id: number) {
+    setTargetIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   async function submit() {
     if (targetIds.length === 0 || count === 0) return;
@@ -50,13 +51,8 @@ export default function BulkDetachInboundsModal({
       const detached = result.detached?.length ?? 0;
       const skipped = result.skipped?.length ?? 0;
       const errors = result.errors?.length ?? 0;
-      if (errors > 0) {
-        messageApi.warning(
-          t('pages.clients.detachFromInboundsResultMixed', { detached, skipped, errors }),
-        );
-      } else {
-        messageApi.success(t('pages.clients.detachFromInboundsResult', { detached, skipped }));
-      }
+      if (errors > 0) message.warning(t('pages.clients.detachFromInboundsResultMixed', { detached, skipped, errors }));
+      else message.success(t('pages.clients.detachFromInboundsResult', { detached, skipped }));
       onOpenChange(false);
     } finally {
       setSubmitting(false);
@@ -64,36 +60,28 @@ export default function BulkDetachInboundsModal({
   }
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={t('pages.clients.detachFromInboundsTitle', { count })}
-        okText={t('pages.clients.detach')}
-        cancelText={t('cancel')}
-        okButtonProps={{ danger: true, disabled: targetIds.length === 0, loading: submitting }}
-        onCancel={() => onOpenChange(false)}
-        onOk={submit}
-        destroyOnHidden
-      >
-        <Typography.Paragraph type="secondary">
-          {t('pages.clients.detachFromInboundsDesc', { count })}
-        </Typography.Paragraph>
-        {targetOptions.length === 0 ? (
-          <Alert type="info" showIcon message={t('pages.clients.detachFromInboundsNoTargets')} />
-        ) : (
-          <Select
-            mode="multiple"
-            style={{ width: '100%' }}
-            value={targetIds}
-            onChange={setTargetIds}
-            options={targetOptions}
-            placeholder={t('pages.clients.detachFromInboundsTargets')}
-            optionFilterProp="label"
-            autoFocus
-          />
-        )}
-      </Modal>
-    </>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && onOpenChange(false)}
+      title={t('pages.clients.detachFromInboundsTitle', { count })}
+      okText={t('pages.clients.detach')}
+      okDanger
+      okDisabled={targetIds.length === 0}
+      confirmLoading={submitting}
+      onOk={submit}
+    >
+      <p className="ds-muted" style={{ marginTop: 0 }}>{t('pages.clients.detachFromInboundsDesc', { count })}</p>
+      {targetOptions.length === 0 ? (
+        <Alert tone="info" title={t('pages.clients.detachFromInboundsNoTargets')} />
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {targetOptions.map((o) => (
+            <Tag key={o.value} tone={targetIds.includes(o.value) ? 'primary' : 'neutral'} onClick={() => toggle(o.value)} style={{ cursor: 'pointer' }}>
+              {o.label}
+            </Tag>
+          ))}
+        </div>
+      )}
+    </Dialog>
   );
 }

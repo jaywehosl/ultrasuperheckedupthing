@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, message } from '@/components/ui';
-import { AutoComplete, Form } from 'antd';
+import { Dialog, Field, Input } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 
 interface BulkAddToGroupModalProps {
   open: boolean;
@@ -19,9 +19,10 @@ export default function BulkAddToGroupModal({
   onSubmit,
 }: BulkAddToGroupModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const listId = useId();
 
   useEffect(() => {
     if (open) setValue('');
@@ -35,7 +36,7 @@ export default function BulkAddToGroupModal({
       const result = await onSubmit(next);
       if (result) {
         const affected = result.affected ?? 0;
-        messageApi.success(t('pages.clients.addToGroupSuccessToast', { count: affected, group: next }));
+        message.success(t('pages.clients.addToGroupSuccessToast', { count: affected, group: next }));
         onOpenChange(false);
       }
     } finally {
@@ -44,39 +45,28 @@ export default function BulkAddToGroupModal({
   }
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={t('pages.clients.addToGroupTitle', { count })}
-        okText={t('add')}
-        cancelText={t('cancel')}
-        confirmLoading={submitting}
-        okButtonProps={{ disabled: !value.trim() }}
-        onCancel={() => onOpenChange(false)}
-        onOk={submit}
-        destroyOnHidden
-      >
-        <Form layout="vertical">
-          <Form.Item
-            label={t('pages.clients.group')}
-            tooltip={t('pages.clients.addToGroupTooltip')}
-          >
-            <AutoComplete
-              value={value}
-              placeholder={t('pages.clients.groupName')}
-              options={groups.map((g) => ({ value: g }))}
-              onChange={(v) => setValue(v ?? '')}
-              filterOption={(input, option) =>
-                String(option?.value ?? '').toLowerCase().includes((input || '').toLowerCase())
-              }
-              allowClear
-              style={{ width: '100%' }}
-              autoFocus
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && onOpenChange(false)}
+      title={t('pages.clients.addToGroupTitle', { count })}
+      okText={t('add')}
+      okDisabled={!value.trim()}
+      confirmLoading={submitting}
+      onOk={submit}
+    >
+      <Field label={t('pages.clients.group')}>
+        <Input
+          list={listId}
+          value={value}
+          placeholder={t('pages.clients.groupName')}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          autoFocus
+        />
+        <datalist id={listId}>
+          {groups.map((g) => <option key={g} value={g} />)}
+        </datalist>
+      </Field>
+    </Dialog>
   );
 }
