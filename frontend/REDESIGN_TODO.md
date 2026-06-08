@@ -31,8 +31,14 @@ asymmetric/flickering open-close ✅.
 - General "more organic" spacing/composition pass across migrated pages.
 
 ## NEXT: continue page migration
-- ✅ nodes (full), ✅ groups (pilot), ✅ Panel Settings (full).
-- **clients** next, then **inbounds** / **xray** (the monsters).
+- ✅ nodes (full), ✅ groups (pilot), ✅ Panel Settings (full), ✅ clients (full).
+- **inbounds** / **xray** (the monsters) next.
+- Deferred QR work (user): `ClientQrModal` still on antd Modal/Collapse + `QrPanel`;
+  `TwoFactorModal` keeps antd `QRCode`; `QrPanel` (@/pages/inbounds/qr) is the QR
+  renderer. Tackle all QR together. Needs a DS Accordion (no Radix accordion
+  installed yet) for ClientQrModal's sections.
+- `DateTimePicker` (@/components/form) + the xray transport `Form` lib
+  (@/lib/xray/forms, used by SubJsonFinalMaskForm) migrate with inbounds/xray.
 - `SubJsonFinalMaskForm` (settings) still rides the shared xray transport `Form`
   lib (`@/lib/xray/forms`) — migrate it together with the inbounds/xray forms.
 - DS library now: Button, Card, Input/Field, Tag, Stat, Dialog, DropdownMenu,
