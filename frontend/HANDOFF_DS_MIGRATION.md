@@ -204,9 +204,9 @@ Net so far: the inbound add/edit modal is 100% antd-free and visually on-spec.
     `@ant-design/icons` imports remain (same convention as the DS itself).
   - **`OutboundFormModal.css`** is self-contained (its own `.ifm-tab`/`.ifm-inline`/
     `.ifm-hint` + `.ofm-json`) so it doesn't depend on the inbound CSS loading.
-  - ⚠️ **`FinalMaskForm`'s antd branch is STILL needed** — `SubJsonFinalMaskForm`
-    (settings) still passes `form={form}` (showAll mode). Don't remove the antd
-    branch until the Settings/SubJson phase is migrated.
+  - ✅ **`FinalMaskForm` is now context-only** (commit `556c396`): the antd dual-mode
+    branch is gone. `SubJsonFinalMaskForm` (settings) was migrated to the controlled
+    keystone, which was the last `form=` caller.
 
 ---
 
@@ -236,8 +236,11 @@ Big clusters, roughly in dependency order:
    Settings phase (item 5) — it still uses the antd `FinalMaskForm` branch.
 4. **Clients leftovers / QR:** `ClientQrModal`, `ClientInfoModal` layering, any
    remaining antd in `clients/*`.
-5. **Settings:** `src/pages/settings/*` (GeneralTab, SecurityTab, Telegram,
-   Subscription*, TwoFactorModal, SettingsPage).
+5. ~~**Settings**~~ ✅ **DONE** (commit `556c396`). Turned out the tab files
+   (GeneralTab, SecurityTab, Telegram, Subscription*, SettingsPage) were already
+   antd-free; the only raw-antd file was `SubJsonFinalMaskForm` (migrated to the
+   controlled keystone, which let the `FinalMaskForm` antd branch be removed).
+   `TwoFactorModal` keeps antd `QRCode` as a leaf renderer (same as QrPanel).
 6. **Index/dashboard modals:** `src/pages/index/*` (many modals: Log, Backup,
    Version, PanelUpdate, SystemHistory, XrayLog/Metrics, CustomGeo...).
 7. **Sub pages:** `src/pages/sub/*`, `src/entries/*`.
@@ -325,13 +328,14 @@ For each subsystem (a modal + its field tree):
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
 3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR + Xray page
-   tabs are now done — recommended next: **Clients leftovers/QR** or **Settings**),
-   apply §6 recipe.
+   tabs + Settings are now done — recommended next: **Clients leftovers/QR** or
+   **Index/dashboard modals**), apply §6 recipe.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `8db5f4f` (xray balancers+basics) on `redesign/ds-foundation`.
-> Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** = done;
-> §5 items 4–9 = open (next recommended: **Clients leftovers/QR** or **Settings**).
-> Suite green at 397/25 files.
+> Current branch tip: `556c396` (settings/FinalMaskForm) on `redesign/ds-foundation`.
+> Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** +
+> **Settings** = done; `FinalMaskForm` is context-only (no more antd dual-mode).
+> §5 items 4, 6–9 = open (next recommended: **Clients leftovers/QR** or
+> **Index/dashboard modals**). Suite green at 397/25 files.
