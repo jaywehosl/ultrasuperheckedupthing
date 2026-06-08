@@ -231,8 +231,11 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   box-shadow: var(--elev-4), inset 0 1px 0 var(--specular);
   z-index: 1001;
 }
-.ds-dialog__content[data-state='open'] { animation: ds-pop-in var(--dur-mid) var(--ease-out-expo); }
-.ds-dialog__content[data-state='closed'] { animation: ds-pop-out var(--dur-mid) var(--ease-out-expo) forwards; }
+/* The content is intentionally NOT animated: any opacity/transform on it forms a
+   compositing group that (a) flickers the blur of glass fields inside and
+   (b) nudges content by a sub-pixel as the layer settles. Only the overlay
+   animates (it has no glass children). Content appears instantly at an integer
+   flex position. */
 .ds-dialog__header {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 18px 22px;
@@ -667,11 +670,3 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
 /* ---- shared animations ---------------------------------------------------- */
 @keyframes ds-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ds-fade-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes ds-pop-in {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
-@keyframes ds-pop-out {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.97); }
-}

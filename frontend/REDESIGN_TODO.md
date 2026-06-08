@@ -12,8 +12,10 @@ Recipe (why each part matters):
   `display:flex; align-items/justify center`, `pointer-events:none`). Content is
   `position:relative; pointer-events:auto`. → integer position, no permanent transform
   layer that "settles" and nudges text up ~2px on open.
-- **Pop animation is scale-only** (`@keyframes ds-pop-in/out` = opacity + `scale`), at
-  rest `scale(1)` (identity) → nothing to re-rasterise after the animation.
+- **The content is NOT animated at all** — only the overlay fades. Any opacity/
+  transform (even scale) on the content forms a compositing group that flickers
+  the blur of glass fields inside AND nudges content a sub-pixel as the layer
+  settles. Content appears instantly at an integer flex position.
 - **Symmetric in/out** via Radix `data-state` (`[data-state='open']` / `[data-state='closed']`
   + `forwards`), opacity/transform only (GPU, real refresh rate).
 - **Overlay** = strong plain page blur (`blur(22px)` + neutral 0.18 scrim), no milky veil.
