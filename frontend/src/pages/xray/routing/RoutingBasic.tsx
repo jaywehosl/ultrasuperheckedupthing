@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Select, Switch } from 'antd';
+import { Alert, Switch } from '@/components/ds';
+import { TagListEditor } from '@/components/form';
 
 import { SettingListItem } from '@/components/ui';
 import type { XraySettingsValue, SetTemplate } from '@/hooks/useXraySetting';
@@ -47,8 +48,7 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
   return (
     <>
       <Alert
-        type="warning"
-        showIcon
+        tone="warning"
         className="mb-12 hint-alert"
         title={t('pages.xray.blockConnectionsConfigsDesc')}
       />
@@ -73,11 +73,10 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
         title={t('pages.xray.blockips')}
         paddings="small"
         control={
-          <Select
-            mode="tags"
+          <TagListEditor
             value={blockedIPs}
-            style={{ width: '100%' }}
-            options={IPS_OPTIONS}
+            presets={IPS_OPTIONS.map((o) => o.value)}
+            separators={[',']}
             onChange={(v) => mutate((tt) => ruleSetter(tt, 'blocked', 'ip', v))}
           />
         }
@@ -87,19 +86,17 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
         title={t('pages.xray.blockdomains')}
         paddings="small"
         control={
-          <Select
-            mode="tags"
+          <TagListEditor
             value={blockedDomains}
-            style={{ width: '100%' }}
-            options={BLOCK_DOMAINS_OPTIONS}
+            presets={BLOCK_DOMAINS_OPTIONS.map((o) => o.value)}
+            separators={[',']}
             onChange={(v) => mutate((tt) => ruleSetter(tt, 'blocked', 'domain', v))}
           />
         }
       />
 
       <Alert
-        type="warning"
-        showIcon
+        tone="warning"
         className="mb-12 hint-alert"
         title={t('pages.xray.directConnectionsConfigsDesc')}
       />
@@ -108,11 +105,10 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
         title={t('pages.xray.directips')}
         paddings="small"
         control={
-          <Select
-            mode="tags"
+          <TagListEditor
             value={directIPs}
-            style={{ width: '100%' }}
-            options={IPS_OPTIONS}
+            presets={IPS_OPTIONS.map((o) => o.value)}
+            separators={[',']}
             onChange={(v) => mutate((tt) => {
               ruleSetter(tt, 'direct', 'ip', v);
               syncOutbound(tt, 'direct', directSettings);
@@ -125,11 +121,10 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
         title={t('pages.xray.directdomains')}
         paddings="small"
         control={
-          <Select
-            mode="tags"
+          <TagListEditor
             value={directDomains}
-            style={{ width: '100%' }}
-            options={DOMAINS_OPTIONS}
+            presets={DOMAINS_OPTIONS.map((o) => o.value)}
+            separators={[',']}
             onChange={(v) => mutate((tt) => {
               ruleSetter(tt, 'direct', 'domain', v);
               syncOutbound(tt, 'direct', directSettings);
@@ -143,11 +138,10 @@ export default function RoutingBasic({ templateSettings, setTemplateSettings }: 
         description={t('pages.xray.ipv4RoutingDesc')}
         paddings="small"
         control={
-          <Select
-            mode="tags"
+          <TagListEditor
             value={ipv4Domains}
-            style={{ width: '100%' }}
-            options={SERVICES_OPTIONS}
+            presets={SERVICES_OPTIONS.map((o) => o.value)}
+            separators={[',']}
             onChange={(v) => mutate((tt) => {
               ruleSetter(tt, 'IPv4', 'domain', v);
               syncOutbound(tt, 'IPv4', ipv4Settings);

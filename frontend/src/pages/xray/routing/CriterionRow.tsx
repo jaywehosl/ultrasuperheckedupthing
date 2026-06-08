@@ -1,4 +1,4 @@
-import { Tooltip } from 'antd';
+import { Tooltip } from '@/components/ds';
 
 import { csv } from './helpers';
 

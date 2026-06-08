@@ -235,3 +235,35 @@
   text-align: center;
 }
 
+
+/* Bespoke routing rules table (replaces antd Table to own row drag attrs). */
+.routing-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+.routing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.routing-table thead th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-2);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hairline-soft);
+  white-space: nowrap;
+}
+.routing-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hairline-soft);
+  vertical-align: top;
+}
+.routing-table tbody tr:hover td {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+}
+.routing-empty {
+  text-align: center;
+  opacity: 0.4;
+  padding: 16px 0;
+}

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Dropdown, Tag, Tooltip } from 'antd';
+import { Button, DropdownMenu, Tag, Tooltip, type MenuEntry } from '@/components/ds';
 import {
   MoreOutlined,
   EditOutlined,
@@ -55,26 +55,22 @@ export default function RuleCardList({
                 onPointerDown={(ev) => onHandlePointerDown(index, ev)}
               />
               <span className="rule-number">#{index + 1}</span>
-              <Dropdown
-                trigger={['click']}
-                menu={{
-                  items: [
-                    { key: 'edit', label: <><EditOutlined /> {t('edit')}</>, onClick: () => openEdit(index) },
-                    { key: 'up', label: <ArrowUpOutlined />, disabled: index === 0, onClick: () => moveUp(index) },
-                    { key: 'down', label: <ArrowDownOutlined />, disabled: index === rows.length - 1, onClick: () => moveDown(index) },
-                    { key: 'del', danger: true, label: <><DeleteOutlined /> {t('delete')}</>, onClick: () => confirmDelete(index) },
-                  ],
-                }}
-              >
-                <Button shape="circle" size="small" icon={<MoreOutlined />} />
-              </Dropdown>
+              <DropdownMenu
+                items={[
+                  { key: 'edit', icon: <EditOutlined />, label: t('edit'), onSelect: () => openEdit(index) },
+                  { key: 'up', icon: <ArrowUpOutlined />, label: t('pages.xray.routing.moveUp') || 'Move up', disabled: index === 0, onSelect: () => moveUp(index) },
+                  { key: 'down', icon: <ArrowDownOutlined />, label: t('pages.xray.routing.moveDown') || 'Move down', disabled: index === rows.length - 1, onSelect: () => moveDown(index) },
+                  { key: 'del', icon: <DeleteOutlined />, label: t('delete'), danger: true, onSelect: () => confirmDelete(index) },
+                ] as MenuEntry[]}
+                trigger={<Button variant="text" size="sm" icon={<MoreOutlined />} />}
+              />
             </div>
 
             <div className="rule-flow">
               <div className="flow-side">
                 <span className="flow-label">{t('pages.xray.Inbounds')}</span>
                 {rule.inboundTag ? (
-                  <Tag color="blue" className="flow-tag">{chipPreview(rule.inboundTag)}</Tag>
+                  <Tag tone="primary" className="flow-tag">{chipPreview(rule.inboundTag)}</Tag>
                 ) : (
                   <span className="criterion-empty">any</span>
                 )}
@@ -85,11 +81,11 @@ export default function RuleCardList({
                   {rule.balancerTag ? t('pages.xray.balancer') || 'Balancer' : t('pages.xray.Outbounds')}
                 </span>
                 {rule.outboundTag ? (
-                  <Tag color="green" className="flow-tag">
+                  <Tag tone="success" className="flow-tag">
                     <ExportOutlined /> {rule.outboundTag}
                   </Tag>
                 ) : rule.balancerTag ? (
-                  <Tag color="purple" className="flow-tag">
+                  <Tag tone="primary" className="flow-tag">
                     <ClusterOutlined /> {rule.balancerTag}
                   </Tag>
                 ) : (

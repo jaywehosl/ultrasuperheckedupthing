@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Modal, Space, Table, Tabs } from 'antd';
+import { Button, Dialog, Tabs, TooltipProvider } from '@/components/ds';
 import { ControlOutlined, PlusOutlined, UnorderedListOutlined } from '@ant-design/icons';
 
 import { catTabLabel } from '@/pages/settings/catTabLabel';
@@ -31,7 +31,7 @@ export default function RoutingTab({
   isMobile,
 }: RoutingTabProps) {
   const { t } = useTranslation();
-  const [modal, modalContextHolder] = Modal.useModal();
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<RoutingRule | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -153,15 +153,13 @@ export default function RoutingTab({
   }
 
   function confirmDelete(idx: number) {
-    modal.confirm({
-      title: `${t('delete')} ${t('pages.xray.Routings')} #${idx + 1}?`,
-      okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: () => mutate((tt) => {
-        tt.routing?.rules?.splice(idx, 1);
-      }),
-    });
+    setDeleteIndex(idx);
+  }
+  function runDelete() {
+    if (deleteIndex == null) return;
+    const idx = deleteIndex;
+    mutate((tt) => { tt.routing?.rules?.splice(idx, 1); });
+    setDeleteIndex(null);
   }
 
   function moveUp(idx: number) {
@@ -243,14 +241,66 @@ export default function RoutingTab({
     confirmDelete,
   });
 
-  const tableScrollX = desktopColumns.reduce((sum, c) => {
-    const col = c as { width?: number; hidden?: boolean };
-    return col.hidden ? sum : sum + (typeof col.width === 'number' ? col.width : 0);
-  }, 0);
+  const visibleColumns = desktopColumns.filter((c) => !c.hidden);
+  const tableScrollX = visibleColumns.reduce((sum, c) => sum + c.width, 0);
+
+  function rowClass(i: number): string {
+    const classes: string[] = [];
+    if (draggedIndex === i) classes.push('row-dragging');
+    if (dropTargetIndex === i && draggedIndex !== i && draggedIndex != null) {
+      classes.push(i > draggedIndex ? 'drop-after' : 'drop-before');
+    }
+    return classes.join(' ');
+  }
+
+  const rulesTab = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+      <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd} style={{ alignSelf: 'flex-start' }}>
+        {t('pages.xray.Routings')}
+      </Button>
+
+      {isMobile ? (
+        <RuleCardList
+          rows={rows}
+          draggedIndex={draggedIndex}
+          dropTargetIndex={dropTargetIndex}
+          onHandlePointerDown={onHandlePointerDown}
+          openEdit={openEdit}
+          moveUp={moveUp}
+          moveDown={moveDown}
+          confirmDelete={confirmDelete}
+        />
+      ) : (
+        <div className="routing-table-scroll">
+          <table className="routing-table" style={{ minWidth: tableScrollX }}>
+            <thead>
+              <tr>
+                {visibleColumns.map((c) => (
+                  <th key={c.key} style={{ width: c.width }}>{c.title}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr><td colSpan={visibleColumns.length} className="routing-empty">—</td></tr>
+              ) : (
+                rows.map((record, i) => (
+                  <tr key={record.key} data-row-key={i} className={rowClass(i)}>
+                    {visibleColumns.map((c) => (
+                      <td key={c.key}>{c.render(record, i)}</td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <>
-      {modalContextHolder}
+    <TooltipProvider>
       <Tabs
         defaultActiveKey="basic"
         items={[
@@ -267,45 +317,7 @@ export default function RoutingTab({
           {
             key: 'rules',
             label: catTabLabel(<UnorderedListOutlined />, t('pages.xray.Routings'), isMobile),
-            children: (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-                <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
-                  {t('pages.xray.Routings')}
-                </Button>
-
-                {isMobile ? (
-                  <RuleCardList
-                    rows={rows}
-                    draggedIndex={draggedIndex}
-                    dropTargetIndex={dropTargetIndex}
-                    onHandlePointerDown={onHandlePointerDown}
-                    openEdit={openEdit}
-                    moveUp={moveUp}
-                    moveDown={moveDown}
-                    confirmDelete={confirmDelete}
-                  />
-                ) : (
-                  <Table
-                    columns={desktopColumns}
-                    dataSource={rows}
-                    rowKey={(r) => r.key}
-                    pagination={false}
-                    scroll={{ x: tableScrollX }}
-                    size="small"
-                    className="routing-table"
-                    onRow={(_record, index) => {
-                      const classes: string[] = [];
-                      const i = index ?? -1;
-                      if (draggedIndex === i) classes.push('row-dragging');
-                      if (dropTargetIndex === i && draggedIndex !== i && draggedIndex != null) {
-                        classes.push(i > draggedIndex ? 'drop-after' : 'drop-before');
-                      }
-                      return { className: classes.join(' '), 'data-row-key': i } as React.HTMLAttributes<HTMLElement>;
-                    }}
-                  />
-                )}
-              </Space>
-            ),
+            children: rulesTab,
           },
         ]}
       />
@@ -318,6 +330,16 @@ export default function RoutingTab({
         onClose={() => setRuleModalOpen(false)}
         onConfirm={onRuleConfirm}
       />
-    </>
+      <Dialog
+        open={deleteIndex != null}
+        onOpenChange={(o) => { if (!o) setDeleteIndex(null); }}
+        title={deleteIndex != null ? `${t('delete')} ${t('pages.xray.Routings')} #${deleteIndex + 1}?` : ''}
+        okText={t('delete')}
+        cancelText={t('cancel')}
+        okDanger
+        onOk={runDelete}
+        width={420}
+      />
+    </TooltipProvider>
   );
 }

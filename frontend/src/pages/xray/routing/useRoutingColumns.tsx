@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Dropdown, Tag } from 'antd';
+import { Button, DropdownMenu, Tag, type MenuEntry } from '@/components/ds';
 import {
   MoreOutlined,
   EditOutlined,
@@ -11,10 +11,19 @@ import {
   ArrowDownOutlined,
   HolderOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 
 import CriterionRow from './CriterionRow';
 import type { RuleRow } from './types';
+
+/** Plain column model — the routing table is rendered as a bespoke <table> so
+ *  it can own per-row drag attributes/classes (DataTable can't express those). */
+export interface RoutingColumn {
+  key: string;
+  title: ReactNode;
+  width: number;
+  hidden?: boolean;
+  render: (record: RuleRow, index: number) => ReactNode;
+}
 
 interface RoutingColumnsParams {
   isMobile: boolean;
@@ -38,58 +47,47 @@ export function useRoutingColumns({
   moveUp,
   moveDown,
   confirmDelete,
-}: RoutingColumnsParams): ColumnsType<RuleRow> {
+}: RoutingColumnsParams): RoutingColumn[] {
   const { t } = useTranslation();
-  return useMemo(
+  return useMemo<RoutingColumn[]>(
     () => [
       {
-        title: '#',
-        align: 'center',
-        width: 100,
         key: 'action',
-        render: (_v, _r, index) => (
-          <div className="action-cell">
-            <HolderOutlined
-              className="drag-handle"
-              title={t('pages.xray.routing.dragToReorder')}
-              onPointerDown={(ev: React.PointerEvent) => onHandlePointerDown(index, ev)}
-            />
-            <span className="row-index">{index + 1}</span>
-            <div className={!isMobile ? 'action-buttons' : ''}>
-              {!isMobile && (
-                <Button shape="circle" size="small" icon={<EditOutlined />} onClick={() => openEdit(index)} />
-              )}
-              <Dropdown
-                trigger={['click']}
-                menu={{
-                  items: [
-                    ...(isMobile
-                      ? [{ key: 'edit', label: <><EditOutlined /> {t('edit')}</>, onClick: () => openEdit(index) }]
-                      : []),
-                    { key: 'up', label: <ArrowUpOutlined />, disabled: index === 0, onClick: () => moveUp(index) },
-                    {
-                      key: 'down',
-                      label: <ArrowDownOutlined />,
-                      disabled: index === rowsLength - 1,
-                      onClick: () => moveDown(index),
-                    },
-                    { key: 'del', danger: true, label: <><DeleteOutlined /> {t('delete')}</>, onClick: () => confirmDelete(index) },
-                  ],
-                }}
-              >
-                <Button shape="circle" size="small" icon={<MoreOutlined />} />
-              </Dropdown>
+        title: '#',
+        width: 100,
+        render: (_record, index) => {
+          const menu: MenuEntry[] = [
+            ...(isMobile
+              ? [{ key: 'edit', icon: <EditOutlined />, label: t('edit'), onSelect: () => openEdit(index) } as MenuEntry]
+              : []),
+            { key: 'up', icon: <ArrowUpOutlined />, label: t('pages.xray.routing.moveUp') || 'Move up', disabled: index === 0, onSelect: () => moveUp(index) },
+            { key: 'down', icon: <ArrowDownOutlined />, label: t('pages.xray.routing.moveDown') || 'Move down', disabled: index === rowsLength - 1, onSelect: () => moveDown(index) },
+            { key: 'del', icon: <DeleteOutlined />, label: t('delete'), danger: true, onSelect: () => confirmDelete(index) },
+          ];
+          return (
+            <div className="action-cell">
+              <HolderOutlined
+                className="drag-handle"
+                title={t('pages.xray.routing.dragToReorder')}
+                onPointerDown={(ev: React.PointerEvent) => onHandlePointerDown(index, ev)}
+              />
+              <span className="row-index">{index + 1}</span>
+              <div className={!isMobile ? 'action-buttons' : ''}>
+                {!isMobile && (
+                  <Button variant="text" size="sm" icon={<EditOutlined />} onClick={() => openEdit(index)} />
+                )}
+                <DropdownMenu items={menu} trigger={<Button variant="text" size="sm" icon={<MoreOutlined />} />} />
+              </div>
             </div>
-          </div>
-        ),
+          );
+        },
       },
       {
-        title: t('pages.xray.rules.source'),
-        align: 'left',
-        width: 180,
         key: 'source',
+        title: t('pages.xray.rules.source'),
+        width: 180,
         hidden: !showSource,
-        render: (_v, record) => (
+        render: (record) => (
           <div className="criterion-flow">
             {record.sourceIP && <CriterionRow label="IP" value={record.sourceIP} title={`Source IP: ${record.sourceIP}`} />}
             {record.sourcePort && <CriterionRow label="Port" value={record.sourcePort} title={`Source port: ${record.sourcePort}`} />}
@@ -99,11 +97,10 @@ export function useRoutingColumns({
         ),
       },
       {
-        title: t('pages.inbounds.network'),
-        align: 'left',
-        width: 180,
         key: 'network',
-        render: (_v, record) => (
+        title: t('pages.inbounds.network'),
+        width: 180,
+        render: (record) => (
           <div className="criterion-flow">
             {record.network && <CriterionRow label="L4" value={record.network} title={`L4: ${record.network}`} />}
             {record.protocol && <CriterionRow label="Protocol" value={record.protocol} title={`Protocol: ${record.protocol}`} />}
@@ -113,11 +110,10 @@ export function useRoutingColumns({
         ),
       },
       {
-        title: t('pages.xray.rules.dest'),
-        align: 'left',
-        width: 200,
         key: 'destination',
-        render: (_v, record) => (
+        title: t('pages.xray.rules.dest'),
+        width: 200,
+        render: (record) => (
           <div className="criterion-flow">
             {record.ip && <CriterionRow label="IP" value={record.ip} title={`Destination IP: ${record.ip}`} />}
             {record.domain && <CriterionRow label="Domain" value={record.domain} title={`Domain: ${record.domain}`} />}
@@ -127,11 +123,10 @@ export function useRoutingColumns({
         ),
       },
       {
-        title: t('pages.xray.Inbounds'),
-        align: 'left',
-        width: 180,
         key: 'inbound',
-        render: (_v, record) => (
+        title: t('pages.xray.Inbounds'),
+        width: 180,
+        render: (record) => (
           <div className="criterion-flow">
             {record.inboundTag && <CriterionRow label="Tag" value={record.inboundTag} title={`Inbound tag: ${record.inboundTag}`} />}
             {record.user && <CriterionRow label="User" value={record.user} title={`User: ${record.user}`} />}
@@ -140,31 +135,29 @@ export function useRoutingColumns({
         ),
       },
       {
-        title: t('pages.xray.Outbounds'),
-        align: 'left',
-        width: 170,
         key: 'outbound',
-        render: (_v, record) =>
+        title: t('pages.xray.Outbounds'),
+        width: 170,
+        render: (record) =>
           record.outboundTag ? (
             <div className="target-row">
               <ExportOutlined className="target-icon" />
-              <Tag color="green">{record.outboundTag}</Tag>
+              <Tag tone="success">{record.outboundTag}</Tag>
             </div>
           ) : (
             <span className="criterion-empty">—</span>
           ),
       },
       {
-        title: t('pages.xray.Balancers'),
-        align: 'left',
-        width: 150,
         key: 'balancer',
+        title: t('pages.xray.Balancers'),
+        width: 150,
         hidden: !showBalancer,
-        render: (_v, record) =>
+        render: (record) =>
           record.balancerTag ? (
             <div className="target-row">
               <ClusterOutlined className="target-icon" />
-              <Tag color="purple">{record.balancerTag}</Tag>
+              <Tag tone="primary">{record.balancerTag}</Tag>
             </div>
           ) : (
             <span className="criterion-empty">—</span>
