@@ -1,3 +1,20 @@
+.outbounds-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.outbounds-toolbar .toolbar-left,
+.outbounds-toolbar .toolbar-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .toolbar-right {
   display: flex;
   justify-content: flex-end;
@@ -149,14 +166,14 @@
   opacity: 0.4;
 }
 
-.outbound-test-popover .timing-breakdown {
+.timing-breakdown {
   font-size: 12px;
   line-height: 1.6;
   min-width: 180px;
   max-width: 320px;
 }
 
-.outbound-test-popover .td-head {
+.timing-breakdown .td-head {
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -164,15 +181,15 @@
   margin-bottom: 4px;
 }
 
-.outbound-test-popover .td-head.ok {
+.timing-breakdown .td-head.ok {
   color: #008771;
 }
 
-.outbound-test-popover .td-head.fail {
+.timing-breakdown .td-head.fail {
   color: #e04141;
 }
 
-.outbound-test-popover .mode-badge {
+.timing-breakdown .mode-badge {
   font-size: 10px;
   font-weight: 500;
   padding: 0 6px;
@@ -182,7 +199,7 @@
   margin-left: auto;
 }
 
-.outbound-test-popover .endpoint-row {
+.timing-breakdown .endpoint-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -190,7 +207,7 @@
   white-space: nowrap;
 }
 
-.outbound-test-popover .endpoint-row .ep-addr {
+.timing-breakdown .endpoint-row .ep-addr {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -198,14 +215,14 @@
   min-width: 0;
 }
 
-.outbound-test-popover .endpoint-row .ep-meta {
+.timing-breakdown .endpoint-row .ep-meta {
   opacity: 0.75;
 }
 
-.outbound-test-popover .dot-ok {
+.timing-breakdown .dot-ok {
   color: #008771;
 }
 
-.outbound-test-popover .dot-fail {
+.timing-breakdown .dot-fail {
   color: #e04141;
 }

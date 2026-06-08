@@ -1,17 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Button,
-  Col,
-  Modal,
-  Popconfirm,
-  Radio,
-  Row,
-  Space,
-  Table,
-  Tooltip,
-} from 'antd';
-import {
   PlusOutlined,
   CloudOutlined,
   ApiOutlined,
@@ -19,6 +8,7 @@ import {
   PlayCircleOutlined,
 } from '@ant-design/icons';
 
+import { Button, DataTable, Dialog, Segmented, Tooltip, TooltipProvider } from '@/components/ds';
 import OutboundFormModal from './OutboundFormModal';
 import type { XraySettingsValue, SetTemplate, OutboundTestState, OutboundTrafficRow } from '@/hooks/useXraySetting';
 import './OutboundsTab.css';
@@ -42,6 +32,8 @@ interface OutboundsTabProps {
   onShowNord: () => void;
 }
 
+type ConfirmState = { kind: 'delete'; index: number } | { kind: 'reset-all' } | null;
+
 export default function OutboundsTab({
   templateSettings,
   setTemplateSettings,
@@ -57,12 +49,12 @@ export default function OutboundsTab({
   onShowNord,
 }: OutboundsTabProps) {
   const { t } = useTranslation();
-  const [modal, modalContextHolder] = Modal.useModal();
   const [testMode, setTestMode] = useState<'tcp' | 'http'>('tcp');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOutbound, setEditingOutbound] = useState<Record<string, unknown> | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [existingTags, setExistingTags] = useState<string[]>([]);
+  const [confirm, setConfirm] = useState<ConfirmState>(null);
 
   const outbounds = useMemo(
     () => (templateSettings?.outbounds || []) as unknown as OutboundRow[],
@@ -114,17 +106,7 @@ export default function OutboundsTab({
   }
 
   function confirmDelete(idx: number) {
-    modal.confirm({
-      title: `${t('delete')} ${t('pages.xray.Outbounds')} #${idx + 1}?`,
-      okText: t('delete'),
-      okType: 'danger',
-      cancelText: t('cancel'),
-      onOk: () => {
-        mutate((tt) => {
-          tt.outbounds?.splice(idx, 1);
-        });
-      },
-    });
+    setConfirm({ kind: 'delete', index: idx });
   }
   function setFirst(idx: number) {
     mutate((tt) => {
@@ -147,6 +129,17 @@ export default function OutboundsTab({
     });
   }
 
+  function runConfirm() {
+    if (!confirm) return;
+    if (confirm.kind === 'delete') {
+      const idx = confirm.index;
+      mutate((tt) => { tt.outbounds?.splice(idx, 1); });
+    } else {
+      onResetTraffic('-alltags-');
+    }
+    setConfirm(null);
+  }
+
   const columns = useOutboundColumns({
     testMode,
     rows,
@@ -162,77 +155,74 @@ export default function OutboundsTab({
   });
 
   return (
-    <>
-      {modalContextHolder}
-      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-        <Row gutter={[12, 12]} align="middle" justify="space-between">
-          <Col xs={24} sm={12}>
-            <Space size="small" wrap>
-              <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
-                {!isMobile && t('pages.xray.Outbounds')}
-              </Button>
-              <Button type="primary" icon={<CloudOutlined />} onClick={onShowWarp}>
-                WARP
-              </Button>
-              <Button type="primary" icon={<ApiOutlined />} onClick={onShowNord}>
-                NordVPN
-              </Button>
-            </Space>
-          </Col>
-          <Col xs={24} sm={12} className="toolbar-right">
-            <Space size="small" wrap>
-              <Tooltip title={t('pages.xray.outbound.testModeTooltip')}>
-                <Radio.Group value={testMode} onChange={(e) => setTestMode(e.target.value)} buttonStyle="solid" size="small">
-                  <Radio.Button value="tcp">TCP</Radio.Button>
-                  <Radio.Button value="http">HTTP</Radio.Button>
-                </Radio.Group>
-              </Tooltip>
-              <Button type="primary" loading={testingAll} icon={<PlayCircleOutlined />} onClick={() => onTestAll(testMode)}>
-                {!isMobile && t('pages.xray.outbound.testAll')}
-              </Button>
-              <Popconfirm
-                placement="topRight"
-                okText={t('reset')}
-                cancelText={t('cancel')}
-                title={t('pages.inbounds.resetAllTrafficContent')}
-                onConfirm={() => onResetTraffic('-alltags-')}
-              >
-                <Button icon={<RetweetOutlined />} />
-              </Popconfirm>
-            </Space>
-          </Col>
-        </Row>
+    <TooltipProvider>
+      <div className="outbounds-toolbar">
+        <div className="toolbar-left">
+          <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>
+            {!isMobile && t('pages.xray.Outbounds')}
+          </Button>
+          <Button variant="primary" icon={<CloudOutlined />} onClick={onShowWarp}>WARP</Button>
+          <Button variant="primary" icon={<ApiOutlined />} onClick={onShowNord}>NordVPN</Button>
+        </div>
+        <div className="toolbar-right">
+          <Tooltip title={t('pages.xray.outbound.testModeTooltip')}>
+            <Segmented
+              value={testMode}
+              onChange={(v) => setTestMode(v as 'tcp' | 'http')}
+              options={[{ value: 'tcp', label: 'TCP' }, { value: 'http', label: 'HTTP' }]}
+            />
+          </Tooltip>
+          <Button variant="primary" loading={testingAll} icon={<PlayCircleOutlined />} onClick={() => onTestAll(testMode)}>
+            {!isMobile && t('pages.xray.outbound.testAll')}
+          </Button>
+          <Button icon={<RetweetOutlined />} onClick={() => setConfirm({ kind: 'reset-all' })} />
+        </div>
+      </div>
 
-        {isMobile ? (
-          <OutboundCardList
-            rows={rows}
-            testMode={testMode}
-            outboundsTraffic={outboundsTraffic}
-            outboundTestStates={outboundTestStates}
-            setFirst={setFirst}
-            openEdit={openEdit}
-            onResetTraffic={onResetTraffic}
-            confirmDelete={confirmDelete}
-            onTest={onTest}
-          />
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={rows}
-            rowKey={(r) => r.key}
-            pagination={false}
-            size="small"
-          />
-        )}
-
-        <OutboundFormModal
-          open={modalOpen}
-          outbound={editingOutbound}
-          existingTags={existingTags}
-          onClose={() => setModalOpen(false)}
-          onConfirm={onConfirm}
+      {isMobile ? (
+        <OutboundCardList
+          rows={rows}
+          testMode={testMode}
+          outboundsTraffic={outboundsTraffic}
+          outboundTestStates={outboundTestStates}
+          setFirst={setFirst}
+          openEdit={openEdit}
+          onResetTraffic={onResetTraffic}
+          confirmDelete={confirmDelete}
+          onTest={onTest}
         />
-      </Space>
-    </>
+      ) : (
+        <DataTable<OutboundRow>
+          data={rows}
+          columns={columns}
+          getRowId={(r) => String(r.key)}
+          sortable={false}
+          empty={<div>—</div>}
+        />
+      )}
+
+      <OutboundFormModal
+        open={modalOpen}
+        outbound={editingOutbound}
+        existingTags={existingTags}
+        onClose={() => setModalOpen(false)}
+        onConfirm={onConfirm}
+      />
+
+      <Dialog
+        open={confirm != null}
+        onOpenChange={(o) => { if (!o) setConfirm(null); }}
+        title={
+          confirm?.kind === 'delete'
+            ? `${t('delete')} ${t('pages.xray.Outbounds')} #${confirm.index + 1}?`
+            : t('pages.inbounds.resetAllTrafficContent')
+        }
+        okText={confirm?.kind === 'delete' ? t('delete') : t('reset')}
+        cancelText={t('cancel')}
+        okDanger={confirm?.kind === 'delete'}
+        onOk={runConfirm}
+        width={420}
+      />
+    </TooltipProvider>
   );
 }
