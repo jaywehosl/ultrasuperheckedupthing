@@ -110,16 +110,11 @@ export default function AppSidebar() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // The brand logo doubles as the (slightly hidden) metrics-panel toggle:
-  // on home it toggles the panel; from another route it returns home and opens it.
+  // The brand logo is the (slightly hidden) metrics status-bar toggle — it only
+  // opens/closes the bar and never navigates.
   const onLogoClick = useCallback(() => {
-    if (pathname !== '/') {
-      navigate('/');
-      setMetricsOpen(true);
-    } else {
-      toggleMetrics();
-    }
-  }, [pathname, navigate, toggleMetrics, setMetricsOpen]);
+    toggleMetrics();
+  }, [toggleMetrics]);
 
   const tabs = useMemo<{ key: string; icon: IconName; title: string }[]>(() => [
     { key: '/#dashboard', icon: 'dashboard', title: t('menu.dashboard') },
@@ -146,13 +141,20 @@ export default function AppSidebar() {
     if (key.startsWith('/#')) {
       const parts = key.substring(2).split('#'); // e.g. ["inbounds"] or ["xray", "basic"]
       const targetSectionId = parts[0];
-      // "Overview" (#dashboard) also pops the metrics panel open.
-      const isOverview = targetSectionId === 'dashboard';
+
+      // "Overview" (#dashboard) goes to the very top of the page (not just the
+      // section — the fixed header would otherwise leave it ~80px short) and
+      // pops the metrics status-bar open.
+      if (targetSectionId === 'dashboard') {
+        if (pathname !== '/') navigate('/');
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        setMetricsOpen(true);
+        return;
+      }
 
       if (pathname !== '/') {
         // Redirect to / with the hash
         navigate(`/#${key.substring(2)}`);
-        if (isOverview) setMetricsOpen(true);
       } else {
         // Smooth scroll to the section
         const el = document.getElementById(targetSectionId);
@@ -160,7 +162,6 @@ export default function AppSidebar() {
           el.scrollIntoView({ behavior: 'smooth' });
           window.history.pushState(null, '', `${window.location.pathname}#${key.substring(2)}`);
         }
-        if (isOverview) setMetricsOpen(true);
       }
       return;
     }

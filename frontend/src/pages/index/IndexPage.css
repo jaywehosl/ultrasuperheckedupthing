@@ -38,30 +38,6 @@
   .dash-hero-subtitle { font-size: 15px; }
 }
 
-/* Full-screen busy overlay for long server ops (restart / import). */
-.dash-busy-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(10, 12, 18, 0.28);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-}
-
-/* Error state */
-.dash-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 48px 0;
-  text-align: center;
-}
-.dash-error h3 { margin: 0; }
-
 /* Feed container and sections */
 .index-page-area {
   display: flex;
