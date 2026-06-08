@@ -398,6 +398,28 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 40px; color: var(--text-3);
 }
 
+/* ---- Collapse (native <details>) ------------------------------------------ */
+.ds-collapse {
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.ds-collapse > summary {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-1);
+  list-style: none;
+  user-select: none;
+}
+.ds-collapse > summary::-webkit-details-marker { display: none; }
+.ds-collapse > summary::before { content: '▸'; display: inline-block; margin-right: 8px; color: var(--text-3); transition: transform var(--dur-fast) var(--ease-out-quint); }
+.ds-collapse[open] > summary::before { transform: rotate(90deg); }
+.ds-collapse[open] > summary { border-bottom: 1px solid var(--hairline-soft); }
+.ds-collapse__body { padding: 14px; }
+
 /* ---- Divider -------------------------------------------------------------- */
 .ds-divider {
   height: 1px;
