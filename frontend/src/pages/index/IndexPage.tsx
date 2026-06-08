@@ -1,20 +1,15 @@
 import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { message, Spin } from '@/components/ui';
 import {
   Button,
   Card,
-  Col,
-  ConfigProvider,
-  message,
-  Result,
-  Row,
-  Space,
-  Spin,
-  Statistic,
+  Dialog as DSDialog,
+  Stat,
   Tag,
   Tooltip,
-} from '@/components/ui';
-import { Dialog as DSDialog, Button as DSButton } from '@/components/ds';
+  TooltipProvider,
+} from '@/components/ds';
 import {
   BarsOutlined,
   ControlOutlined,
@@ -172,7 +167,7 @@ export default function IndexPage() {
   const pageClass = `index-page ${isDark ? 'is-dark' : ''} ${isUltra ? 'is-ultra' : ''}`.trim();
 
   return (
-    <ConfigProvider>
+    <>
       {messageContextHolder}
       <div className={`content-shell index-page-shell ${pageClass}`}>
         <div className="content-area index-page-area">
@@ -186,19 +181,18 @@ export default function IndexPage() {
               {!fetched ? (
                 <div className="loading-spacer" />
               ) : fetchError ? (
-                <Result
-                  status="error"
-                  title={t('somethingWentWrong')}
-                  subTitle={fetchError}
-                  extra={<Button type="primary" onClick={refresh}>{t('refresh')}</Button>}
-                />
+                <div className="dash-error">
+                  <h3>{t('somethingWentWrong')}</h3>
+                  <p className="ds-muted">{fetchError}</p>
+                  <Button variant="primary" onClick={refresh}>{t('refresh')}</Button>
+                </div>
               ) : (
-                <Row gutter={[isMobile ? 8 : 16, 12]}>
-                  <Col span={24}>
-                    <StatusCard status={status} isMobile={isMobile} />
-                  </Col>
+                <TooltipProvider>
+                  <div className="dash-grid">
+                    <div className="dash-span-2">
+                      <StatusCard status={status} isMobile={isMobile} />
+                    </div>
 
-                  <Col xs={24} lg={12}>
                     <XrayStatusCard
                       status={status}
                       isMobile={isMobile}
@@ -209,250 +203,90 @@ export default function IndexPage() {
                       onOpenLogs={() => setLogsOpen(true)}
                       onOpenVersionSwitch={() => setVersionOpen(true)}
                     />
-                  </Col>
 
-                  <Col xs={24} lg={12}>
-                    <Card
-                      title={t('menu.link')}
-                      hoverable
-                      actions={[
-                        <Space className="action" key="logs" onClick={() => setLogsOpen(true)}>
-                          <BarsOutlined />
-                          {!isMobile && <span>{t('pages.index.logs')}</span>}
-                        </Space>,
-                        <Space className="action" key="config" onClick={openConfig}>
-                          <ControlOutlined />
-                          {!isMobile && <span>{t('pages.index.config')}</span>}
-                        </Space>,
-                        <Space className="action" key="backup" onClick={() => setBackupOpen(true)}>
-                          <CloudServerOutlined />
-                          {!isMobile && <span>{t('pages.index.backupTitle')}</span>}
-                        </Space>,
-                      ]}
-                    />
-                  </Col>
-
-                  <Col xs={24} lg={12}>
-                    <Card
-                      title={
-                        <Space>
-                          <span>3X-UI</span>
-                          {isMobile && displayVersion && (
-                            <Tag color={panelUpdateInfo.updateAvailable ? 'orange' : 'green'}>
-                              {panelUpdateInfo.updateAvailable
-                                ? `v${panelUpdateInfo.latestVersion}`
-                                : `v${displayVersion}`}
-                            </Tag>
-                          )}
-                        </Space>
-                      }
-                      hoverable
-                      actions={[
-                        <Space className="action" key="tg" onClick={openTelegram}>
-                          <svg
-                            viewBox="0 0 24 24"
-                            width="14"
-                            height="14"
-                            fill="currentColor"
-                            className="tg-icon"
-                            aria-hidden="true"
-                          >
+                    <Card title={t('menu.link') || 'Quick actions'} className="dash-actions-card">
+                      <div className="dash-actions">
+                        <button type="button" className="dash-action" onClick={() => setLogsOpen(true)}>
+                          <BarsOutlined /><span>{t('pages.index.logs')}</span>
+                        </button>
+                        <button type="button" className="dash-action" onClick={openConfig}>
+                          <ControlOutlined /><span>{t('pages.index.config')}</span>
+                        </button>
+                        <button type="button" className="dash-action" onClick={() => setBackupOpen(true)}>
+                          <CloudServerOutlined /><span>{t('pages.index.backupTitle')}</span>
+                        </button>
+                        <button type="button" className="dash-action" onClick={() => setSysHistoryOpen(true)}>
+                          <AreaChartOutlined /><span>{t('pages.index.systemHistoryTitle')}</span>
+                        </button>
+                        <button type="button" className="dash-action" onClick={() => setXrayMetricsOpen(true)}>
+                          <AreaChartOutlined /><span>{t('pages.index.xrayMetricsTitle')}</span>
+                        </button>
+                        <button type="button" className="dash-action" onClick={openTelegram}>
+                          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" className="tg-icon" aria-hidden="true">
                             <path d="M21.93 4.34a1.5 1.5 0 0 0-2.05-1.6L2.97 9.6c-.92.36-.91 1.66.02 1.99l4.32 1.53 1.7 5.23a1 1 0 0 0 1.68.36l2.43-2.43 4.36 3.21a1.5 1.5 0 0 0 2.36-.91l3.09-13.86a1.5 1.5 0 0 0 0-.38ZM9.97 14.66l-.55 3.36-1.36-4.2 9.8-7.05-7.89 7.89Z" />
                           </svg>
-                          {!isMobile && <span>@XrayUI</span>}
-                        </Space>,
-                        <Space
-                          key="panel-version"
-                          className={`action ${panelUpdateInfo.updateAvailable ? 'action-update' : ''}`}
+                          <span>@XrayUI</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`dash-action ${panelUpdateInfo.updateAvailable ? 'dash-action--update' : ''}`}
                           onClick={openPanelVersion}
                         >
                           <CloudDownloadOutlined />
-                          {!isMobile && (
-                            <span>
-                              {panelUpdateInfo.updateAvailable
-                                ? `${t('update')} ${panelUpdateInfo.latestVersion}`
-                                : `v${displayVersion}`}
-                            </span>
-                          )}
-                        </Space>,
-                      ]}
-                    />
-                  </Col>
+                          <span>
+                            {panelUpdateInfo.updateAvailable
+                              ? `${t('update')} ${panelUpdateInfo.latestVersion}`
+                              : `v${displayVersion}`}
+                          </span>
+                        </button>
+                      </div>
+                    </Card>
 
-                  <Col xs={24} lg={12}>
                     <Card
-                      title={t('pages.index.charts')}
-                      hoverable
-                      actions={[
-                        <Space
-                          className="action"
-                          key="sys-history"
-                          onClick={() => setSysHistoryOpen(true)}
-                        >
-                          <AreaChartOutlined />
-                          {!isMobile && <span>{t('pages.index.systemHistoryTitle')}</span>}
-                        </Space>,
-                        <Space
-                          className="action"
-                          key="xray-metrics"
-                          onClick={() => setXrayMetricsOpen(true)}
-                        >
-                          <AreaChartOutlined />
-                          {!isMobile && <span>{t('pages.index.xrayMetricsTitle')}</span>}
-                        </Space>,
-                      ]}
-                    />
-                  </Col>
-
-                  <Col xs={24} lg={12}>
-                    <Card title={t('pages.index.operationHours')} hoverable>
-                      <Row gutter={isMobile ? [8, 8] : 0}>
-                        <Col span={12}>
-                          <Statistic
-                            title="Xray"
-                            value={TimeFormatter.formatSecond(status.appStats.uptime)}
-                            prefix={<ThunderboltOutlined />}
-                          />
-                        </Col>
-                        <Col span={12}>
-                          <Statistic
-                            title="OS"
-                            value={TimeFormatter.formatSecond(status.uptime)}
-                            prefix={<DesktopOutlined />}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
-
-                  <Col xs={24} lg={12}>
-                    <Card title={t('usage')} hoverable>
-                      <Row gutter={isMobile ? [8, 8] : 0}>
-                        <Col span={12}>
-                          <Statistic
-                            title={t('pages.index.memory')}
-                            value={SizeFormatter.sizeFormat(status.appStats.mem)}
-                            prefix={<DatabaseOutlined />}
-                          />
-                        </Col>
-                        <Col span={12}>
-                          <Statistic
-                            title={t('pages.index.threads')}
-                            value={status.appStats.threads}
-                            prefix={<ForkOutlined />}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
-
-                  <Col xs={24} lg={12}>
-                    <Card title={t('pages.index.overallSpeed')} hoverable>
-                      <Row gutter={isMobile ? [8, 8] : 0}>
-                        <Col span={12}>
-                          <Statistic
-                            title={t('pages.index.upload')}
-                            value={SizeFormatter.sizeFormat(status.netIO.up)}
-                            prefix={<ArrowUpOutlined />}
-                            suffix="/s"
-                          />
-                        </Col>
-                        <Col span={12}>
-                          <Statistic
-                            title={t('pages.index.download')}
-                            value={SizeFormatter.sizeFormat(status.netIO.down)}
-                            prefix={<ArrowDownOutlined />}
-                            suffix="/s"
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
-
-                  <Col xs={24} lg={12}>
-                    <Card title={t('pages.index.totalData')} hoverable>
-                      <Row gutter={isMobile ? [8, 8] : 0}>
-                        <Col span={12}>
-                          <Statistic
-                            title={t('pages.index.sent')}
-                            value={SizeFormatter.sizeFormat(status.netTraffic.sent)}
-                            prefix={<CloudUploadOutlined />}
-                          />
-                        </Col>
-                        <Col span={12}>
-                          <Statistic
-                            title={t('pages.index.received')}
-                            value={SizeFormatter.sizeFormat(status.netTraffic.recv)}
-                            prefix={<CloudDownloadOutlined />}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
-
-                  <Col xs={24} lg={12}>
-                    <Card
-                      title={t('pages.index.ipAddresses')}
-                      hoverable
+                      title="Network"
+                      className={`dash-span-2 dash-net ${showIp ? '' : 'ip-hidden'}`}
                       extra={
-                        <Tooltip
-                          title={t('pages.index.toggleIpVisibility')}
-                          placement={isMobile ? 'topRight' : 'top'}
-                        >
-                          {showIp ? (
-                            <EyeOutlined
-                              className="ip-toggle-icon"
-                              onClick={() => setShowIp(false)}
-                            />
-                          ) : (
-                            <EyeInvisibleOutlined
-                              className="ip-toggle-icon"
-                              onClick={() => setShowIp(true)}
-                            />
-                          )}
+                        <Tooltip title={t('pages.index.toggleIpVisibility')}>
+                          <button type="button" className="ip-toggle-btn" onClick={() => setShowIp((v) => !v)} aria-label={t('pages.index.toggleIpVisibility')}>
+                            {showIp ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                          </button>
                         </Tooltip>
                       }
                     >
-                      <Row className={showIp ? 'ip-visible' : 'ip-hidden'} gutter={isMobile ? [8, 8] : 0}>
-                        <Col span={isMobile ? 24 : 12}>
-                          <Statistic
-                            title="IPv4"
-                            value={status.publicIP.ipv4}
-                            prefix={<GlobalOutlined />}
-                          />
-                        </Col>
-                        <Col span={isMobile ? 24 : 12}>
-                          <Statistic
-                            title="IPv6"
-                            value={status.publicIP.ipv6}
-                            prefix={<GlobalOutlined />}
-                          />
-                        </Col>
-                      </Row>
+                      <div className="ds-stats-grid">
+                        <Stat title={t('pages.index.upload')} prefix={<ArrowUpOutlined />} value={`${SizeFormatter.sizeFormat(status.netIO.up)}/s`} />
+                        <Stat title={t('pages.index.download')} prefix={<ArrowDownOutlined />} value={`${SizeFormatter.sizeFormat(status.netIO.down)}/s`} />
+                        <Stat title={t('pages.index.sent')} prefix={<CloudUploadOutlined />} value={SizeFormatter.sizeFormat(status.netTraffic.sent)} />
+                        <Stat title={t('pages.index.received')} prefix={<CloudDownloadOutlined />} value={SizeFormatter.sizeFormat(status.netTraffic.recv)} />
+                        <Stat title="TCP" prefix={<SwapOutlined />} value={status.tcpCount} />
+                        <Stat title="UDP" prefix={<SwapOutlined />} value={status.udpCount} />
+                        <Stat className="dash-ip-stat" title="IPv4" prefix={<GlobalOutlined />} value={status.publicIP.ipv4} />
+                        <Stat className="dash-ip-stat" title="IPv6" prefix={<GlobalOutlined />} value={status.publicIP.ipv6} />
+                      </div>
                     </Card>
-                  </Col>
 
-                  <Col xs={24} lg={12}>
-                    <Card title={t('pages.index.connectionCount')} hoverable>
-                      <Row gutter={isMobile ? [8, 8] : 0}>
-                        <Col span={12}>
-                          <Statistic
-                            title="TCP"
-                            value={status.tcpCount}
-                            prefix={<SwapOutlined />}
-                          />
-                        </Col>
-                        <Col span={12}>
-                          <Statistic
-                            title="UDP"
-                            value={status.udpCount}
-                            prefix={<SwapOutlined />}
-                          />
-                        </Col>
-                      </Row>
+                    <Card title="System" className="dash-span-2">
+                      <div className="ds-stats-grid">
+                        <Stat title={t('pages.index.memory')} prefix={<DatabaseOutlined />} value={SizeFormatter.sizeFormat(status.appStats.mem)} />
+                        <Stat title={t('pages.index.threads')} prefix={<ForkOutlined />} value={status.appStats.threads} />
+                        <Stat title={`Xray ${t('pages.index.operationHours')}`} prefix={<ThunderboltOutlined />} value={TimeFormatter.formatSecond(status.appStats.uptime)} />
+                        <Stat title={`OS ${t('pages.index.operationHours')}`} prefix={<DesktopOutlined />} value={TimeFormatter.formatSecond(status.uptime)} />
+                        <Stat
+                          title="3X-UI"
+                          prefix={<CloudDownloadOutlined />}
+                          value={
+                            <span className="dash-ver-value">
+                              v{displayVersion}
+                              {panelUpdateInfo.updateAvailable && (
+                                <Tag tone="warning">{t('update')} {panelUpdateInfo.latestVersion}</Tag>
+                              )}
+                            </span>
+                          }
+                        />
+                      </div>
                     </Card>
-                  </Col>
-                </Row>
+                  </div>
+                </TooltipProvider>
               )}
             </Spin>
           </section>
@@ -540,12 +374,12 @@ export default function IndexPage() {
             width={isMobile ? '100%' : 900}
             footer={(
               <>
-                <DSButton onClick={downloadConfig} size={isMobile ? 'sm' : 'md'} icon={<CloudDownloadOutlined />}>
+                <Button onClick={downloadConfig} size={isMobile ? 'sm' : 'md'} icon={<CloudDownloadOutlined />}>
                   {isMobile ? 'Download' : 'config.json'}
-                </DSButton>
-                <DSButton variant="primary" onClick={copyConfig} size={isMobile ? 'sm' : 'md'} icon={<CopyOutlined />}>
+                </Button>
+                <Button variant="primary" onClick={copyConfig} size={isMobile ? 'sm' : 'md'} icon={<CopyOutlined />}>
                   Copy
-                </DSButton>
+                </Button>
               </>
             )}
           >
@@ -558,6 +392,6 @@ export default function IndexPage() {
             />
           </DSDialog>
         </LazyMount>
-    </ConfigProvider>
+    </>
   );
 }

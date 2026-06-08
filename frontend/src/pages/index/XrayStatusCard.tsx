@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Card, Col, Popover, Row, Space, Tag } from '@/components/ui';
+import { Button, Card, Popover, Tag, Tooltip, TooltipProvider } from '@/components/ds';
 
 import {
   BarsOutlined,
@@ -44,12 +44,12 @@ export default function XrayStatusCard({
   const stateText = t(XRAY_STATE_KEYS[status.xray.state] ?? 'pages.index.xrayStatusUnknown');
 
   const title = (
-    <Space>
+    <span className="xray-card-title">
       <span>{t('pages.index.xrayStatus')}</span>
       {isMobile && status.xray.version && status.xray.version !== 'Unknown' && (
-        <Tag color="green">v{status.xray.version}</Tag>
+        <Tag tone="success">v{status.xray.version}</Tag>
       )}
-    </Space>
+    </span>
   );
 
   const errorLines = useMemo(
@@ -57,65 +57,65 @@ export default function XrayStatusCard({
     [status.xray.errorMsg],
   );
 
+  const stateBadge = (
+    <span className="xray-state">
+      <span className="xray-dot" style={{ background: status.xray.color }} />
+      {stateText}
+    </span>
+  );
+
   const extra =
     status.xray.state !== 'error' ? (
-      <Badge status="processing" text={stateText} color={status.xray.color} />
+      stateBadge
     ) : (
       <Popover
-        title = {
-          <Row align="middle" justify="space-between">
-            <Col>
+        side="bottom"
+        align="end"
+        trigger={<button type="button" className="xray-state-trigger">{stateBadge}</button>}
+        content={
+          <div className="xray-error-pop">
+            <div className="xray-error-head">
               <span>{t('pages.index.xrayStatusError')}</span>
-            </Col>
-            <Col>
               <BarsOutlined className="cursor-pointer" onClick={onOpenLogs} />
-            </Col>
-          </Row>
-        }
-        content = {
-          <>
+            </div>
             {errorLines.map((line, i) => (
-              <span key={i} className="error-line">
-                {line}
-              </span>
+              <span key={i} className="error-line">{line}</span>
             ))}
-          </>
+          </div>
         }
-      >
-        <Badge status="processing" text={stateText} color={status.xray.color} />
-      </Popover>
+      />
     );
 
-  const actions = [
-    ...(ipLimitEnable
-      ? [
-          <Space key="xraylogs" className="action" onClick={onOpenXrayLogs}>
-            <BarsOutlined />
-            {!isMobile && <span>{t('pages.index.logs')}</span>}
-          </Space>,
-        ]
-      : []),
-    <Space key="stop" className="action" onClick={onStopXray}>
-      <PoweroffOutlined />
-      {!isMobile && <span>{t('pages.index.stopXray')}</span>}
-    </Space>,
-    <Space key="restart" className="action" onClick={onRestartXray}>
-      <ReloadOutlined />
-      {!isMobile && <span>{t('pages.index.restartXray')}</span>}
-    </Space>,
-    <Space key="switch" className="action" onClick={onOpenVersionSwitch}>
-      <ToolOutlined />
-      {!isMobile && (
-        <span>
-          {status.xray.version && status.xray.version !== 'Unknown'
-            ? `v${status.xray.version}`
-            : t('pages.index.xraySwitch')}
-        </span>
-      )}
-    </Space>,
-  ];
-
   return (
-    <Card hoverable title={title} extra={extra} actions={actions} className="xray-status-card" />
+    <TooltipProvider>
+      <Card title={title} extra={extra} className="xray-status-card">
+        <div className="xray-actions">
+          {ipLimitEnable && (
+            <Tooltip title={t('pages.index.logs')}>
+              <Button variant="text" icon={<BarsOutlined />} onClick={onOpenXrayLogs}>
+                {!isMobile && t('pages.index.logs')}
+              </Button>
+            </Tooltip>
+          )}
+          <Tooltip title={t('pages.index.stopXray')}>
+            <Button variant="text" icon={<PoweroffOutlined />} onClick={onStopXray}>
+              {!isMobile && t('pages.index.stopXray')}
+            </Button>
+          </Tooltip>
+          <Tooltip title={t('pages.index.restartXray')}>
+            <Button variant="text" icon={<ReloadOutlined />} onClick={onRestartXray}>
+              {!isMobile && t('pages.index.restartXray')}
+            </Button>
+          </Tooltip>
+          <Tooltip title={t('pages.index.xraySwitch')}>
+            <Button variant="text" icon={<ToolOutlined />} onClick={onOpenVersionSwitch}>
+              {!isMobile && (status.xray.version && status.xray.version !== 'Unknown'
+                ? `v${status.xray.version}`
+                : t('pages.index.xraySwitch'))}
+            </Button>
+          </Tooltip>
+        </div>
+      </Card>
+    </TooltipProvider>
   );
 }

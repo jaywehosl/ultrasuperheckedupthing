@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Col, Row, Tooltip } from '@/components/ui';
+import { Card, Tooltip, TooltipProvider } from '@/components/ds';
 import { AreaChartOutlined } from '@ant-design/icons';
 
 
@@ -96,68 +96,70 @@ export default function StatusCard({ status, isMobile: _isMobile, onToggleGuide:
 
   return (
     <Card className="status-card-cockpit">
-      <div className="cockpit-header">
-        <div className="cockpit-title-node">
-          <span className="cockpit-led-active" />
-          <span className="cockpit-title-text">{t('pages.index.serverTelemetry') || 'SYSTEM TELEMETRY'}</span>
-        </div>
-      </div>
-      <Row gutter={[16, 16]} justify="space-around" className="cockpit-grid">
-        <Col xs={12} sm={6}>
-          <TelemetryDial
-            percent={status.cpu.percent}
-            color={status.cpu.color}
-            label={t('pages.index.cpu')}
-            detail={`${CPUFormatter.cpuCoreFormat(status.cpuCores)}`}
-          />
-          <div className="telemetry-tooltip-link">
-            <Tooltip
-              title={
-                <div className="telemetry-tooltip-detail">
-                  <div>
-                    <b>{t('pages.index.logicalProcessors') || 'Logical Processors'}:</b> {status.logicalPro}
-                  </div>
-                  <div>
-                    <b>{t('pages.index.frequency') || 'Frequency'}:</b>{' '}
-                    {CPUFormatter.cpuSpeedFormat(status.cpuSpeedMhz)}
-                  </div>
-                </div>
-              }
-            >
-              <span className="diagnostic-trigger">
-                <AreaChartOutlined /> {t('pages.index.diagnostics') || 'DIAGNOSTICS'}
-              </span>
-            </Tooltip>
+      <TooltipProvider>
+        <div className="cockpit-header">
+          <div className="cockpit-title-node">
+            <span className="cockpit-led-active" />
+            <span className="cockpit-title-text">{t('pages.index.serverTelemetry') || 'SYSTEM TELEMETRY'}</span>
           </div>
-        </Col>
+        </div>
+        <div className="cockpit-grid">
+          <div className="cockpit-cell">
+            <TelemetryDial
+              percent={status.cpu.percent}
+              color={status.cpu.color}
+              label={t('pages.index.cpu')}
+              detail={`${CPUFormatter.cpuCoreFormat(status.cpuCores)}`}
+            />
+            <div className="telemetry-tooltip-link">
+              <Tooltip
+                title={
+                  <div className="telemetry-tooltip-detail">
+                    <div>
+                      <b>{t('pages.index.logicalProcessors') || 'Logical Processors'}:</b> {status.logicalPro}
+                    </div>
+                    <div>
+                      <b>{t('pages.index.frequency') || 'Frequency'}:</b>{' '}
+                      {CPUFormatter.cpuSpeedFormat(status.cpuSpeedMhz)}
+                    </div>
+                  </div>
+                }
+              >
+                <span className="diagnostic-trigger">
+                  <AreaChartOutlined /> {t('pages.index.diagnostics') || 'DIAGNOSTICS'}
+                </span>
+              </Tooltip>
+            </div>
+          </div>
 
-        <Col xs={12} sm={6}>
-          <TelemetryDial
-            percent={status.mem.percent}
-            color={status.mem.color}
-            label={t('pages.index.memory')}
-            detail={`${SizeFormatter.sizeFormat(status.mem.current)} / ${SizeFormatter.sizeFormat(status.mem.total)}`}
-          />
-        </Col>
+          <div className="cockpit-cell">
+            <TelemetryDial
+              percent={status.mem.percent}
+              color={status.mem.color}
+              label={t('pages.index.memory')}
+              detail={`${SizeFormatter.sizeFormat(status.mem.current)} / ${SizeFormatter.sizeFormat(status.mem.total)}`}
+            />
+          </div>
 
-        <Col xs={12} sm={6}>
-          <TelemetryDial
-            percent={status.swap.percent}
-            color={status.swap.color}
-            label={t('pages.index.swap')}
-            detail={`${SizeFormatter.sizeFormat(status.swap.current)} / ${SizeFormatter.sizeFormat(status.swap.total)}`}
-          />
-        </Col>
+          <div className="cockpit-cell">
+            <TelemetryDial
+              percent={status.swap.percent}
+              color={status.swap.color}
+              label={t('pages.index.swap')}
+              detail={`${SizeFormatter.sizeFormat(status.swap.current)} / ${SizeFormatter.sizeFormat(status.swap.total)}`}
+            />
+          </div>
 
-        <Col xs={12} sm={6}>
-          <TelemetryDial
-            percent={status.disk.percent}
-            color={status.disk.color}
-            label={t('pages.index.storage')}
-            detail={`${SizeFormatter.sizeFormat(status.disk.current)} / ${SizeFormatter.sizeFormat(status.disk.total)}`}
-          />
-        </Col>
-      </Row>
+          <div className="cockpit-cell">
+            <TelemetryDial
+              percent={status.disk.percent}
+              color={status.disk.color}
+              label={t('pages.index.storage')}
+              detail={`${SizeFormatter.sizeFormat(status.disk.current)} / ${SizeFormatter.sizeFormat(status.disk.total)}`}
+            />
+          </div>
+        </div>
+      </TooltipProvider>
     </Card>
   );
 }

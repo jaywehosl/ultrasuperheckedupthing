@@ -41,19 +41,101 @@
   vertical-align: -2px;
 }
 
-.index-page .ip-toggle-icon {
-  cursor: pointer;
-  font-size: 16px;
+/* ---- Consolidated dashboard grid ---------------------------------------- */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.dash-grid .dash-span-2 {
+  grid-column: 1 / -1;
+}
+@media (max-width: 900px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  .dash-grid .dash-span-2 {
+    grid-column: auto;
+  }
 }
 
-.index-page .ip-hidden .ant-statistic-content-value {
-  filter: blur(6px);
+/* Network card — IPv4/IPv6 blur toggle (replaces the stale .ant-statistic rule) */
+.dash-net.ip-hidden .dash-ip-stat .ds-stat__value {
+  filter: blur(7px);
   transition: filter 0.2s ease;
 }
-
-.index-page .ip-visible .ant-statistic-content-value {
+.dash-net .dash-ip-stat .ds-stat__value {
   filter: none;
+  transition: filter 0.2s ease;
+  font-size: 18px;
+  word-break: break-all;
 }
+.ip-toggle-btn {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px;
+  color: var(--text-3);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.ip-toggle-btn:hover { color: var(--color-primary); }
+
+.dash-ver-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 18px;
+}
+
+/* Quick-actions card */
+.dash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dash-action {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface-2, rgba(18, 19, 23, 0.04));
+  border: 1px solid var(--hairline-soft);
+  transition: border-color var(--dur-fast) var(--ease-out-quint),
+    color var(--dur-fast) var(--ease-out-quint),
+    box-shadow var(--dur-fast) var(--ease-out-quint);
+}
+.dash-action:hover {
+  color: var(--color-primary-strong);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: var(--hover-glow);
+}
+.dash-action--update {
+  color: var(--color-warning);
+  border-color: rgba(var(--color-warning-rgb), 0.45);
+  background: rgba(var(--color-warning-rgb), 0.1);
+}
+
+/* Error state */
+.dash-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 0;
+  text-align: center;
+}
+.dash-error h3 { margin: 0; }
 
 /* Feed container and sections */
 .index-page-area {
