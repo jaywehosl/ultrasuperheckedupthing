@@ -447,3 +447,40 @@ body.dark .drawer-utility-list {
     inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
   transform: none !important;
 }
+
+/* ============================================================================
+   Header ⇄ metrics status-bar alignment.
+   Both the header nav and the status-bar controls render as an identical
+   centered 8-column band, so each header button sits exactly above its
+   status-bar counterpart and nothing reflows when values change width.
+   ========================================================================== */
+:root { --nav-band-w: 760px; }
+
+.header-container { position: relative !important; }
+
+.header-center {
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: var(--nav-band-w);
+  max-width: calc(100% - 480px);
+  flex: none !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.header-nav-list-container { width: 100% !important; max-width: none !important; }
+.header-nav-list {
+  display: grid !important;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0 !important;
+  width: 100%;
+}
+.header-nav-item-wrapper { display: flex; justify-content: center; }
+.header-nav-list .nav-menu-item { justify-content: center; text-align: center; }
+
+/* When the metrics bar is open, drop the header divider so the two frosted
+   surfaces read as one continuous glass panel (no seam). */
+.antigravity-header.metrics-open { border-bottom-color: transparent !important; }

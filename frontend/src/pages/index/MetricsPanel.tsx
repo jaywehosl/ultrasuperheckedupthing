@@ -4,8 +4,9 @@ import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   AreaChartOutlined,
+  ApiOutlined,
   BarsOutlined,
-  CloseOutlined,
+  ClockCircleOutlined,
   CloudServerOutlined,
   DashboardOutlined,
   DatabaseOutlined,
@@ -61,7 +62,7 @@ const XRAY_STATE_KEYS: Record<string, string> = {
 
 export default function MetricsPanel() {
   const { t } = useTranslation();
-  const { open, setOpen } = useMetricsPanel();
+  const { open } = useMetricsPanel();
   const { status, refresh } = useStatusQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
@@ -147,36 +148,40 @@ export default function MetricsPanel() {
             </div>
           </div>
 
-          {/* ---- RIGHT: text data (under theme/lang/logout) ---- */}
+          {/* ---- RIGHT: categorized text data (under theme/lang/logout) ---- */}
           <div className="mb-right">
-            <div className={`mb-data ${showIp ? '' : 'ip-hidden'}`}>
-              <span className="mb-data__cell"><ArrowUpOutlined /> {SizeFormatter.sizeFormat(status.netIO.up)}/s</span>
-              <span className="mb-data__cell"><ArrowDownOutlined /> {SizeFormatter.sizeFormat(status.netIO.down)}/s</span>
-              <span className="mb-data__cell">TCP {status.tcpCount}</span>
-              <span className="mb-data__cell">UDP {status.udpCount}</span>
-              <span className="mb-data__cell">Xray {TimeFormatter.formatSecond(status.appStats.uptime)}</span>
-              <span className="mb-data__cell">OS {TimeFormatter.formatSecond(status.uptime)}</span>
-              <span className="mb-data__cell mb-data__ip">
-                IPv4 <b>{status.publicIP.ipv4}</b>
-              </span>
-              <span className="mb-data__cell mb-data__ip">
-                IPv6 <b>{status.publicIP.ipv6}</b>
-              </span>
+            <div className="mb-stats">
+              <div className="mb-stat-row mb-speed">
+                <span className="mb-speed__up"><ArrowUpOutlined /> {SizeFormatter.sizeFormat(status.netIO.up)}/s</span>
+                <span className="mb-speed__down"><ArrowDownOutlined /> {SizeFormatter.sizeFormat(status.netIO.down)}/s</span>
+              </div>
+              <div className="mb-stat-row mb-conn">
+                <span className="mb-conn__cell"><ApiOutlined /> TCP {status.tcpCount}</span>
+                <span className="mb-conn__cell">UDP {status.udpCount}</span>
+              </div>
+              <div className="mb-stat-row mb-uptime">
+                <span className="mb-pill mb-pill--xray" title={`Xray ${t('pages.index.operationHours')}`}>
+                  <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.appStats.uptime)}
+                </span>
+                <span className="mb-pill mb-pill--os" title={`OS ${t('pages.index.operationHours')}`}>
+                  <ClockCircleOutlined /> {TimeFormatter.formatSecond(status.uptime)}
+                </span>
+              </div>
             </div>
-            <button
-              type="button"
-              className="mb-eye"
-              onClick={() => setShowIp((v) => !v)}
-              aria-label={t('pages.index.toggleIpVisibility')}
-              title={t('pages.index.toggleIpVisibility')}
-            >
-              {showIp ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-            </button>
+            <div className={`mb-ipcol ${showIp ? '' : 'ip-hidden'}`}>
+              <button
+                type="button"
+                className="mb-eye"
+                onClick={() => setShowIp((v) => !v)}
+                aria-label={t('pages.index.toggleIpVisibility')}
+                title={t('pages.index.toggleIpVisibility')}
+              >
+                {showIp ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+              </button>
+              <span className="mb-ip" title="IPv4">{status.publicIP.ipv4}</span>
+              <span className="mb-ip" title="IPv6">{status.publicIP.ipv6}</span>
+            </div>
           </div>
-
-          <button type="button" className="mb-close" aria-label={t('close')} onClick={() => setOpen(false)}>
-            <CloseOutlined />
-          </button>
         </div>
       </div>
 

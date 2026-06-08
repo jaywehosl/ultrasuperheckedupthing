@@ -106,7 +106,7 @@ export default function AppSidebar() {
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
-  const { setOpen: setMetricsOpen, toggle: toggleMetrics } = useMetricsPanel();
+  const { open: metricsOpen, setOpen: setMetricsOpen, toggle: toggleMetrics } = useMetricsPanel();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -183,7 +183,7 @@ export default function AppSidebar() {
   }, [isDark, isUltra, toggleTheme, toggleUltra]);
 
   return (
-    <header className="antigravity-header">
+    <header className={`antigravity-header ${metricsOpen ? 'metrics-open' : ''}`}>
       <div className="header-container">
         <div className="header-left">
           <div className="brand-block" onClick={onLogoClick} style={{ cursor: 'pointer' }} title={t('menu.dashboard')}>

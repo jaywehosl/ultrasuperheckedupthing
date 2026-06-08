@@ -1,7 +1,9 @@
 /* ============================================================================
-   Metrics status-bar — a second header row that drops down below the header.
-   Full width, mirrors the header's glass + 3-zone layout. Animated via
-   max-height ONLY (glass-rule safe: no transform/opacity on this element).
+   Metrics status-bar — a second header row that drops below the header.
+   Full width, mirrors the header glass + 3-zone layout. Animated via
+   max-height ONLY (glass-rule safe). The center control band uses the SAME
+   absolute-centered 8-column grid as the header nav, so every control sits
+   exactly under its header button.
    ========================================================================== */
 
 .metrics-bar {
@@ -21,28 +23,39 @@
 }
 .metrics-bar.is-open { max-height: 132px; pointer-events: auto; }
 body.dark .metrics-bar {
-  background: rgba(21, 22, 29, 0.5);
+  background: rgba(21, 22, 29, 0.45);
   border-bottom-color: rgba(255, 255, 255, 0.07);
 }
-html[data-theme="ultra-dark"] body.dark .metrics-bar { background: rgba(0, 0, 0, 0.68); }
+html[data-theme="ultra-dark"] body.dark .metrics-bar { background: rgba(0, 0, 0, 0.65); }
 
 .mb-container {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 104px;
   padding: 0 32px;
   gap: 16px;
-  position: relative;
 }
 
 .mb-left { flex-shrink: 0; display: flex; align-items: center; }
-.mb-center { flex: 1 1 auto; display: flex; justify-content: center; min-width: 0; }
-.mb-right { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding-right: 28px; }
+.mb-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-right: 24px;
+}
 
-/* ---- LEFT: vertical equalizer gauges ------------------------------------ */
-.mb-gauges { display: flex; align-items: flex-end; gap: 16px; }
+/* ---- LEFT: vertical equalizer gauges (span the logo width, no reflow) ---- */
+.mb-gauges {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 212px; /* ≈ the "3X-UI Antigravity" logo width */
+}
 .mb-gauge {
+  width: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -68,29 +81,41 @@ body.dark .mb-gauge__track { background: rgba(255, 255, 255, 0.1); }
   transition: height 0.6s var(--ease-out-quint);
 }
 .mb-gauge__pct {
+  width: 100%;
+  text-align: center;
+  font-variant-numeric: tabular-nums; /* digits don't shift the layout */
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 10px; font-weight: 700; color: var(--text-2);
   letter-spacing: -0.03em;
 }
 .mb-gauge__pct i { font-style: normal; font-size: 8px; color: var(--text-3); margin-left: 1px; }
 
-/* ---- CENTER: control buttons (header-nav style) ------------------------- */
-.mb-controls {
+/* ---- CENTER: control band — identical centered 8-col grid as the nav ----- */
+.mb-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  width: var(--nav-band-w, 760px);
+  max-width: calc(100% - 480px);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
-.mb-controls::-webkit-scrollbar { display: none; }
+.mb-controls {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  gap: 0;
+}
+.mb-controls > * { justify-self: center; }
 .mb-controls .nav-menu-item {
-  padding: 7px 11px;
-  font-size: 12px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  justify-content: center;
+  white-space: normal;
 }
 .mb-controls .nav-menu-item .anticon { font-size: 13px; }
 
@@ -100,45 +125,63 @@ body.dark .mb-gauge__track { background: rgba(255, 255, 255, 0.1); }
 }
 body.dark .mb-state { background: rgba(255, 255, 255, 0.05) !important; }
 .mb-state-dot {
-  width: 7px; height: 7px; border-radius: 50%;
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
   box-shadow: 0 0 6px currentColor;
 }
 
-/* ---- RIGHT: small text data -------------------------------------------- */
-.mb-data {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 3px 16px;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 11px;
-  color: var(--text-2);
-  letter-spacing: -0.02em;
+/* ---- RIGHT: categorized text data --------------------------------------- */
+.mb-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
-.mb-data__cell { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.mb-data__cell .anticon { font-size: 10px; opacity: 0.7; }
-.mb-data__ip { grid-column: 1 / -1; max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
-.mb-data__ip b { font-weight: 600; transition: filter 0.2s ease; }
-.mb-data.ip-hidden .mb-data__ip b { filter: blur(5px); }
+.mb-stat-row { display: flex; align-items: center; gap: 10px; }
 
+.mb-speed { font-weight: 700; font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); }
+.mb-speed__up { color: #2f6fed; display: inline-flex; align-items: center; gap: 4px; }
+.mb-speed__down { color: #0fa8a0; display: inline-flex; align-items: center; gap: 4px; }
+.is-dark .mb-speed__up { color: #6ea8ff; }
+.is-dark .mb-speed__down { color: #38d6cd; }
+
+.mb-conn { font-weight: 600; font-size: 11.5px; color: var(--text-2); font-family: var(--font-mono, ui-monospace, monospace); }
+.mb-conn__cell { display: inline-flex; align-items: center; gap: 5px; }
+.mb-conn__cell .anticon { opacity: 0.65; font-size: 11px; }
+
+.mb-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 11px; border-radius: 99px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; font-weight: 700; cursor: default;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.mb-pill .anticon { font-size: 11px; opacity: 0.8; }
+.mb-pill--xray { background: rgba(var(--color-primary-rgb), 0.12); color: var(--color-primary-strong); }
+.mb-pill--xray:hover { background: rgba(var(--color-primary-rgb), 0.2); }
+.mb-pill--os { background: rgba(15, 168, 160, 0.14); color: #0c8a83; }
+.is-dark .mb-pill--os { color: #38d6cd; }
+.mb-pill--os:hover { background: rgba(15, 168, 160, 0.24); }
+
+.mb-ipcol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 150px;
+}
 .mb-eye {
   all: unset; cursor: pointer; display: inline-flex;
-  font-size: 14px; color: var(--text-3); padding: 4px;
+  font-size: 15px; color: var(--text-3); padding: 3px;
+  border-radius: var(--radius-sm);
 }
 .mb-eye:hover { color: var(--color-primary); }
-
-.mb-close {
-  all: unset;
-  cursor: pointer;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  color: var(--text-3);
+.mb-ip {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px; font-weight: 600; color: var(--text-2);
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: filter 0.2s ease;
 }
-.mb-close:hover { color: var(--text-1); background: rgba(18, 19, 23, 0.05); }
-.is-dark .mb-close:hover { background: rgba(255, 255, 255, 0.07); }
+.mb-ipcol.ip-hidden .mb-ip { filter: blur(5px); }
 
 @media (max-width: 992px) {
   .mb-center { display: none; }
@@ -146,7 +189,7 @@ body.dark .mb-state { background: rgba(255, 255, 255, 0.05) !important; }
 @media (max-width: 768px) {
   .metrics-bar { top: 64px; }
   .mb-container { padding: 0 16px; }
-  .mb-right { padding-right: 24px; }
+  .mb-right { padding-right: 16px; }
 }
 
 /* ---- Full-screen busy overlay (restart / import) ------------------------ */
