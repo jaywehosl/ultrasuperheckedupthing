@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Col, Row, Tooltip, Button } from '@/components/ui';
-import { AreaChartOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Card, Col, Row, Tooltip } from '@/components/ui';
+import { AreaChartOutlined } from '@ant-design/icons';
 
 
 import { CPUFormatter, SizeFormatter } from '@/utils';
@@ -91,7 +91,7 @@ function TelemetryDial({ percent, color, label, detail }: TelemetryDialProps) {
   );
 }
 
-export default function StatusCard({ status, isMobile: _isMobile, onToggleGuide }: StatusCardProps) {
+export default function StatusCard({ status, isMobile: _isMobile, onToggleGuide: _onToggleGuide }: StatusCardProps) {
   const { t } = useTranslation();
 
   return (

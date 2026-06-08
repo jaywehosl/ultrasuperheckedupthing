@@ -5,7 +5,6 @@ import {
   Card,
   Col,
   ConfigProvider,
-  Layout,
   Modal,
   Result,
   Row,
@@ -29,7 +28,6 @@ import { coerceInboundJsonField, type DBInbound } from '@/models/dbinbound';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
-import AppSidebar from '@/layouts/AppSidebar';
 const TextModal = lazy(() => import('@/components/feedback/TextModal'));
 const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 

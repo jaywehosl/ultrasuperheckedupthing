@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
+import '@/styles/reset.css';
 import '@/styles/tokens.css';
 import '@/styles/utils.css';
 import '@/styles/page-shell.css';

@@ -1,4 +1,7 @@
 import { createRoot } from 'react-dom/client';
+import '@/styles/reset.css';
+import '@/styles/tokens.css';
+import '@/styles/utils.css';
 
 import { setupAxios } from '@/api/axios-init';
 import { applyDocumentTitle } from '@/utils';

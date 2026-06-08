@@ -356,7 +356,7 @@ export const Radio = {
       </div>
     );
   },
-  Button: ({ value, checked, onClick, children }: any) => {
+  Button: ({ checked, onClick, children }: any) => {
     return (
       <button
         type="button"
@@ -382,7 +382,7 @@ export function Result({ status, title, subTitle, extra }: any) {
 }
 
 // Back top floating button
-export function FloatButton({ ...props }: any) {
+export function FloatButton() {
   return null;
 }
 

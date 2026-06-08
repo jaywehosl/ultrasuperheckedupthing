@@ -1,39 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  ApiOutlined,
   CloseOutlined,
-  CloudServerOutlined,
-  ClusterOutlined,
-  CodeOutlined,
-  DashboardOutlined,
-  DatabaseOutlined,
-  GithubOutlined,
-  HeartOutlined,
-  ImportOutlined,
-  LogoutOutlined,
   MenuOutlined,
-  MessageOutlined,
   MoonFilled,
   MoonOutlined,
-  SafetyOutlined,
-  SettingOutlined,
   SunOutlined,
-  SwapOutlined,
-  TagsOutlined,
-  TeamOutlined,
-  ToolOutlined,
   TranslationOutlined,
-  UploadOutlined,
 } from '@ant-design/icons';
 import { DropdownMenu } from '@/components/ds';
 import type { MenuEntry } from '@/components/ds';
 
 import { HttpUtil, LanguageManager } from '@/utils';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
-import { useAllSettings } from '@/api/queries/useAllSettings';
 import {
   DashboardIcon,
   InboundsIcon,
@@ -47,9 +28,6 @@ import {
 } from '@/components/ui';
 import './AppSidebar.css';
 
-const SIDEBAR_COLLAPSED_KEY = 'isSidebarCollapsed';
-const DONATE_URL = 'https://donate.sanaei.dev/';
-const REPO_URL = 'https://github.com/MHSanaei/3x-ui';
 const LOGOUT_KEY = '__logout__';
 
 type IconName = 'dashboard' | 'inbound' | 'team' | 'groups' | 'setting' | 'tool' | 'cluster' | 'logout' | 'apidocs';
@@ -65,47 +43,6 @@ const iconByName: Record<IconName, ComponentType<any>> = {
   logout: LogoutIcon,
   apidocs: ApiDocsIcon,
 };
-
-function readCollapsed(): boolean {
-  try {
-    return JSON.parse(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) || 'false');
-  } catch {
-    return false;
-  }
-}
-
-function DonateButton({ ariaLabel }: { ariaLabel: string }) {
-  return (
-    <a
-      href={DONATE_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="sidebar-donate"
-      aria-label={ariaLabel}
-      title={ariaLabel}
-    >
-      <HeartOutlined />
-    </a>
-  );
-}
-
-function VersionBadge({ version, collapsed }: { version: string; collapsed?: boolean }) {
-  if (!version) return null;
-  const label = `v${version}`;
-  return (
-    <a
-      href={REPO_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`sider-version${collapsed ? ' is-collapsed' : ''}`}
-      aria-label={`GitHub ${label}`}
-      title={label}
-    >
-      <GithubOutlined />
-      {!collapsed && <span className="sider-version-text">{label}</span>}
-    </a>
-  );
-}
 
 function ThemeCycleButton({ id, isDark, isUltra, onCycle, ariaLabel }: {
   id: string;
@@ -168,14 +105,8 @@ export default function AppSidebar() {
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
-  const { allSetting } = useAllSettings();
-  const showSubFormats = !!(allSetting.subJsonEnable || allSetting.subClashEnable);
 
-  const [collapsed, setCollapsed] = useState<boolean>(() => readCollapsed());
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const currentTheme: 'light' | 'dark' = isDark ? 'dark' : 'light';
-  const panelVersion = window.X_UI_CUR_VER || '';
 
   const tabs = useMemo<{ key: string; icon: IconName; title: string }[]>(() => [
     { key: '/#dashboard', icon: 'dashboard', title: t('menu.dashboard') },
@@ -191,55 +122,6 @@ export default function AppSidebar() {
 
   const navItems = useMemo(() => tabs.filter((tab) => tab.icon !== 'logout'), [tabs]);
   const utilItems = useMemo(() => tabs.filter((tab) => tab.icon === 'logout'), [tabs]);
-
-  const settingsChildren = useMemo(() => {
-    const children = [
-      { key: '/settings#general', icon: <SettingOutlined />, label: t('pages.settings.panelSettings') },
-      { key: '/settings#security', icon: <SafetyOutlined />, label: t('pages.settings.securitySettings') },
-      { key: '/settings#telegram', icon: <MessageOutlined />, label: t('pages.settings.TGBotSettings') },
-      { key: '/settings#subscription', icon: <CloudServerOutlined />, label: t('pages.settings.subSettings') },
-    ];
-    if (showSubFormats) {
-      children.push({ key: '/settings#subscription-formats', icon: <CodeOutlined />, label: 'Sub Formats' });
-    }
-    return children;
-  }, [t, showSubFormats]);
-
-  const xrayChildren = useMemo(() => [
-    { key: '/xray#basic', icon: <SettingOutlined />, label: t('pages.xray.basicTemplate') },
-    { key: '/xray#routing', icon: <SwapOutlined />, label: t('pages.xray.Routings') },
-    { key: '/xray#outbound', icon: <UploadOutlined />, label: t('pages.xray.Outbounds') },
-    { key: '/xray#balancer', icon: <ClusterOutlined />, label: t('pages.xray.Balancers') },
-    { key: '/xray#dns', icon: <DatabaseOutlined />, label: 'DNS' },
-    { key: '/xray#advanced', icon: <CodeOutlined />, label: t('pages.xray.advancedTemplate') },
-  ], [t]);
-
-  const settingsActive = pathname === '/settings';
-  const xrayActive = pathname === '/xray';
-  const apiDocsActive = pathname === '/api-docs';
-  
-  const selectedKey = useMemo(() => {
-    if (settingsActive) {
-      return `/settings${hash || '#general'}`;
-    }
-    if (xrayActive) {
-      return `/xray${hash || '#basic'}`;
-    }
-    if (apiDocsActive) {
-      return '/api-docs';
-    }
-    if (!hash) return '/#dashboard';
-    const mainHash = hash.split('#')[1] || '';
-    return `/#${mainHash}`;
-  }, [settingsActive, xrayActive, apiDocsActive, hash]);
-
-  const openSubmenu = settingsActive ? '/settings' : xrayActive ? '/xray' : null;
-  const [openKeys, setOpenKeys] = useState<string[]>(() => (openSubmenu ? [openSubmenu] : []));
-  useEffect(() => {
-    if (openSubmenu) {
-      setOpenKeys((keys) => (keys.includes(openSubmenu) ? keys : [...keys, openSubmenu]));
-    }
-  }, [openSubmenu]);
 
   const openLink = useCallback(async (key: string) => {
     if (key === LOGOUT_KEY) {

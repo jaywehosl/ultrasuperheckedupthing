@@ -1,4 +1,7 @@
 import { createRoot } from 'react-dom/client';
+import '@/styles/reset.css';
+import '@/styles/tokens.css';
+import '@/styles/utils.css';
 
 import { readyI18n } from '@/i18n/react';
 import { ThemeProvider } from '@/hooks/useTheme';
