@@ -14,3 +14,26 @@
   align-items: center;
   flex-wrap: wrap;
 }
+
+/* DS layout helpers (replaces antd Space/Empty). */
+.dns-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+.dns-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dns-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 0;
+}
+.dns-empty-desc {
+  color: var(--text-3);
+}

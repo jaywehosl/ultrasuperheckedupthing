@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Modal, Space, Tag } from 'antd';
+import { Button, Dialog, Tag } from '@/components/ds';
 import './DnsPresetsModal.css';
 
 interface DnsPresetsModalProps {
@@ -40,28 +40,28 @@ export default function DnsPresetsModal({ open, onClose, onInstall }: DnsPresets
   const { t } = useTranslation();
 
   return (
-    <Modal
+    <Dialog
       open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={t('pages.xray.dns.dnsPresetTitle')}
       footer={null}
-      mask={{ closable: false }}
-      onCancel={onClose}
+      width={480}
     >
       <div className="preset-list">
         {PRESETS.map((preset) => (
           <div key={preset.name} className="preset-row">
-            <Space size="small" align="center">
-              <Tag color={preset.family ? 'purple' : 'green'}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Tag tone={preset.family ? 'primary' : 'success'}>
                 {preset.family ? t('pages.xray.dns.dnsPresetFamily') : 'DNS'}
               </Tag>
               <span className="preset-name">{preset.name}</span>
-            </Space>
-            <Button type="primary" size="small" onClick={() => onInstall([...preset.data])}>
+            </span>
+            <Button variant="primary" size="sm" onClick={() => onInstall([...preset.data])}>
               {t('install')}
             </Button>
           </div>
         ))}
       </div>
-    </Modal>
+    </Dialog>
   );
 }

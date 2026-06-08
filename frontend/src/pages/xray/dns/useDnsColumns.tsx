@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Dropdown, Input, InputNumber, Space } from 'antd';
+import { Button, DropdownMenu, Input, type ColumnDef, type MenuEntry } from '@/components/ds';
 import { MoreOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 
 import { addrFor, domainsFor, expectedIPsFor } from './helpers';
 import type { DnsServerValue } from './DnsServerModal';
@@ -16,50 +15,31 @@ export function useDnsServerColumns({
 }: {
   openEditServer: (idx: number) => void;
   deleteServer: (idx: number) => void;
-}): ColumnsType<DnsServerRow> {
+}): ColumnDef<DnsServerRow, unknown>[] {
   const { t } = useTranslation();
-  return useMemo(
+  return useMemo<ColumnDef<DnsServerRow, unknown>[]>(
     () => [
       {
-        title: '#',
-        key: 'action',
-        align: 'center',
-        width: 60,
-        render: (_v, _record, index) => (
-          <Space size={6}>
-            <span className="row-index">{index + 1}</span>
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: [
-                  { key: 'edit', label: <><EditOutlined /> {t('edit')}</>, onClick: () => openEditServer(index) },
-                  { key: 'del', danger: true, label: <><DeleteOutlined /> {t('delete')}</>, onClick: () => deleteServer(index) },
-                ],
-              }}
-            >
-              <Button shape="circle" size="small" icon={<MoreOutlined />} />
-            </Dropdown>
-          </Space>
-        ),
+        id: 'action',
+        size: 60,
+        header: () => '#',
+        cell: ({ row }) => {
+          const index = row.index;
+          const menu: MenuEntry[] = [
+            { key: 'edit', icon: <EditOutlined />, label: t('edit'), onSelect: () => openEditServer(index) },
+            { key: 'del', icon: <DeleteOutlined />, label: t('delete'), danger: true, onSelect: () => deleteServer(index) },
+          ];
+          return (
+            <div className="action-cell">
+              <span className="row-index">{index + 1}</span>
+              <DropdownMenu items={menu} trigger={<Button variant="text" size="sm" icon={<MoreOutlined />} />} />
+            </div>
+          );
+        },
       },
-      {
-        title: t('pages.inbounds.address'),
-        key: 'address',
-        align: 'left',
-        render: (_v, record) => addrFor(record.server),
-      },
-      {
-        title: t('pages.xray.dns.domains'),
-        key: 'domains',
-        align: 'left',
-        render: (_v, record) => <span className="muted">{domainsFor(record.server)}</span>,
-      },
-      {
-        title: t('pages.xray.dns.expectIPs'),
-        key: 'expectedIPs',
-        align: 'left',
-        render: (_v, record) => <span className="muted">{expectedIPsFor(record.server)}</span>,
-      },
+      { id: 'address', header: () => t('pages.inbounds.address'), cell: ({ row }) => addrFor(row.original.server) },
+      { id: 'domains', header: () => t('pages.xray.dns.domains'), cell: ({ row }) => <span className="muted">{domainsFor(row.original.server)}</span> },
+      { id: 'expectedIPs', header: () => t('pages.xray.dns.expectIPs'), cell: ({ row }) => <span className="muted">{expectedIPsFor(row.original.server)}</span> },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [t],
@@ -72,47 +52,33 @@ export function useFakednsColumns({
 }: {
   deleteFakedns: (idx: number) => void;
   updateFakednsField: (idx: number, field: 'ipPool' | 'poolSize', value: string | number) => void;
-}): ColumnsType<FakednsTableRow> {
-  return useMemo(
+}): ColumnDef<FakednsTableRow, unknown>[] {
+  return useMemo<ColumnDef<FakednsTableRow, unknown>[]>(
     () => [
       {
-        title: '#',
-        key: 'action',
-        align: 'center',
-        width: 60,
-        render: (_v, _record, index) => (
-          <Space size={6}>
-            <span className="row-index">{index + 1}</span>
-            <Button shape="circle" size="small" danger icon={<DeleteOutlined />} onClick={() => deleteFakedns(index)} />
-          </Space>
+        id: 'action',
+        size: 60,
+        header: () => '#',
+        cell: ({ row }) => (
+          <div className="action-cell">
+            <span className="row-index">{row.index + 1}</span>
+            <Button variant="text" size="sm" danger icon={<DeleteOutlined />} onClick={() => deleteFakedns(row.index)} />
+          </div>
         ),
       },
       {
-        title: 'IP pool',
-        dataIndex: 'ipPool',
-        key: 'ipPool',
-        align: 'left',
-        render: (_v, record, index) => (
-          <Input
-            value={record.ipPool}
-            size="small"
-            onChange={(e) => updateFakednsField(index, 'ipPool', e.target.value)}
-          />
+        id: 'ipPool',
+        header: () => 'IP pool',
+        cell: ({ row }) => (
+          <Input value={row.original.ipPool} onChange={(e) => updateFakednsField(row.index, 'ipPool', e.target.value)} />
         ),
       },
       {
-        title: 'Pool size',
-        dataIndex: 'poolSize',
-        key: 'poolSize',
-        align: 'right',
-        width: 120,
-        render: (_v, record, index) => (
-          <InputNumber
-            value={record.poolSize}
-            min={1}
-            size="small"
-            onChange={(v) => updateFakednsField(index, 'poolSize', Number(v) || 0)}
-          />
+        id: 'poolSize',
+        size: 140,
+        header: () => 'Pool size',
+        cell: ({ row }) => (
+          <Input type="number" min={1} value={row.original.poolSize} onChange={(e) => updateFakednsField(row.index, 'poolSize', Number(e.target.value) || 0)} />
         ),
       },
     ],

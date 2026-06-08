@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Empty, Input, InputNumber, Modal, Select, Space, Switch, Table, Tabs } from 'antd';
+import type { ReactNode } from 'react';
+import { Button, DataTable, Dialog, Input, Select, Switch, Tabs } from '@/components/ds';
+import { TagListEditor } from '@/components/form';
 import {
   DatabaseOutlined,
   DeleteOutlined,
@@ -22,17 +24,26 @@ import './DnsTab.css';
 
 import { STRATEGIES, DEFAULT_FAKEDNS } from './helpers';
 import type { DnsConfig, HostRow, FakednsRow } from './types';
-import { useDnsServerColumns, useFakednsColumns } from './useDnsColumns';
+import { useDnsServerColumns, useFakednsColumns, type DnsServerRow, type FakednsTableRow } from './useDnsColumns';
 
 interface DnsTabProps {
   templateSettings: XraySettingsValue | null;
   setTemplateSettings: SetTemplate;
 }
 
+function EmptyState({ description, children }: { description: ReactNode; children: ReactNode }) {
+  return (
+    <div className="dns-empty">
+      <div className="dns-empty-desc">{description}</div>
+      {children}
+    </div>
+  );
+}
+
 export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTabProps) {
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
-  const [modal, modalContextHolder] = Modal.useModal();
+  const [clearAllOpen, setClearAllOpen] = useState(false);
   const [hostsList, setHostsList] = useState<HostRow[]>([]);
   const [serverModalOpen, setServerModalOpen] = useState(false);
   const [editingServer, setEditingServer] = useState<DnsServerValue | null>(null);
@@ -156,17 +167,9 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
       if (cfg?.servers) cfg.servers.splice(idx, 1);
     });
   }
-  function clearAllServers() {
-    modal.confirm({
-      title: t('pages.xray.dns.clearAllTitle'),
-      content: t('pages.xray.dns.clearAllConfirm'),
-      okText: t('delete'),
-      okButtonProps: { danger: true },
-      cancelText: t('cancel'),
-      onOk: () => mutate((tt) => {
-        if (tt.dns) (tt.dns as DnsConfig).servers = [];
-      }),
-    });
+  function runClearAllServers() {
+    mutate((tt) => { if (tt.dns) (tt.dns as DnsConfig).servers = []; });
+    setClearAllOpen(false);
   }
   function onPresetInstall(servers: string[]) {
     mutate((tt) => {
@@ -250,9 +253,8 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
                   control={
                     <Select
                       value={dns?.queryStrategy ?? 'UseIP'}
-                      style={{ width: '100%' }}
                       options={STRATEGIES.map((s) => ({ value: s, label: s }))}
-                      onChange={(v) => setDnsField('queryStrategy', v)}
+                      onChange={(v) => setDnsField('queryStrategy', v as DnsConfig['queryStrategy'])}
                     />
                   }
                 />
@@ -284,12 +286,12 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
                   title={t('pages.xray.dns.serveExpiredTTL')}
                   description={t('pages.xray.dns.serveExpiredTTLDesc')}
                   control={
-                    <InputNumber
+                    <Input
+                      type="number"
                       value={dns?.serveExpiredTTL ?? 0}
                       min={0}
                       step={60}
-                      style={{ width: '100%' }}
-                      onChange={(v) => setDnsField('serveExpiredTTL', Number(v) || 0)}
+                      onChange={(e) => setDnsField('serveExpiredTTL', Number(e.target.value) || 0)}
                     />
                   }
                 />
@@ -305,42 +307,43 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
         key: 'hosts',
         label: catTabLabel(<ProfileOutlined />, t('pages.xray.dns.hosts'), isMobile),
         children: hostsList.length === 0 ? (
-          <Empty description={t('pages.xray.dns.hostsEmpty')}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => syncHosts([...hostsList, { domain: '', values: [] }])}>
+          <EmptyState description={t('pages.xray.dns.hostsEmpty')}>
+            <Button variant="primary" icon={<PlusOutlined />} onClick={() => syncHosts([...hostsList, { domain: '', values: [] }])}>
               {t('pages.xray.dns.hostsAdd')}
             </Button>
-          </Empty>
+          </EmptyState>
         ) : (
-          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => syncHosts([...hostsList, { domain: '', values: [] }])}>
+          <div className="dns-stack">
+            <Button variant="primary" icon={<PlusOutlined />} onClick={() => syncHosts([...hostsList, { domain: '', values: [] }])} style={{ alignSelf: 'flex-start' }}>
               {t('pages.xray.dns.hostsAdd')}
             </Button>
             {hostsList.map((row, idx) => (
               <div key={`h${idx}`} className="hosts-row">
-                <Input
-                  value={row.domain}
-                  placeholder={t('pages.xray.dns.hostsDomain')}
-                  style={{ flex: '1 1 220px' }}
-                  onChange={(e) => {
-                    const next = hostsList.map((r, i) => (i === idx ? { ...r, domain: e.target.value } : r));
-                    syncHosts(next);
-                  }}
-                />
-                <Select
-                  mode="tags"
-                  value={row.values}
-                  placeholder={t('pages.xray.dns.hostsValues')}
-                  style={{ flex: '2 1 320px' }}
-                  tokenSeparators={[',', ' ']}
-                  onChange={(values) => {
-                    const next = hostsList.map((r, i) => (i === idx ? { ...r, values } : r));
-                    syncHosts(next);
-                  }}
-                />
+                <div style={{ flex: '1 1 220px' }}>
+                  <Input
+                    value={row.domain}
+                    placeholder={t('pages.xray.dns.hostsDomain')}
+                    onChange={(e) => {
+                      const next = hostsList.map((r, i) => (i === idx ? { ...r, domain: e.target.value } : r));
+                      syncHosts(next);
+                    }}
+                  />
+                </div>
+                <div style={{ flex: '2 1 320px' }}>
+                  <TagListEditor
+                    value={row.values}
+                    placeholder={t('pages.xray.dns.hostsValues')}
+                    separators={[',', ' ']}
+                    onChange={(values) => {
+                      const next = hostsList.map((r, i) => (i === idx ? { ...r, values } : r));
+                      syncHosts(next);
+                    }}
+                  />
+                </div>
                 <Button danger icon={<DeleteOutlined />} onClick={() => syncHosts(hostsList.filter((_, i) => i !== idx))} />
               </div>
             ))}
-          </Space>
+          </div>
         ),
       });
 
@@ -348,38 +351,36 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
         key: '2',
         label: catTabLabel(<DatabaseOutlined />, 'DNS', isMobile),
         children: dnsServers.length === 0 ? (
-          <Empty description={t('emptyDnsDesc')}>
-            <Space>
-              <Button type="primary" icon={<PlusOutlined />} onClick={openAddServer}>
+          <EmptyState description={t('emptyDnsDesc')}>
+            <div className="dns-row-actions">
+              <Button variant="primary" icon={<PlusOutlined />} onClick={openAddServer}>
                 {t('pages.xray.dns.add')}
               </Button>
               <Button icon={<MenuOutlined />} onClick={() => setPresetsModalOpen(true)}>
                 {t('pages.xray.dns.usePreset')}
               </Button>
-            </Space>
-          </Empty>
+            </div>
+          </EmptyState>
         ) : (
-          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-            <Space wrap>
-              <Button type="primary" icon={<PlusOutlined />} onClick={openAddServer}>
+          <div className="dns-stack">
+            <div className="dns-row-actions">
+              <Button variant="primary" icon={<PlusOutlined />} onClick={openAddServer}>
                 {t('pages.xray.dns.add')}
               </Button>
               <Button icon={<MenuOutlined />} onClick={() => setPresetsModalOpen(true)}>
                 {t('pages.xray.dns.usePreset')}
               </Button>
-              <Button danger icon={<DeleteOutlined />} onClick={clearAllServers}>
+              <Button danger icon={<DeleteOutlined />} onClick={() => setClearAllOpen(true)}>
                 {t('pages.xray.dns.clearAll')}
               </Button>
-            </Space>
-            <Table
+            </div>
+            <DataTable<DnsServerRow>
+              data={dnsServers}
               columns={dnsColumns}
-              dataSource={dnsServers}
-              rowKey={(r) => r.key}
-              pagination={false}
-              size="small"
-              bordered
+              getRowId={(r) => String(r.key)}
+              sortable={false}
             />
-          </Space>
+          </div>
         ),
       });
 
@@ -387,25 +388,23 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
         key: '3',
         label: catTabLabel(<ExperimentOutlined />, 'Fake DNS', isMobile),
         children: fakeDnsList.length === 0 ? (
-          <Empty description={t('emptyFakeDnsDesc')}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={addFakedns}>
+          <EmptyState description={t('emptyFakeDnsDesc')}>
+            <Button variant="primary" icon={<PlusOutlined />} onClick={addFakedns}>
               {t('pages.xray.fakedns.add')}
             </Button>
-          </Empty>
+          </EmptyState>
         ) : (
-          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={addFakedns}>
+          <div className="dns-stack">
+            <Button variant="primary" icon={<PlusOutlined />} onClick={addFakedns} style={{ alignSelf: 'flex-start' }}>
               {t('pages.xray.fakedns.add')}
             </Button>
-            <Table
+            <DataTable<FakednsTableRow>
+              data={fakeDnsList}
               columns={fakednsColumns}
-              dataSource={fakeDnsList}
-              rowKey={(r) => r.key}
-              pagination={false}
-              size="small"
-              bordered
+              getRowId={(r) => String(r.key)}
+              sortable={false}
             />
-          </Space>
+          </div>
         ),
       });
     }
@@ -416,7 +415,6 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
 
   return (
     <>
-      {modalContextHolder}
       <Tabs defaultActiveKey="1" items={items} />
       <DnsServerModal
         open={serverModalOpen}
@@ -430,6 +428,18 @@ export default function DnsTab({ templateSettings, setTemplateSettings }: DnsTab
         onClose={() => setPresetsModalOpen(false)}
         onInstall={onPresetInstall}
       />
+      <Dialog
+        open={clearAllOpen}
+        onOpenChange={(o) => { if (!o) setClearAllOpen(false); }}
+        title={t('pages.xray.dns.clearAllTitle')}
+        okText={t('delete')}
+        cancelText={t('cancel')}
+        okDanger
+        onOk={runClearAllServers}
+        width={440}
+      >
+        <p style={{ margin: 0 }}>{t('pages.xray.dns.clearAllConfirm')}</p>
+      </Dialog>
     </>
   );
 }
