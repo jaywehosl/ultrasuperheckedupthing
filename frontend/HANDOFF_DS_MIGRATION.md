@@ -254,9 +254,17 @@ Big clusters, roughly in dependency order:
    `XrayStatusCard.css`). And `IndexPage.tsx`/`StatusCard.tsx`/`XrayStatusCard.tsx`
    keep the pre-red `getMessage()` union typing + a couple `TS6133` — that's the
    messageBus-typing baseline, not raw antd.
-7. **Sub pages:** `src/pages/sub/*`, `src/entries/*`.
-8. **Shared shims:** `components/ui/*` (PlanVerificationModal, SettingListItem,
-   TelemetryGuideOverlay), `components/feedback/*` (PromptModal, TextModal).
+7. ~~**Sub pages**~~ ✅ **DONE** (commit `164c128`). `SubPage` (Layout/Card/
+   Descriptions/Dropdown/Menu/Popover/Space/Tag/Tooltip/Divider/Button → DS;
+   Descriptions → DS-styled `<dl>`; dropped `ConfigProvider`) + `SubUsageSummary`
+   (antd `Progress` → custom token bar). **Exceptions:** `SubPage` keeps antd
+   `QRCode` (leaf renderer, same as QrPanel/TwoFactorModal); `entries/{login,
+   subpage}.tsx` keep antd `message` + `antd/dist/reset.css` = the toast-backend
+   infra (goes away with messageBus in item 9).
+8. ~~**Shared shims**~~ ✅ **DONE** (commit `6d3cf3a`). `SettingListItem`
+   (Row/Col → grid), `TelemetryGuideOverlay` (Button), `PromptModal`/`TextModal`
+   (Modal/Input → DS Dialog + Input/Textarea), `PlanVerificationModal`
+   (Modal/Button/Alert → DS; kept terminal-diff styling, ant tokens → DS).
 9. **Deferred / cross-cutting:**
    - **`DateTimePicker`** (`src/components/form/DateTimePicker.tsx`) still wraps
      antd `DatePicker` (+ persian calendar). Needs a DS date input. Used by client
@@ -338,17 +346,27 @@ For each subsystem (a modal + its field tree):
    `ds.css` and `NodeFormModal.tsx`/`InboundFormModal.tsx`.
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
-3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR + Xray page
-   tabs + Settings + Clients leftovers/QR + **Index/dashboard modals** are now
-   done — recommended next: **Sub pages** (item 7) or **Shared shims** (item 8)),
-   apply §6 recipe.
+3. §5 items 1–8 are all done. What's left is **item 9 (deferred / cross-cutting)**:
+   - The `--ant-color-*` CSS sweep (many `src/pages/index/*.css` + scattered
+     others still reference antd CSS vars — grep `--ant-` across `src`).
+   - A DS toast system to replace the antd `message` backend (`utils/messageBus.ts`,
+     `entries/*` `message.config`, `main.tsx`) → then drop `antd/dist/reset.css`.
+   - A DS QR renderer to retire the antd `QRCode` leaf (SubPage, QrPanel,
+     TwoFactorModal).
+   - A DS date input to replace `DateTimePicker` (antd DatePicker + persian).
+   - Modal z-index / layering polish (user-flagged "баги слоями").
+   - Clean residual `@ant-design/icons` only once a DS icon set exists (low pri —
+     icons are the accepted convention for now).
+   Confirm with the user which of these to tackle; several are cross-cutting infra.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `5f3f152` (index CustomGeo/Xray modals) on `redesign/ds-foundation`.
+> Current branch tip: `164c128` (sub pages) on `redesign/ds-foundation`.
 > Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** +
-> **Settings** + **Clients leftovers/QR** + **Index/dashboard modals** = done;
-> `FinalMaskForm` is context-only.
-> §5 items 7–9 = open (next recommended: **Sub pages** / **Shared shims**).
+> **Settings** + **Clients leftovers/QR** + **Index/dashboard modals** +
+> **Sub pages** + **Shared shims** = done; `FinalMaskForm` is context-only.
+> **All feature pages/modals are off raw antd** — only documented leaf/infra
+> exceptions remain (antd `QRCode`, antd `message` backend, `@ant-design/icons`,
+> `DateTimePicker`). §5 items 1–8 done; only **item 9 (cross-cutting infra)** open.
 > Suite green at 397/25 files.
