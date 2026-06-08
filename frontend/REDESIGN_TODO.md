@@ -34,6 +34,13 @@ asymmetric/flickering open-close ✅.
 - `backdrop-filter` dies if ANY ancestor has transform / opacity<1 / filter / animation /
   will-change / contain / isolation. The `.feed-section` entrance animation silently broke
   panel glass for two sessions. Never wrap glass surfaces in such elements.
+- **CANON — never animate a CONTAINER that holds glass/backdrop-filter children.**
+  Animating `opacity` (or transform) on a wrapper (tab content, accordion body, list, any
+  group of frosted inputs/cards/selects) makes it a compositing group → the children's
+  blur is disabled for the duration → they "flicker / catch up" the frost. Swap such
+  content INSTANTLY (no enter animation). Only animate leaf elements that have NO
+  backdrop-filter, or the glass element's OWN opacity (e.g. the dialog overlay fading
+  itself is fine). Applied to `.ds-tabs__content` (instant swap).
 - The automated browser tab runs backgrounded (`document.hidden`), which pauses the
   particle rAF — screenshots taken via automation show a blank canvas. Visual verification
   of glass/particles must be done by the user on the active tab.

@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Input,
-  InputNumber,
-  Select,
-  Switch,
-  Tabs,
-} from 'antd';
-import {
   ApartmentOutlined,
   BellOutlined,
   ClockCircleOutlined,
@@ -15,17 +8,14 @@ import {
   SafetyCertificateOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
+import { Input, Select, Switch, Tabs, Tag } from '@/components/ds';
 import type { AllSetting } from '@/models/setting';
-import { HttpUtil, LanguageManager } from '@/utils';
+import { LanguageManager } from '@/utils';
+import { inboundsApi } from '@/generated/client';
 import { SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from './catTabLabel';
 import { sanitizePath } from './uriPath';
-
-interface ApiMsg<T = unknown> {
-  success?: boolean;
-  obj?: T;
-}
 
 interface GeneralTabProps {
   allSetting: AllSetting;
@@ -47,17 +37,10 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // /options is the slim picker-shaped endpoint — it skips the heavy
-      // per-client settings and clientStats payloads that /list ships.
-      const msg = await HttpUtil.get('/panel/api/inbounds/options') as ApiMsg<{
-        tag: string; protocol: string; port: number;
-      }[]>;
+      const msg = await inboundsApi.options<{ tag: string; protocol: string; port: number }[]>(undefined, { silent: true });
       if (cancelled) return;
       if (msg?.success && Array.isArray(msg.obj)) {
-        setInboundOptions(msg.obj.map((ib) => ({
-          label: `${ib.tag} (${ib.protocol}@${ib.port})`,
-          value: ib.tag,
-        })));
+        setInboundOptions(msg.obj.map((ib) => ({ label: `${ib.tag} (${ib.protocol}@${ib.port})`, value: ib.tag })));
       } else {
         setInboundOptions([]);
       }
@@ -70,8 +53,11 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
     return csv.length ? csv.split(',').map((s) => s.trim()).filter(Boolean) : [];
   }, [allSetting.ldapInboundTags]);
 
-  function setLdapInboundTagList(list: string[]) {
-    updateSetting({ ldapInboundTags: Array.isArray(list) ? list.join(',') : '' });
+  function toggleLdapTag(tag: string) {
+    const next = ldapInboundTagList.includes(tag)
+      ? ldapInboundTagList.filter((x) => x !== tag)
+      : [...ldapInboundTagList, tag];
+    updateSetting({ ldapInboundTags: next.join(',') });
   }
 
   function onLangChange(value: string) {
@@ -82,12 +68,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
   const langOptions = useMemo(
     () => LanguageManager.supportedLanguages.map((l: { value: string; name: string; icon: string }) => ({
       value: l.value,
-      label: (
-        <>
-          <span role="img" aria-label={l.name}>{l.icon}</span>
-          &nbsp;&nbsp;<span>{l.name}</span>
-        </>
-      ),
+      label: `${l.icon}  ${l.name}`,
     })),
     [],
   );
@@ -102,57 +83,29 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
             <SettingListItem paddings="small" title={t('pages.settings.panelListeningIP')} description={t('pages.settings.panelListeningIPDesc')}>
               <Input value={allSetting.webListen} onChange={(e) => updateSetting({ webListen: e.target.value })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.panelListeningDomain')} description={t('pages.settings.panelListeningDomainDesc')}>
               <Input value={allSetting.webDomain} onChange={(e) => updateSetting({ webDomain: e.target.value })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.panelPort')} description={t('pages.settings.panelPortDesc')}>
-              <InputNumber value={allSetting.webPort} min={1} max={65535} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ webPort: Number(v) || 0 })} />
+              <Input type="number" min={1} max={65535} value={allSetting.webPort} onChange={(e) => updateSetting({ webPort: Number(e.target.value) || 0 })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.panelUrlPath')} description={t('pages.settings.panelUrlPathDesc')}>
               <Input value={allSetting.webBasePath} onChange={(e) => updateSetting({ webBasePath: sanitizePath(e.target.value) })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.sessionMaxAge')} description={t('pages.settings.sessionMaxAgeDesc')}>
-              <InputNumber value={allSetting.sessionMaxAge} min={60} max={525600} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ sessionMaxAge: Number(v) || 0 })} />
+              <Input type="number" min={60} max={525600} value={allSetting.sessionMaxAge} onChange={(e) => updateSetting({ sessionMaxAge: Number(e.target.value) || 0 })} />
             </SettingListItem>
-
-            <SettingListItem
-              paddings="small"
-              title={t('pages.settings.trustedProxyCidrs')}
-              description={t('pages.settings.trustedProxyCidrsDesc')}
-            >
-              <Input
-                value={allSetting.trustedProxyCIDRs}
-                placeholder="127.0.0.1/32,::1/128"
-                onChange={(e) => updateSetting({ trustedProxyCIDRs: e.target.value })}
-              />
+            <SettingListItem paddings="small" title={t('pages.settings.trustedProxyCidrs')} description={t('pages.settings.trustedProxyCidrsDesc')}>
+              <Input value={allSetting.trustedProxyCIDRs} placeholder="127.0.0.1/32,::1/128" onChange={(e) => updateSetting({ trustedProxyCIDRs: e.target.value })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.panelProxy')} description={t('pages.settings.panelProxyDesc')}>
-              <Input
-                value={allSetting.panelProxy}
-                placeholder="socks5:// or http://user:pass@host:port"
-                onChange={(e) => updateSetting({ panelProxy: e.target.value })}
-              />
+              <Input value={allSetting.panelProxy} placeholder="socks5:// or http://user:pass@host:port" onChange={(e) => updateSetting({ panelProxy: e.target.value })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.pageSize')} description={t('pages.settings.pageSizeDesc')}>
-              <InputNumber value={allSetting.pageSize} min={0} max={1000} step={5} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ pageSize: Number(v) || 0 })} />
+              <Input type="number" min={0} max={1000} step={5} value={allSetting.pageSize} onChange={(e) => updateSetting({ pageSize: Number(e.target.value) || 0 })} />
             </SettingListItem>
-
             <SettingListItem paddings="small" title={t('pages.settings.language')}>
-              <Select
-                value={lang}
-                onChange={onLangChange}
-                style={{ width: '100%' }}
-                options={langOptions}
-              />
+              <Select value={lang} onChange={onLangChange} options={langOptions} />
             </SettingListItem>
           </>
         ),
@@ -163,12 +116,10 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         children: (
           <>
             <SettingListItem paddings="small" title={t('pages.settings.expireTimeDiff')} description={t('pages.settings.expireTimeDiffDesc')}>
-              <InputNumber value={allSetting.expireDiff} min={0} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ expireDiff: Number(v) || 0 })} />
+              <Input type="number" min={0} value={allSetting.expireDiff} onChange={(e) => updateSetting({ expireDiff: Number(e.target.value) || 0 })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.trafficDiff')} description={t('pages.settings.trafficDiffDesc')}>
-              <InputNumber value={allSetting.trafficDiff} min={0} max={100} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ trafficDiff: Number(v) || 0 })} />
+              <Input type="number" min={0} max={100} value={allSetting.trafficDiff} onChange={(e) => updateSetting({ trafficDiff: Number(e.target.value) || 0 })} />
             </SettingListItem>
           </>
         ),
@@ -193,19 +144,13 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
         children: (
           <>
             <SettingListItem paddings="small" title={t('pages.settings.externalTrafficInformEnable')} description={t('pages.settings.externalTrafficInformEnableDesc')}>
-              <Switch checked={allSetting.externalTrafficInformEnable}
-                onChange={(v) => updateSetting({ externalTrafficInformEnable: v })} />
+              <Switch checked={allSetting.externalTrafficInformEnable} onChange={(v) => updateSetting({ externalTrafficInformEnable: v })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.externalTrafficInformURI')} description={t('pages.settings.externalTrafficInformURIDesc')}>
-              <Input
-                value={allSetting.externalTrafficInformURI}
-                placeholder="(http|https)://domain[:port]/path/"
-                onChange={(e) => updateSetting({ externalTrafficInformURI: e.target.value })}
-              />
+              <Input value={allSetting.externalTrafficInformURI} placeholder="(http|https)://domain[:port]/path/" onChange={(e) => updateSetting({ externalTrafficInformURI: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.restartXrayOnClientDisable')} description={t('pages.settings.restartXrayOnClientDisableDesc')}>
-              <Switch checked={allSetting.restartXrayOnClientDisable}
-                onChange={(v) => updateSetting({ restartXrayOnClientDisable: v })} />
+              <Switch checked={allSetting.restartXrayOnClientDisable} onChange={(v) => updateSetting({ restartXrayOnClientDisable: v })} />
             </SettingListItem>
           </>
         ),
@@ -222,7 +167,6 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
               <Select
                 value={allSetting.datepicker || 'gregorian'}
                 onChange={(v) => updateSetting({ datepicker: v as 'gregorian' | 'jalalian' })}
-                style={{ width: '100%' }}
                 options={DATEPICKER_LIST.map((d) => ({ value: d.value, label: d.name }))}
               />
             </SettingListItem>
@@ -241,8 +185,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
               <Input value={allSetting.ldapHost} onChange={(e) => updateSetting({ ldapHost: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.port')}>
-              <InputNumber value={allSetting.ldapPort} min={1} max={65535} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ ldapPort: Number(v) || 0 })} />
+              <Input type="number" min={1} max={65535} value={allSetting.ldapPort} onChange={(e) => updateSetting({ ldapPort: Number(e.target.value) || 0 })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.useTls')}>
               <Switch checked={allSetting.ldapUseTLS} onChange={(v) => updateSetting({ ldapUseTLS: v })} />
@@ -255,7 +198,8 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
               title={t('password')}
               description={allSetting.hasLdapPassword ? t('pages.settings.ldap.passwordConfigured') : t('pages.settings.ldap.passwordUnconfigured')}
             >
-              <Input.Password
+              <Input
+                type="password"
                 value={allSetting.ldapPassword}
                 placeholder={allSetting.hasLdapPassword ? t('pages.settings.ldap.passwordPlaceholder') : ''}
                 onChange={(e) => updateSetting({ ldapPassword: e.target.value })}
@@ -286,18 +230,24 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
               <Input value={allSetting.ldapSyncCron} onChange={(e) => updateSetting({ ldapSyncCron: e.target.value })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.inboundTags')} description={t('pages.settings.ldap.inboundTagsDesc')}>
-              <>
-                <Select
-                  mode="multiple"
-                  value={ldapInboundTagList}
-                  onChange={setLdapInboundTagList}
-                  style={{ width: '100%' }}
-                  options={inboundOptions}
-                />
-                {inboundOptions.length === 0 && (
+              <div style={{ width: '100%' }}>
+                {inboundOptions.length === 0 ? (
                   <div className="ldap-no-inbounds">{t('pages.settings.ldap.noInbounds')}</div>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {inboundOptions.map((opt) => (
+                      <Tag
+                        key={opt.value}
+                        tone={ldapInboundTagList.includes(opt.value) ? 'primary' : 'neutral'}
+                        onClick={() => toggleLdapTag(opt.value)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {opt.label}
+                      </Tag>
+                    ))}
+                  </div>
                 )}
-              </>
+              </div>
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.autoCreate')}>
               <Switch checked={allSetting.ldapAutoCreate} onChange={(v) => updateSetting({ ldapAutoCreate: v })} />
@@ -306,16 +256,13 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
               <Switch checked={allSetting.ldapAutoDelete} onChange={(v) => updateSetting({ ldapAutoDelete: v })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.defaultTotalGb')}>
-              <InputNumber value={allSetting.ldapDefaultTotalGB} min={0} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ ldapDefaultTotalGB: Number(v) || 0 })} />
+              <Input type="number" min={0} value={allSetting.ldapDefaultTotalGB} onChange={(e) => updateSetting({ ldapDefaultTotalGB: Number(e.target.value) || 0 })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.defaultExpiryDays')}>
-              <InputNumber value={allSetting.ldapDefaultExpiryDays} min={0} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ ldapDefaultExpiryDays: Number(v) || 0 })} />
+              <Input type="number" min={0} value={allSetting.ldapDefaultExpiryDays} onChange={(e) => updateSetting({ ldapDefaultExpiryDays: Number(e.target.value) || 0 })} />
             </SettingListItem>
             <SettingListItem paddings="small" title={t('pages.settings.ldap.defaultIpLimit')}>
-              <InputNumber value={allSetting.ldapDefaultLimitIP} min={0} style={{ width: '100%' }}
-                onChange={(v) => updateSetting({ ldapDefaultLimitIP: Number(v) || 0 })} />
+              <Input type="number" min={0} value={allSetting.ldapDefaultLimitIP} onChange={(e) => updateSetting({ ldapDefaultLimitIP: Number(e.target.value) || 0 })} />
             </SettingListItem>
           </>
         ),
