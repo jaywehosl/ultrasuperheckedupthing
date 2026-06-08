@@ -243,8 +243,17 @@ Big clusters, roughly in dependency order:
    antd-free; the only raw-antd file was `SubJsonFinalMaskForm` (migrated to the
    controlled keystone, which let the `FinalMaskForm` antd branch be removed).
    `TwoFactorModal` keeps antd `QRCode` as a leaf renderer (same as QrPanel).
-6. **Index/dashboard modals:** `src/pages/index/*` (many modals: Log, Backup,
-   Version, PanelUpdate, SystemHistory, XrayLog/Metrics, CustomGeo...).
+6. ~~**Index/dashboard modals**~~ ✅ **DONE** (commits `33c327d`, `5f3f152`).
+   Backup/Log/PanelUpdate/SystemHistory/Version + CustomGeoFormModal/Section +
+   XrayLog/XrayMetrics → DS (Dialog/Select/Button/Tag/Alert/Segmented,
+   `.ds-collapse`, `.ds-check`, bespoke `.ds-table`, confirm-state Dialogs).
+   `src/pages/index/` has **no raw antd** now (only `@ant-design/icons`).
+   **Debt left for a later sweep:** several index `*.css` still reference stale
+   `--ant-color-*` tokens (`LogModal.css`, `BackupModal.css`, `PanelUpdateModal.css`,
+   `VersionModal.css`, `SystemHistoryModal.css`, `IndexPage.css`,
+   `XrayStatusCard.css`). And `IndexPage.tsx`/`StatusCard.tsx`/`XrayStatusCard.tsx`
+   keep the pre-red `getMessage()` union typing + a couple `TS6133` — that's the
+   messageBus-typing baseline, not raw antd.
 7. **Sub pages:** `src/pages/sub/*`, `src/entries/*`.
 8. **Shared shims:** `components/ui/*` (PlanVerificationModal, SettingListItem,
    TelemetryGuideOverlay), `components/feedback/*` (PromptModal, TextModal).
@@ -330,14 +339,16 @@ For each subsystem (a modal + its field tree):
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
 3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR + Xray page
-   tabs + Settings + Clients leftovers/QR are now done — recommended next:
-   **Index/dashboard modals**), apply §6 recipe.
+   tabs + Settings + Clients leftovers/QR + **Index/dashboard modals** are now
+   done — recommended next: **Sub pages** (item 7) or **Shared shims** (item 8)),
+   apply §6 recipe.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `34da83d` (clients QR) on `redesign/ds-foundation`.
+> Current branch tip: `5f3f152` (index CustomGeo/Xray modals) on `redesign/ds-foundation`.
 > Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** +
-> **Settings** + **Clients leftovers/QR** = done; `FinalMaskForm` is context-only.
-> §5 items 6–9 = open (next recommended: **Index/dashboard modals**).
+> **Settings** + **Clients leftovers/QR** + **Index/dashboard modals** = done;
+> `FinalMaskForm` is context-only.
+> §5 items 7–9 = open (next recommended: **Sub pages** / **Shared shims**).
 > Suite green at 397/25 files.
