@@ -318,6 +318,44 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 40px; color: var(--text-3);
 }
 
+/* ---- Tabs (Radix) --------------------------------------------------------- */
+.ds-tabs__list {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--hairline-soft);
+  margin-bottom: 18px;
+  overflow-x: auto;
+}
+.ds-tabs__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition: color var(--dur-fast) var(--ease-out-quint), background var(--dur-fast);
+}
+.ds-tabs__trigger:hover { color: var(--text-1); background: var(--surface-hover); }
+.ds-tabs__trigger[data-state='active'] { color: var(--color-primary-strong); }
+.ds-tabs__trigger[data-state='active']::after {
+  content: '';
+  position: absolute;
+  left: 8px; right: 8px; bottom: -1px;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--color-primary);
+}
+.ds-tabs__trigger[disabled] { opacity: 0.45; cursor: not-allowed; }
+.ds-tabs__content:focus-visible { outline: none; }
+
 /* ---- native checkbox (table selection) ------------------------------------ */
 .ds-check {
   width: 16px; height: 16px;

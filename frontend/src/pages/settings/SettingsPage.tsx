@@ -2,20 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Alert,
-  Button,
-  Card,
-  Col,
-  ConfigProvider,
-  FloatButton,
-  Layout,
-  Modal,
-  Row,
-  Space,
-  Spin,
-  message,
-} from '@/components/ui';
-import {
   SettingOutlined,
   SafetyOutlined,
   MessageOutlined,
@@ -23,14 +9,15 @@ import {
   CodeOutlined,
 } from '@ant-design/icons';
 
+import { Alert, Button, Card, Dialog } from '@/components/ds';
+import { FloatButton, Spin, VerticalTabs } from '@/components/ui';
 import { HttpUtil, PromiseUtil } from '@/utils';
-import { setMessageInstance } from '@/utils/messageBus';
+import { getMessage } from '@/utils/messageBus';
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { AllSettingSchema } from '@/schemas/setting';
 import PlanVerificationModal from '@/components/ui/PlanVerificationModal';
-import { VerticalTabs } from '@/components/ui';
 import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
 import TelegramTab from './TelegramTab';
@@ -66,15 +53,10 @@ function scrollTarget() {
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra } = useTheme();
   const { isMobile } = useMediaQuery();
-  const [modal, modalContextHolder] = Modal.useModal();
-  const [messageApi, messageContextHolder] = message.useMessage();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setMessageInstance(messageApi);
-  }, [messageApi]);
+  const message = getMessage();
 
   const {
     allSetting,
@@ -87,9 +69,10 @@ export default function SettingsPage() {
     saveAll,
   } = useAllSettings();
 
-  const showSubFormats = useMemo(() => {
-    return !!(allSetting?.subJsonEnable || allSetting?.subClashEnable);
-  }, [allSetting?.subJsonEnable, allSetting?.subClashEnable]);
+  const showSubFormats = useMemo(
+    () => !!(allSetting?.subJsonEnable || allSetting?.subClashEnable),
+    [allSetting?.subJsonEnable, allSetting?.subClashEnable],
+  );
 
   const tabItems = useMemo(() => {
     const list = [
@@ -105,21 +88,19 @@ export default function SettingsPage() {
   }, [t, showSubFormats]);
 
   const [showPlan, setShowPlan] = useState(false);
-
+  const [restartConfirm, setRestartConfirm] = useState(false);
   const [entryHost, setEntryHost] = useState('');
   const [entryPort, setEntryPort] = useState('');
   const [entryIsIP, setEntryIsIP] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(true);
 
   useEffect(() => {
-     
     const host = window.location.hostname;
     setEntryHost(host);
     setEntryPort(window.location.port);
     setEntryIsIP(isIp(host));
-     
   }, []);
 
-  const [alertVisible, setAlertVisible] = useState(true);
   const location = useLocation();
   const slug = location.hash.replace(/^#/, '');
   const activeSlug = tabSlugs.includes(slug) ? slug : 'general';
@@ -149,13 +130,13 @@ export default function SettingsPage() {
     return url.toString();
   }
 
-  async function onSave() {
+  function onSave() {
     const result = AllSettingSchema.safeParse(allSetting);
     if (!result.success) {
       const issue = result.error.issues[0];
       const fieldPath = issue?.path.join('.') ?? 'value';
       const msgKey = issue?.message ?? 'somethingWentWrong';
-      messageApi.error(`${fieldPath}: ${t(msgKey, { defaultValue: msgKey })}`);
+      message.error(`${fieldPath}: ${t(msgKey, { defaultValue: msgKey })}`);
       return;
     }
     setShowPlan(true);
@@ -171,66 +152,46 @@ export default function SettingsPage() {
     }
   }
 
-  function restartPanel() {
-    modal.confirm({
-      title: t('pages.settings.restartPanel'),
-      content: t('pages.settings.restartPanelDesc'),
-      okText: t('pages.settings.restartPanel'),
-      okButtonProps: { danger: true },
-      cancelText: t('cancel'),
-      onOk: async () => {
-        setSpinning(true);
-        try {
-          const msg = await HttpUtil.post('/panel/setting/restartPanel') as ApiMsg;
-          if (!msg?.success) return;
-          await PromiseUtil.sleep(5000);
-          window.location.replace(rebuildUrlAfterRestart());
-        } finally {
-          setSpinning(false);
-        }
-      },
-    });
+  async function doRestart() {
+    setRestartConfirm(false);
+    setSpinning(true);
+    try {
+      const msg = await HttpUtil.post('/panel/setting/restartPanel') as ApiMsg;
+      if (!msg?.success) return;
+      await PromiseUtil.sleep(5000);
+      window.location.replace(rebuildUrlAfterRestart());
+    } finally {
+      setSpinning(false);
+    }
   }
 
   const confAlerts = useMemo<string[]>(() => {
     const out: string[] = [];
-    if (window.location.protocol !== 'https:') {
-      out.push(t('pages.settings.warnHttp'));
-    }
-    if (allSetting.webPort === 2053) {
-      out.push(t('pages.settings.warnDefaultPort'));
-    }
+    if (window.location.protocol !== 'https:') out.push(t('pages.settings.warnHttp'));
+    if (allSetting.webPort === 2053) out.push(t('pages.settings.warnDefaultPort'));
     const segs = window.location.pathname.split('/').length < 4;
-    if (segs && allSetting.webBasePath === '/') {
-      out.push(t('pages.settings.warnDefaultBasePath'));
-    }
+    if (segs && allSetting.webBasePath === '/') out.push(t('pages.settings.warnDefaultBasePath'));
     if (allSetting.subEnable) {
       let subPath = allSetting.subPath;
       if (allSetting.subURI) {
         try { subPath = new URL(allSetting.subURI).pathname; } catch { /* noop */ }
       }
-      if (subPath === '/sub/') {
-        out.push(t('pages.settings.warnDefaultSubPath'));
-      }
+      if (subPath === '/sub/') out.push(t('pages.settings.warnDefaultSubPath'));
     }
     if (allSetting.subJsonEnable) {
       let p = allSetting.subJsonPath;
       if (allSetting.subJsonURI) {
         try { p = new URL(allSetting.subJsonURI).pathname; } catch { /* noop */ }
       }
-      if (p === '/json/') {
-        out.push(t('pages.settings.warnDefaultJsonPath'));
-      }
+      if (p === '/json/') out.push(t('pages.settings.warnDefaultJsonPath'));
     }
     return out;
   }, [allSetting, t]);
 
-  const pageClass = useMemo(() => {
-    const classes = ['settings-page'];
-    if (isDark) classes.push('is-dark');
-    if (isUltra) classes.push('is-ultra');
-    return classes.join(' ');
-  }, [isDark, isUltra]);
+  const pageClass = useMemo(
+    () => ['settings-page', isDark && 'is-dark', isUltra && 'is-ultra'].filter(Boolean).join(' '),
+    [isDark, isUltra],
+  );
 
   const categoryBody = useMemo(() => {
     switch (activeSlug) {
@@ -243,77 +204,84 @@ export default function SettingsPage() {
   }, [activeSlug, allSetting, updateSetting]);
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
-      {messageContextHolder}
-      {modalContextHolder}
-      <div className={pageClass}>
-        <Layout className="content-shell">
-          <Layout.Content id="content-layout" className="content-area">
-            <Spin spinning={spinning || !fetched} delay={200} description={t('loading')} size="large">
-              {!fetched ? (
-                <div className="loading-spacer" />
-              ) : (
-                <>
-                  {confAlerts.length > 0 && alertVisible && (
+    <div className={pageClass}>
+      <div className="content-shell">
+        <div id="content-layout" className="content-area">
+          <Spin spinning={spinning || !fetched} delay={200} description={t('loading')} size="large">
+            {!fetched ? (
+              <div className="loading-spacer" />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 8 : 12 }}>
+                {confAlerts.length > 0 && alertVisible && (
+                  <div className="conf-alert" style={{ position: 'relative' }}>
                     <Alert
-                      type="error"
-                      showIcon
-                      closable={{ onClose: () => setAlertVisible(false) }}
-                      className="conf-alert"
+                      tone="error"
                       title={t('pages.settings.securityWarnings')}
                       description={(
                         <>
                           <b>{t('pages.settings.panelExposed')}</b>
-                          <ul>
+                          <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
                             {confAlerts.map((msg, i) => <li key={i}>{msg}</li>)}
                           </ul>
                         </>
                       )}
                     />
-                  )}
+                    <button
+                      className="ds-dialog__close"
+                      style={{ position: 'absolute', top: 8, right: 8 }}
+                      onClick={() => setAlertVisible(false)}
+                      aria-label="Close"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                )}
 
-                  <Row gutter={[isMobile ? 8 : 16, isMobile ? 0 : 12]}>
-                    <Col span={24}>
-                      <Card hoverable>
-                        <Row className="header-row">
-                          <Col xs={24} sm={10} className="header-actions">
-                            <Space>
-                              <Button type="primary" disabled={saveDisabled} onClick={onSave}>
-                                {t('pages.settings.save')}
-                              </Button>
-                              <Button type="primary" danger disabled={!saveDisabled} onClick={restartPanel}>
-                                {t('pages.settings.restartPanel')}
-                              </Button>
-                            </Space>
-                          </Col>
-                          <Col xs={24} sm={14} className="header-info">
-                            <FloatButton.BackTop target={scrollTarget} visibilityHeight={200} />
-                            <Alert type="warning" showIcon title={t('pages.settings.infoDesc')} />
-                          </Col>
-                        </Row>
-                      </Card>
-                    </Col>
+                <Card>
+                  <div className="header-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+                    <div className="header-actions" style={{ display: 'flex', gap: 10 }}>
+                      <Button variant="primary" disabled={saveDisabled} onClick={onSave}>
+                        {t('pages.settings.save')}
+                      </Button>
+                      <Button variant="primary" danger disabled={!saveDisabled} onClick={() => setRestartConfirm(true)}>
+                        {t('pages.settings.restartPanel')}
+                      </Button>
+                    </div>
+                    <div className="header-info" style={{ flex: 1, minWidth: 220 }}>
+                      <FloatButton.BackTop target={scrollTarget} visibilityHeight={200} />
+                      <Alert tone="warning" title={t('pages.settings.infoDesc')} />
+                    </div>
+                  </div>
+                </Card>
 
-                    <Col xs={24} md={6}>
-                      <VerticalTabs
-                        items={tabItems}
-                        activeKey={activeSlug}
-                        onChange={(key) => navigate(`#${key}`)}
-                      />
-                    </Col>
-
-                    <Col xs={24} md={18}>
-                      <Card hoverable style={{ minHeight: '450px' }}>
-                        {categoryBody}
-                      </Card>
-                    </Col>
-                  </Row>
-                </>
-              )}
-            </Spin>
-          </Layout.Content>
-        </Layout>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '240px 1fr', gap: isMobile ? 8 : 16, alignItems: 'start' }}>
+                  <VerticalTabs
+                    items={tabItems}
+                    activeKey={activeSlug}
+                    onChange={(key) => navigate(`#${key}`)}
+                  />
+                  <Card style={{ minHeight: 450 }}>
+                    {categoryBody}
+                  </Card>
+                </div>
+              </div>
+            )}
+          </Spin>
+        </div>
       </div>
+
+      <Dialog
+        open={restartConfirm}
+        onOpenChange={(o) => !o && setRestartConfirm(false)}
+        title={t('pages.settings.restartPanel')}
+        okText={t('pages.settings.restartPanel')}
+        okDanger
+        confirmLoading={spinning}
+        onOk={doRestart}
+      >
+        <p style={{ margin: 0 }}>{t('pages.settings.restartPanelDesc')}</p>
+      </Dialog>
+
       <PlanVerificationModal
         open={showPlan}
         title="Settings Implementation Plan"
@@ -323,6 +291,6 @@ export default function SettingsPage() {
         onConfirm={executeSave}
         onCancel={() => setShowPlan(false)}
       />
-    </ConfigProvider>
+    </div>
   );
 }
