@@ -1,10 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Modal, Tooltip, message } from '@/components/ui';
-import { Table, Typography } from 'antd';
-import type { TableColumnType } from 'antd';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
-
+import { Alert, Button, DataTable, Dialog, Tooltip, TooltipProvider, type ColumnDef } from '@/components/ds';
+import { getMessage } from '@/utils/messageBus';
 import type { ClientRecord } from '@/hooks/useClients';
 
 interface SubSettings {
@@ -30,15 +28,11 @@ interface Row {
   jsonLink: string;
 }
 
-export default function SubLinksModal({
-  open,
-  emails,
-  clients,
-  subSettings,
-  onOpenChange,
-}: SubLinksModalProps) {
+const ellipsisCell: React.CSSProperties = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '100%' };
+
+export default function SubLinksModal({ open, emails, clients, subSettings, onOpenChange }: SubLinksModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+  const message = getMessage();
 
   const enabled = !!subSettings?.enable && !!subSettings?.subURI;
   const jsonEnabled = !!subSettings?.subJsonEnable && !!subSettings?.subJsonURI;
@@ -69,9 +63,9 @@ export default function SubLinksModal({
   async function copy(text: string, label?: string) {
     try {
       await navigator.clipboard.writeText(text);
-      messageApi.success(label || t('copied'));
+      message.success(label || t('copied'));
     } catch {
-      messageApi.error(t('somethingWentWrong'));
+      message.error(t('somethingWentWrong'));
     }
   }
 
@@ -88,107 +82,75 @@ export default function SubLinksModal({
     URL.revokeObjectURL(url);
   }
 
-  const columns: TableColumnType<Row>[] = [
-    {
-      title: t('pages.clients.client'),
-      dataIndex: 'email',
-      key: 'email',
-      width: 180,
-      ellipsis: true,
-    },
-    {
-      title: t('pages.clients.subLinkColumn'),
-      dataIndex: 'link',
-      key: 'link',
-      ellipsis: true,
-      render: (link: string) => (
-        <Tooltip title={link} placement="topLeft">
-          <Typography.Text copyable={false} ellipsis>{link}</Typography.Text>
-        </Tooltip>
-      ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 64,
-      render: (_v, row) => (
-        <Button size="small" type="text" icon={<CopyOutlined />} onClick={() => copy(row.link, t('copied'))} />
-      ),
-    },
-  ];
-
-  if (jsonEnabled) {
-    columns.splice(2, 0, {
-      title: t('pages.clients.subJsonLinkColumn'),
-      dataIndex: 'jsonLink',
-      key: 'jsonLink',
-      ellipsis: true,
-      render: (link: string) => (
-        <Tooltip title={link} placement="topLeft">
-          <Typography.Text copyable={false} ellipsis>{link}</Typography.Text>
-        </Tooltip>
+  const columns = useMemo<ColumnDef<Row, unknown>[]>(() => {
+    const cols: ColumnDef<Row, unknown>[] = [
+      { id: 'email', size: 180, header: () => t('pages.clients.client'), cell: ({ row }) => <span style={ellipsisCell}>{row.original.email}</span> },
+      {
+        id: 'link',
+        header: () => t('pages.clients.subLinkColumn'),
+        cell: ({ row }) => (
+          <Tooltip title={row.original.link} side="top">
+            <span style={ellipsisCell}>{row.original.link}</span>
+          </Tooltip>
+        ),
+      },
+    ];
+    if (jsonEnabled) {
+      cols.push({
+        id: 'jsonLink',
+        header: () => t('pages.clients.subJsonLinkColumn'),
+        cell: ({ row }) => (
+          <Tooltip title={row.original.jsonLink} side="top">
+            <span style={ellipsisCell}>{row.original.jsonLink}</span>
+          </Tooltip>
+        ),
+      });
+    }
+    cols.push({
+      id: 'actions',
+      size: 64,
+      header: () => '',
+      cell: ({ row }) => (
+        <Button size="sm" variant="text" icon={<CopyOutlined />} onClick={() => copy(row.original.link, t('copied'))} />
       ),
     });
-  }
+    return cols;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, jsonEnabled]);
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={t('pages.clients.subLinksTitle', { count: rows.length })}
-        width={780}
-        footer={
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button onClick={() => onOpenChange(false)}>{t('close')}</Button>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button
-                icon={<CopyOutlined />}
-                disabled={rows.length === 0}
-                onClick={() => copy(allText, t('pages.clients.subLinksCopiedAll', { count: rows.length }))}
-              >
-                {t('pages.clients.subLinksCopyAll')}
-              </Button>
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                disabled={rows.length === 0}
-                onClick={download}
-              >
-                {t('download')}
-              </Button>
-            </div>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && onOpenChange(false)}
+      title={t('pages.clients.subLinksTitle', { count: rows.length })}
+      width={780}
+      footer={(
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          <Button onClick={() => onOpenChange(false)}>{t('close')}</Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button icon={<CopyOutlined />} disabled={rows.length === 0} onClick={() => copy(allText, t('pages.clients.subLinksCopiedAll', { count: rows.length }))}>
+              {t('pages.clients.subLinksCopyAll')}
+            </Button>
+            <Button variant="primary" icon={<DownloadOutlined />} disabled={rows.length === 0} onClick={download}>
+              {t('download')}
+            </Button>
           </div>
-        }
-        onCancel={() => onOpenChange(false)}
-      >
+        </div>
+      )}
+    >
+      <TooltipProvider>
         {!enabled && (
-          <Alert
-            type="warning"
-            showIcon
-            message={t('pages.clients.subLinksDisabled')}
-            description={t('pages.clients.subLinksDisabledHint')}
-            style={{ marginBottom: 12 }}
-          />
+          <Alert tone="warning" title={t('pages.clients.subLinksDisabled')} description={t('pages.clients.subLinksDisabledHint')} style={{ marginBottom: 12 }} />
         )}
         {enabled && rows.length === 0 && (
-          <Alert
-            type="info"
-            showIcon
-            message={t('pages.clients.subLinksEmpty')}
-            style={{ marginBottom: 12 }}
-          />
+          <Alert tone="info" title={t('pages.clients.subLinksEmpty')} style={{ marginBottom: 12 }} />
         )}
         {rows.length > 0 && (
-          <Table<Row>
-            dataSource={rows}
-            columns={columns}
-            size="small"
-            pagination={false}
-            scroll={{ y: 360 }}
-          />
+          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            <DataTable data={rows} columns={columns} getRowId={(r) => r.key} sortable={false} />
+          </div>
         )}
-      </Modal>
-    </>
+      </TooltipProvider>
+    </Dialog>
   );
 }
