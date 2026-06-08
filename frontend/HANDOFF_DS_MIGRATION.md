@@ -226,11 +226,14 @@ Big clusters, roughly in dependency order:
    `InboundInfoModal`/`QrCodeModal` still use the CustomUI `Modal` shell + a few
    CustomUI shims (Button/Space/Tag/Tooltip) — those belong to the §8 shim layer,
    not raw antd.
-3. **Xray page tabs:** `src/pages/xray/` — `XrayPage`, `basics/BasicsTab`,
-   `routing/*` (RoutingTab, RuleFormModal, RuleCardList, CriterionRow,
-   RoutingBasic, useRoutingColumns), `dns/*` (DnsTab, DnsServerModal,
-   DnsPresetsModal, useDnsColumns), `balancers/*`, `overrides/*` (Nord/Warp),
-   `SubJsonFinalMaskForm` (settings).
+3. ~~**Xray page tabs**~~ ✅ **DONE** (commits `d8f343e` routing, `6d52009` dns,
+   `8db5f4f` balancers+basics). The whole `src/pages/xray/` tree is now antd-free
+   (only `@ant-design/icons` remain). The routing rules table is a bespoke
+   `<table>` (DataTable can't host per-row drag attrs). `XrayPage`,
+   `RuleFormModal`, `DnsServerModal`, `BalancerFormModal`, `overrides/*`
+   (Nord/Warp) were already DS before this phase. **Still open from this cluster:**
+   `SubJsonFinalMaskForm` lives under `src/pages/settings/` and is part of the
+   Settings phase (item 5) — it still uses the antd `FinalMaskForm` branch.
 4. **Clients leftovers / QR:** `ClientQrModal`, `ClientInfoModal` layering, any
    remaining antd in `clients/*`.
 5. **Settings:** `src/pages/settings/*` (GeneralTab, SecurityTab, Telegram,
@@ -321,14 +324,14 @@ For each subsystem (a modal + its field tree):
    `ds.css` and `NodeFormModal.tsx`/`InboundFormModal.tsx`.
 2. `cd frontend && npx tsc --noEmit` and `npx vitest run` to confirm the green
    baseline before changing anything.
-3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR are now
-   done — recommended next: **Xray page tabs** routing/dns/balancers/overrides),
+3. Pick the next subsystem from §5 (Outbounds + Inbound list/info/QR + Xray page
+   tabs are now done — recommended next: **Clients leftovers/QR** or **Settings**),
    apply §6 recipe.
 4. Confirm scope/approach with the user if a decision has trade-offs (they chose
    "full controlled rewrite, no antd Form abstraction" for forms; keep to that).
 5. Atomic commit, locally, no push, no `vite.config.js`.
 
-> Current branch tip: `3fccd58` (inbound info+QR) on `redesign/ds-foundation`.
-> Inbound modal + **Outbounds** + **Inbound list/info/QR** = done;
-> §5 items 3–9 = open (next recommended: **Xray page tabs** — routing/dns/
-> balancers/overrides). Suite green at 397/25 files.
+> Current branch tip: `8db5f4f` (xray balancers+basics) on `redesign/ds-foundation`.
+> Inbound modal + **Outbounds** + **Inbound list/info/QR** + **Xray page tabs** = done;
+> §5 items 4–9 = open (next recommended: **Clients leftovers/QR** or **Settings**).
+> Suite green at 397/25 files.
