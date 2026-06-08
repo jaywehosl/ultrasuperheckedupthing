@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Checkbox, Form, Modal, Select, Space } from 'antd';
+import { Button, Dialog, Select } from '@/components/ds';
 import { DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 
 import { HttpUtil, FileManager, PromiseUtil } from '@/utils';
@@ -105,22 +105,18 @@ export default function LogModal({ open, onClose }: LogModalProps) {
   );
 
   return (
-    <Modal
+    <Dialog
       open={open}
       footer={null}
-      width={isMobile ? '100vw' : 800}
-      style={isMobile ? { top: 0, paddingBottom: 0, maxWidth: '100vw' } : undefined}
-      className={isMobile ? 'logmodal-mobile' : undefined}
-      onCancel={onClose}
+      width={isMobile ? 360 : 800}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={titleNode}
     >
-      <Form layout="inline" className="log-toolbar">
-        <Form.Item>
-          <Space.Compact>
+      <div className="log-toolbar">
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ width: 70 }}>
             <Select
               value={rows}
-              size="small"
-              style={{ width: 70 }}
               onChange={setRows}
               options={[
                 { value: '10', label: '10' },
@@ -130,10 +126,10 @@ export default function LogModal({ open, onClose }: LogModalProps) {
                 { value: '500', label: '500' },
               ]}
             />
+          </div>
+          <div style={{ width: 95 }}>
             <Select
               value={level}
-              size="small"
-              style={{ width: 95 }}
               onChange={setLevel}
               options={[
                 { value: 'debug', label: 'Debug' },
@@ -143,17 +139,16 @@ export default function LogModal({ open, onClose }: LogModalProps) {
                 { value: 'err', label: 'Error' },
               ]}
             />
-          </Space.Compact>
-        </Form.Item>
-        <Form.Item>
-          <Checkbox checked={syslog} onChange={(e) => setSyslog(e.target.checked)}>
-            SysLog
-          </Checkbox>
-        </Form.Item>
-        <Form.Item className="download-item">
-          <Button type="primary" onClick={download} icon={<DownloadOutlined />} />
-        </Form.Item>
-      </Form>
+          </div>
+        </div>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <input type="checkbox" className="ds-check" checked={syslog} onChange={(e) => setSyslog(e.target.checked)} />
+          SysLog
+        </label>
+        <div className="download-item">
+          <Button variant="primary" onClick={download} icon={<DownloadOutlined />} />
+        </div>
+      </div>
 
       <div className={`log-container ${isMobile ? 'log-container-mobile' : ''}`}>
         {parsedLogs.length === 0 ? (
@@ -200,6 +195,6 @@ export default function LogModal({ open, onClose }: LogModalProps) {
           ))
         )}
       </div>
-    </Modal>
+    </Dialog>
   );
 }

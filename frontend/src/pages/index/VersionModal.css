@@ -28,3 +28,9 @@
   justify-content: flex-end;
   margin-top: 12px;
 }
+
+.version-collapse {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

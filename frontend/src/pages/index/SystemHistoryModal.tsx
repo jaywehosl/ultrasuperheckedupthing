@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Select, Tabs } from 'antd';
+import { Dialog, Select, Tabs } from '@/components/ds';
 import {
   ApiOutlined,
   DashboardOutlined,
@@ -192,75 +192,77 @@ export default function SystemHistoryModal({ open, status, onClose }: SystemHist
     return () => window.clearInterval(id);
   }, [open, bucket, fetchBucket]);
 
+  const chart = (
+    <div className="cpu-chart-wrap">
+      {activeMetric?.title && <div className="history-chart-title">{t(activeMetric.title)}</div>}
+      <Sparkline
+        data={points}
+        data2={activeMetric?.key2 ? points2 : undefined}
+        data3={activeMetric?.key3 ? points3 : undefined}
+        stroke2={activeMetric?.stroke2}
+        stroke3={activeMetric?.stroke3}
+        name1={trName(activeMetric?.name1)}
+        name2={trName(activeMetric?.name2)}
+        name3={trName(activeMetric?.name3)}
+        labels={labels}
+        height={260}
+        stroke={strokeColor}
+        strokeWidth={2.2}
+        showGrid
+        showAxes
+        tickCountX={5}
+        maxPoints={points.length || 1}
+        fillOpacity={0.18}
+        markerRadius={3.2}
+        showTooltip
+        valueMin={0}
+        valueMax={activeMetric?.valueMax ?? null}
+        yFormatter={yFormatter}
+        tooltipLabelFormatter={tooltipLabelFormatter}
+        extrema={{ show: !activeMetric?.key2, formatter: yFormatter }}
+      />
+    </div>
+  );
+
   return (
-    <Modal
+    <Dialog
       open={open}
       footer={null}
-      width={isMobile ? '95vw' : 900}
-      onCancel={onClose}
+      width={isMobile ? 360 : 900}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={
         <div className="metric-modal-title">
           <span>{t('pages.index.systemHistoryTitle')}</span>
-          <Select
-            value={bucket}
-            size="small"
-            className="bucket-select"
-            onChange={setBucket}
-            options={[
-              { value: 2, label: '2m' },
-              { value: 30, label: '30m' },
-              { value: 60, label: '1h' },
-              { value: 120, label: '2h' },
-              { value: 180, label: '3h' },
-              { value: 300, label: '5h' },
-            ]}
-          />
+          <div className="bucket-select">
+            <Select
+              value={String(bucket)}
+              onChange={(v) => setBucket(Number(v))}
+              options={[
+                { value: '2', label: '2m' },
+                { value: '30', label: '30m' },
+                { value: '60', label: '1h' },
+                { value: '120', label: '2h' },
+                { value: '180', label: '3h' },
+                { value: '300', label: '5h' },
+              ]}
+            />
+          </div>
         </div>
       }
     >
       <Tabs
         activeKey={activeKey}
         onChange={setActiveKey}
-        size="small"
         className="history-tabs"
         items={METRICS.map((m) => {
           const tabLabel = m.tabKey ? t(m.tabKey) : m.tab;
           return {
             key: m.key,
             label: isMobile ? <span title={tabLabel} aria-label={tabLabel}>{m.icon}</span> : tabLabel,
+            children: chart,
           };
         })}
       />
-
-      <div className="cpu-chart-wrap">
-        {activeMetric?.title && <div className="history-chart-title">{t(activeMetric.title)}</div>}
-        <Sparkline
-          data={points}
-          data2={activeMetric?.key2 ? points2 : undefined}
-          data3={activeMetric?.key3 ? points3 : undefined}
-          stroke2={activeMetric?.stroke2}
-          stroke3={activeMetric?.stroke3}
-          name1={trName(activeMetric?.name1)}
-          name2={trName(activeMetric?.name2)}
-          name3={trName(activeMetric?.name3)}
-          labels={labels}
-          height={260}
-          stroke={strokeColor}
-          strokeWidth={2.2}
-          showGrid
-          showAxes
-          tickCountX={5}
-          maxPoints={points.length || 1}
-          fillOpacity={0.18}
-          markerRadius={3.2}
-          showTooltip
-          valueMin={0}
-          valueMax={activeMetric?.valueMax ?? null}
-          yFormatter={yFormatter}
-          tooltipLabelFormatter={tooltipLabelFormatter}
-          extrema={{ show: !activeMetric?.key2, formatter: yFormatter }}
-        />
-      </div>
-    </Modal>
+    </Dialog>
   );
 }

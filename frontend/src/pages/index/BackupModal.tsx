@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Modal } from 'antd';
+import { Button, Dialog } from '@/components/ds';
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
@@ -64,11 +64,11 @@ export default function BackupModal({ open, basePath: _basePath, onClose, onBusy
   }
 
   return (
-    <Modal
+    <Dialog
       open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={t('pages.index.backupTitle')}
       footer={null}
-      onCancel={onClose}
     >
       {isPostgres && (
         <div className="backup-description" style={{ marginBottom: 16 }}>
@@ -83,7 +83,7 @@ export default function BackupModal({ open, basePath: _basePath, onClose, onBusy
               {isPostgres ? t('pages.index.exportDatabasePgDesc') : t('pages.index.exportDatabaseDesc')}
             </div>
           </div>
-          <Button type="primary" onClick={exportDb} icon={<DownloadOutlined />} />
+          <Button variant="primary" onClick={exportDb} icon={<DownloadOutlined />} />
         </div>
 
         <div className="backup-item">
@@ -93,7 +93,7 @@ export default function BackupModal({ open, basePath: _basePath, onClose, onBusy
               {isPostgres ? t('pages.index.migrationDownloadPgDesc') : t('pages.index.migrationDownloadDesc')}
             </div>
           </div>
-          <Button type="primary" onClick={exportMigration} icon={<DownloadOutlined />} />
+          <Button variant="primary" onClick={exportMigration} icon={<DownloadOutlined />} />
         </div>
 
         <div className="backup-item">
@@ -103,9 +103,9 @@ export default function BackupModal({ open, basePath: _basePath, onClose, onBusy
               {isPostgres ? t('pages.index.importDatabasePgDesc') : t('pages.index.importDatabaseDesc')}
             </div>
           </div>
-          <Button type="primary" onClick={importDb} icon={<UploadOutlined />} />
+          <Button variant="primary" onClick={importDb} icon={<UploadOutlined />} />
         </div>
       </div>
-    </Modal>
+    </Dialog>
   );
 }

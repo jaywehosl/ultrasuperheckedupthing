@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Collapse, Modal, Radio, Spin, Tag, Tooltip } from 'antd';
+import { Alert, Button, Dialog, Tag, Tooltip, TooltipProvider } from '@/components/ds';
+import { Spin } from '@/components/ui';
 import { ReloadOutlined } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
@@ -20,6 +21,12 @@ interface VersionModalProps {
   onBusy: (e: BusyEvent) => void;
 }
 
+interface ConfirmState {
+  title: string;
+  content: string;
+  onOk: () => void;
+}
+
 const GEOFILES = [
   'geosite.dat',
   'geoip.dat',
@@ -31,8 +38,8 @@ const GEOFILES = [
 
 export default function VersionModal({ open, status, onClose, onBusy }: VersionModalProps) {
   const { t } = useTranslation();
-  const [modal, modalContextHolder] = Modal.useModal();
-  const [activeKey, setActiveKey] = useState<string | string[]>('1');
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [activeKey, setActiveKey] = useState('1');
   const [versions, setVersions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -51,11 +58,9 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
   }, [open, fetchVersions]);
 
   function switchXrayVersion(version: string) {
-    modal.confirm({
+    setConfirm({
       title: t('pages.index.xraySwitchVersionDialog'),
       content: t('pages.index.xraySwitchVersionDialogDesc').replace('#version#', version),
-      okText: t('confirm'),
-      cancelText: t('cancel'),
       onOk: async () => {
         onClose();
         onBusy({ busy: true, tip: t('pages.index.dontRefresh') });
@@ -70,13 +75,11 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
 
   function updateGeofile(fileName: string) {
     const isSingle = !!fileName;
-    modal.confirm({
+    setConfirm({
       title: t('pages.index.geofileUpdateDialog'),
       content: isSingle
         ? t('pages.index.geofileUpdateDialogDesc').replace('#filename#', fileName)
         : t('pages.index.geofilesUpdateDialogDesc'),
-      okText: t('confirm'),
-      cancelText: t('cancel'),
       onOk: async () => {
         onClose();
         onBusy({ busy: true, tip: t('pages.index.dontRefresh') });
@@ -92,81 +95,82 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
     });
   }
 
-  const activeKeyStr = Array.isArray(activeKey) ? activeKey[0] : activeKey;
+  function toggle(key: string, isOpen: boolean) {
+    setActiveKey(isOpen ? key : '');
+  }
 
   return (
-    <Modal
+    <Dialog
       open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={t('pages.index.xrayUpdates')}
       footer={null}
-      onCancel={onClose}
     >
-      {modalContextHolder}
-      <Spin spinning={loading}>
-        <Collapse
-          accordion
-          activeKey={activeKey}
-          onChange={setActiveKey}
-          items={[
-            {
-              key: '1',
-              label: 'Xray',
-              children: (
-                <>
-                  <Alert
-                    type="warning"
-                    className="mb-12"
-                    title={t('pages.index.xraySwitchClickDesk')}
-                    showIcon
-                  />
-                  <div className="version-list">
-                    {versions.map((version, index) => (
-                      <div key={version} className="version-list-item">
-                        <Tag color={index % 2 === 0 ? 'purple' : 'green'}>{version}</Tag>
-                        <Radio
-                          checked={version === `v${status?.xray?.version}`}
-                          onClick={() => switchXrayVersion(version)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ),
-            },
-            {
-              key: '2',
-              label: 'Geofiles',
-              children: (
-                <>
-                  <div className="version-list">
-                    {GEOFILES.map((file, index) => (
-                      <div key={file} className="version-list-item">
-                        <Tag color={index % 2 === 0 ? 'purple' : 'green'}>{file}</Tag>
-                        <Tooltip title={t('update')}>
-                          <ReloadOutlined
-                            className="reload-icon"
-                            onClick={() => updateGeofile(file)}
-                          />
-                        </Tooltip>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="actions-row">
-                    <Button onClick={() => updateGeofile('')}>
-                      {t('pages.index.geofilesUpdateAll')}
-                    </Button>
-                  </div>
-                </>
-              ),
-            },
-            {
-              key: '3',
-              label: t('pages.index.customGeoTitle'),
-              children: <CustomGeoSection active={activeKeyStr === '3'} />,
-            },
-          ]}
-        />
-      </Spin>
-    </Modal>
+      <TooltipProvider>
+        <Spin spinning={loading}>
+          <div className="version-collapse">
+            <details className="ds-collapse" open={activeKey === '1'} onToggle={(e) => toggle('1', (e.currentTarget as HTMLDetailsElement).open)}>
+              <summary>Xray</summary>
+              <div className="ds-collapse__body">
+                <Alert tone="warning" className="mb-12" title={t('pages.index.xraySwitchClickDesk')} />
+                <div className="version-list">
+                  {versions.map((version, index) => (
+                    <div key={version} className="version-list-item">
+                      <Tag tone={index % 2 === 0 ? 'primary' : 'success'}>{version}</Tag>
+                      <input
+                        type="radio"
+                        className="ds-check"
+                        checked={version === `v${status?.xray?.version}`}
+                        onChange={() => switchXrayVersion(version)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </details>
+
+            <details className="ds-collapse" open={activeKey === '2'} onToggle={(e) => toggle('2', (e.currentTarget as HTMLDetailsElement).open)}>
+              <summary>Geofiles</summary>
+              <div className="ds-collapse__body">
+                <div className="version-list">
+                  {GEOFILES.map((file, index) => (
+                    <div key={file} className="version-list-item">
+                      <Tag tone={index % 2 === 0 ? 'primary' : 'success'}>{file}</Tag>
+                      <Tooltip title={t('update')}>
+                        <ReloadOutlined className="reload-icon" onClick={() => updateGeofile(file)} />
+                      </Tooltip>
+                    </div>
+                  ))}
+                </div>
+                <div className="actions-row">
+                  <Button onClick={() => updateGeofile('')}>
+                    {t('pages.index.geofilesUpdateAll')}
+                  </Button>
+                </div>
+              </div>
+            </details>
+
+            <details className="ds-collapse" open={activeKey === '3'} onToggle={(e) => toggle('3', (e.currentTarget as HTMLDetailsElement).open)}>
+              <summary>{t('pages.index.customGeoTitle')}</summary>
+              <div className="ds-collapse__body">
+                <CustomGeoSection active={activeKey === '3'} />
+              </div>
+            </details>
+          </div>
+        </Spin>
+      </TooltipProvider>
+
+      <Dialog
+        open={confirm != null}
+        onOpenChange={(o) => { if (!o) setConfirm(null); }}
+        title={confirm?.title ?? ''}
+        okText={t('confirm')}
+        cancelText={t('cancel')}
+        onOk={() => { confirm?.onOk(); setConfirm(null); }}
+        width={440}
+      >
+        <p style={{ margin: 0 }}>{confirm?.content}</p>
+      </Dialog>
+    </Dialog>
   );
 }
