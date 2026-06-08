@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { Modal, Tag } from '@/components/ui';
+import { Dialog, Tag, type TagTone } from '@/components/ds';
+import { InfinityIcon } from '@/components/ui';
 
 import { SizeFormatter, IntlUtil, ColorUtils } from '@/utils';
-import { InfinityIcon } from '@/components/ui';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 
 import {
@@ -26,59 +26,54 @@ interface InboundStatsModalProps {
   onClose: () => void;
 }
 
+function tn(c?: string): TagTone {
+  switch (c) {
+    case 'green': case 'lime': return 'success';
+    case 'red': case 'magenta': case 'volcano': return 'danger';
+    case 'gold': case 'orange': return 'warning';
+    case 'blue': case 'geekblue': case 'cyan': case 'purple': return 'primary';
+    default: return 'neutral';
+  }
+}
+
 export default function InboundStatsModal({
-  open,
-  record,
-  hasActiveNode,
-  nodesById,
-  clientCount,
-  trafficDiff,
-  expireDiff,
-  onClose,
+  open, record, hasActiveNode, nodesById, clientCount, trafficDiff, expireDiff, onClose,
 }: InboundStatsModalProps) {
   const { t } = useTranslation();
   return (
-    <Modal
+    <Dialog
       open={open}
+      onOpenChange={(o) => !o && onClose()}
       footer={null}
       width={360}
-      centered
       title={record ? `#${record.id} ${record.remark || ''}`.trim() : ''}
-      onCancel={onClose}
-      destroyOnHidden
     >
       {record && (
         <div className="card-stats">
           <div className="stat-row">
             <span className="stat-label">{t('pages.inbounds.protocol')}</span>
-            <Tag color="purple">{record.protocol}</Tag>
-            {(record.isWireguard || record.isHysteria) && (
-              <Tag color="green">UDP</Tag>
-            )}
+            <Tag tone="primary">{record.protocol}</Tag>
+            {(record.isWireguard || record.isHysteria) && <Tag tone="success">UDP</Tag>}
             {record.isSS && (() => {
               const stream = readStreamHints(record.streamSettings);
               return (
                 <>
-                  <Tag color="green">{shadowsocksNetworkLabel(record.settings)}</Tag>
-                  {stream.isTls && <Tag color="blue">TLS</Tag>}
+                  <Tag tone="success">{shadowsocksNetworkLabel(record.settings)}</Tag>
+                  {stream.isTls && <Tag tone="primary">TLS</Tag>}
                 </>
               );
             })()}
-            {record.isTunnel && (
-              <Tag color="green">{tunnelNetworkLabel(record.settings)}</Tag>
-            )}
-            {record.isMixed && (
-              <Tag color="green">{mixedNetworkLabel(record.settings)}</Tag>
-            )}
+            {record.isTunnel && <Tag tone="success">{tunnelNetworkLabel(record.settings)}</Tag>}
+            {record.isMixed && <Tag tone="success">{mixedNetworkLabel(record.settings)}</Tag>}
             {(record.isVMess || record.isVLess || record.isTrojan) && (() => {
               const stream = readStreamHints(record.streamSettings);
               const l4 = networkL4(stream.network);
               return (
                 <>
-                  <Tag color="green">{networkLabel(stream.network)}</Tag>
-                  {l4 && <Tag color="green">{l4}</Tag>}
-                  {stream.isTls && <Tag color="blue">TLS</Tag>}
-                  {stream.isReality && <Tag color="blue">Reality</Tag>}
+                  <Tag tone="success">{networkLabel(stream.network)}</Tag>
+                  {l4 && <Tag tone="success">{l4}</Tag>}
+                  {stream.isTls && <Tag tone="primary">TLS</Tag>}
+                  {stream.isReality && <Tag tone="primary">Reality</Tag>}
                 </>
               );
             })()}
@@ -91,19 +86,19 @@ export default function InboundStatsModal({
             <div className="stat-row">
               <span className="stat-label">{t('pages.inbounds.node')}</span>
               {record.nodeId == null ? (
-                <Tag color="default">{t('pages.inbounds.localPanel')}</Tag>
+                <Tag>{t('pages.inbounds.localPanel')}</Tag>
               ) : nodesById.get(record.nodeId) ? (
-                <Tag color={nodesById.get(record.nodeId)!.status === 'online' ? 'blue' : 'red'}>
+                <Tag tone={nodesById.get(record.nodeId)!.status === 'online' ? 'primary' : 'danger'}>
                   {nodesById.get(record.nodeId)!.name}
                 </Tag>
               ) : (
-                <Tag color="orange">#{record.nodeId}</Tag>
+                <Tag tone="warning">#{record.nodeId}</Tag>
               )}
             </div>
           )}
           <div className="stat-row">
             <span className="stat-label">{t('pages.inbounds.traffic')}</span>
-            <Tag color={ColorUtils.usageColor(record.up + record.down, trafficDiff, record.total)}>
+            <Tag tone={tn(ColorUtils.usageColor(record.up + record.down, trafficDiff, record.total))}>
               {SizeFormatter.sizeFormat(record.up + record.down)} /
               {' '}
               {record.total > 0 ? SizeFormatter.sizeFormat(record.total) : <InfinityIcon />}
@@ -112,30 +107,24 @@ export default function InboundStatsModal({
           {clientCount[record.id] && (
             <div className="stat-row">
               <span className="stat-label">{t('clients')}</span>
-              <Tag color="green" className="client-count-tag">{clientCount[record.id].clients}</Tag>
-              {clientCount[record.id].online.length > 0 && (
-                <Tag color="blue">{clientCount[record.id].online.length} {t('online')}</Tag>
-              )}
-              {clientCount[record.id].depleted.length > 0 && (
-                <Tag color="red">{clientCount[record.id].depleted.length} {t('depleted')}</Tag>
-              )}
-              {clientCount[record.id].expiring.length > 0 && (
-                <Tag color="orange">{clientCount[record.id].expiring.length} {t('depletingSoon')}</Tag>
-              )}
+              <Tag tone="success" className="client-count-tag">{clientCount[record.id].clients}</Tag>
+              {clientCount[record.id].online.length > 0 && <Tag tone="primary">{clientCount[record.id].online.length} {t('online')}</Tag>}
+              {clientCount[record.id].depleted.length > 0 && <Tag tone="danger">{clientCount[record.id].depleted.length} {t('depleted')}</Tag>}
+              {clientCount[record.id].expiring.length > 0 && <Tag tone="warning">{clientCount[record.id].expiring.length} {t('depletingSoon')}</Tag>}
             </div>
           )}
           <div className="stat-row">
             <span className="stat-label">{t('pages.inbounds.expireDate')}</span>
             {record.expiryTime > 0 ? (
-              <Tag color={ColorUtils.usageColor(Date.now(), expireDiff, record._expiryTime)}>
+              <Tag tone={tn(ColorUtils.usageColor(Date.now(), expireDiff, record._expiryTime))}>
                 {IntlUtil.formatRelativeTime(record.expiryTime)}
               </Tag>
             ) : (
-              <Tag color="purple"><InfinityIcon /></Tag>
+              <Tag tone="primary"><InfinityIcon /></Tag>
             )}
           </div>
         </div>
       )}
-    </Modal>
+    </Dialog>
   );
 }
