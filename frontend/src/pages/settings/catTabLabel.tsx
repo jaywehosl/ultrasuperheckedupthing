@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react';
-import { Tooltip } from 'antd';
 
 /* Builds a settings category tab label: icon + text on desktop, and on
-   mobile just the icon with the text moved into a tooltip — mirroring the
+   mobile just the icon (with the text as a native title hint) — mirroring the
    old top tab bar's icons-only behaviour. */
 export function catTabLabel(icon: ReactNode, text: ReactNode, iconsOnly: boolean): ReactNode {
   if (iconsOnly) {
-    return <Tooltip title={text}>{icon}</Tooltip>;
+    return (
+      <span title={typeof text === 'string' ? text : undefined} style={{ display: 'inline-flex' }}>
+        {icon}
+      </span>
+    );
   }
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
