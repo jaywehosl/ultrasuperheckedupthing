@@ -1,128 +1,93 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, InputNumber, Select, Switch, type FormInstance } from 'antd';
-
+import { Field, Input, Select, Switch, Textarea } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
+import { useFormCtl } from '@/lib/form/FormContext';
 
-const MASQ_PATH = ['streamSettings', 'hysteriaSettings', 'masquerade'];
+const HY = ['streamSettings', 'hysteriaSettings'] as const;
+const MASQ = [...HY, 'masquerade'] as const;
 
-export default function HysteriaFields({ form }: { form: FormInstance }) {
+interface Masq {
+  type?: string;
+  dir?: string;
+  url?: string;
+  rewriteHost?: boolean;
+  insecure?: boolean;
+  content?: string;
+  headers?: Record<string, unknown>;
+  statusCode?: number;
+}
+
+export default function HysteriaFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
+  const m = ctl.get<Masq | undefined>([...MASQ]);
+
   return (
     <>
-      <Form.Item
-        label={t('pages.inbounds.form.version')}
-        name={['streamSettings', 'hysteriaSettings', 'version']}
-      >
-        <InputNumber min={2} max={2} disabled />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.udpIdleTimeout')}
-        name={['streamSettings', 'hysteriaSettings', 'udpIdleTimeout']}
-      >
-        <InputNumber min={1} style={{ width: '100%' }} />
-      </Form.Item>
+      <Field label={t('pages.inbounds.form.version')}>
+        <Input type="number" min={2} max={2} disabled value={ctl.get([...HY, 'version']) ?? 2} onChange={() => {}} />
+      </Field>
+      <Field label={t('pages.inbounds.form.udpIdleTimeout')}>
+        <Input type="number" min={1} value={ctl.get([...HY, 'udpIdleTimeout']) ?? ''} onChange={(e) => ctl.set([...HY, 'udpIdleTimeout'], Number(e.target.value) || 0)} />
+      </Field>
 
-      <Form.Item label={t('pages.inbounds.form.masquerade')}>
-        <Form.Item shouldUpdate noStyle>
-          {() => {
-            const m = form.getFieldValue(MASQ_PATH);
-            return (
-              <Switch
-                checked={!!m}
-                onChange={(checked) =>
-                  form.setFieldValue(
-                    MASQ_PATH,
-                    checked
-                      ? {
-                        type: '', dir: '', url: '',
-                        rewriteHost: false, insecure: false,
-                        content: '', headers: {}, statusCode: 0,
-                      }
-                      : undefined,
-                  )
-                }
-              />
-            );
-          }}
-        </Form.Item>
-      </Form.Item>
-      <Form.Item shouldUpdate noStyle>
-        {() => {
-          const m = form.getFieldValue(MASQ_PATH) as { type?: string } | undefined;
-          if (!m) return null;
-          return (
+      <Field label={t('pages.inbounds.form.masquerade')}>
+        <Switch
+          checked={!!m}
+          onChange={(checked) =>
+            ctl.set([...MASQ], checked
+              ? { type: '', dir: '', url: '', rewriteHost: false, insecure: false, content: '', headers: {}, statusCode: 0 }
+              : undefined)
+          }
+        />
+      </Field>
+      {m && (
+        <>
+          <Field label={t('pages.inbounds.form.type')}>
+            <Select
+              value={m.type ?? ''}
+              onChange={(v) => ctl.set([...MASQ, 'type'], v)}
+              options={[
+                { value: '', label: 'default (404 page)' },
+                { value: 'proxy', label: 'proxy (reverse proxy)' },
+                { value: 'file', label: 'file (serve directory)' },
+                { value: 'string', label: 'string (fixed body)' },
+              ]}
+            />
+          </Field>
+          {m.type === 'proxy' && (
             <>
-              <Form.Item
-                label={t('pages.inbounds.form.type')}
-                name={[...MASQ_PATH, 'type']}
-              >
-                <Select
-                  options={[
-                    { value: '', label: 'default (404 page)' },
-                    { value: 'proxy', label: 'proxy (reverse proxy)' },
-                    { value: 'file', label: 'file (serve directory)' },
-                    { value: 'string', label: 'string (fixed body)' },
-                  ]}
-                />
-              </Form.Item>
-              {m.type === 'proxy' && (
-                <>
-                  <Form.Item
-                    label={t('pages.inbounds.form.upstreamUrl')}
-                    name={[...MASQ_PATH, 'url']}
-                  >
-                    <Input placeholder="https://www.example.com" />
-                  </Form.Item>
-                  <Form.Item
-                    label={t('pages.inbounds.form.rewriteHost')}
-                    name={[...MASQ_PATH, 'rewriteHost']}
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                  <Form.Item
-                    label={t('pages.inbounds.form.skipTlsVerify')}
-                    name={[...MASQ_PATH, 'insecure']}
-                    valuePropName="checked"
-                  >
-                    <Switch />
-                  </Form.Item>
-                </>
-              )}
-              {m.type === 'file' && (
-                <Form.Item
-                  label={t('pages.inbounds.form.directory')}
-                  name={[...MASQ_PATH, 'dir']}
-                >
-                  <Input placeholder="/var/www/html" />
-                </Form.Item>
-              )}
-              {m.type === 'string' && (
-                <>
-                  <Form.Item
-                    label={t('pages.inbounds.form.statusCode')}
-                    name={[...MASQ_PATH, 'statusCode']}
-                  >
-                    <InputNumber min={0} max={599} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item
-                    label={t('pages.inbounds.form.body')}
-                    name={[...MASQ_PATH, 'content']}
-                  >
-                    <Input.TextArea autoSize={{ minRows: 3 }} />
-                  </Form.Item>
-                  <Form.Item
-                    label={t('pages.inbounds.form.headers')}
-                    name={[...MASQ_PATH, 'headers']}
-                  >
-                    <HeaderMapEditor mode="v1" />
-                  </Form.Item>
-                </>
-              )}
+              <Field label={t('pages.inbounds.form.upstreamUrl')}>
+                <Input placeholder="https://www.example.com" value={m.url ?? ''} onChange={(e) => ctl.set([...MASQ, 'url'], e.target.value)} />
+              </Field>
+              <Field label={t('pages.inbounds.form.rewriteHost')}>
+                <Switch checked={!!m.rewriteHost} onChange={(v) => ctl.set([...MASQ, 'rewriteHost'], v)} />
+              </Field>
+              <Field label={t('pages.inbounds.form.skipTlsVerify')}>
+                <Switch checked={!!m.insecure} onChange={(v) => ctl.set([...MASQ, 'insecure'], v)} />
+              </Field>
             </>
-          );
-        }}
-      </Form.Item>
+          )}
+          {m.type === 'file' && (
+            <Field label={t('pages.inbounds.form.directory')}>
+              <Input placeholder="/var/www/html" value={m.dir ?? ''} onChange={(e) => ctl.set([...MASQ, 'dir'], e.target.value)} />
+            </Field>
+          )}
+          {m.type === 'string' && (
+            <>
+              <Field label={t('pages.inbounds.form.statusCode')}>
+                <Input type="number" min={0} max={599} value={m.statusCode ?? ''} onChange={(e) => ctl.set([...MASQ, 'statusCode'], Number(e.target.value) || 0)} />
+              </Field>
+              <Field label={t('pages.inbounds.form.body')}>
+                <Textarea rows={3} value={m.content ?? ''} onChange={(e) => ctl.set([...MASQ, 'content'], e.target.value)} />
+              </Field>
+              <Field label={t('pages.inbounds.form.headers')}>
+                <HeaderMapEditor mode="v1" value={ctl.get([...MASQ, 'headers'])} onChange={(v) => ctl.set([...MASQ, 'headers'], v)} />
+              </Field>
+            </>
+          )}
+        </>
+      )}
     </>
   );
 }

@@ -1,37 +1,27 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, Switch } from 'antd';
-
+import { Field, Input, Switch } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
+import { useFormCtl } from '@/lib/form/FormContext';
+
+const H = ['streamSettings', 'httpupgradeSettings'] as const;
 
 export default function HttpUpgradeForm() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item
-        name={['streamSettings', 'httpupgradeSettings', 'acceptProxyProtocol']}
-        label={t('pages.inbounds.form.proxyProtocol')}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'httpupgradeSettings', 'host']}
-        label={t('host')}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'httpupgradeSettings', 'path']}
-        label={t('path')}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        label={t('pages.inbounds.form.headers')}
-        name={['streamSettings', 'httpupgradeSettings', 'headers']}
-      >
-        <HeaderMapEditor mode="v1" />
-      </Form.Item>
+      <Field label={t('pages.inbounds.form.proxyProtocol')}>
+        <Switch checked={!!ctl.get([...H, 'acceptProxyProtocol'])} onChange={(v) => ctl.set([...H, 'acceptProxyProtocol'], v)} />
+      </Field>
+      <Field label={t('host')}>
+        <Input value={ctl.get([...H, 'host']) ?? ''} onChange={(e) => ctl.set([...H, 'host'], e.target.value)} />
+      </Field>
+      <Field label={t('path')}>
+        <Input value={ctl.get([...H, 'path']) ?? ''} onChange={(e) => ctl.set([...H, 'path'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.form.headers')}>
+        <HeaderMapEditor mode="v1" value={ctl.get([...H, 'headers'])} onChange={(v) => ctl.set([...H, 'headers'], v)} />
+      </Field>
     </>
   );
 }

@@ -3,6 +3,19 @@
   margin-top: 6px;
 }
 
+/* controlled-form layout grids (replacing antd Row/Col) */
+.ifm-grid {
+  display: grid;
+  gap: 0 16px;
+  align-items: start;
+}
+.ifm-grid--2 { grid-template-columns: 1fr 1fr; }
+.ifm-grid--1-3 { grid-template-columns: 1fr 3fr; }
+.ifm-grid--2-1 { grid-template-columns: 2fr 1fr; }
+@media (max-width: 640px) {
+  .ifm-grid { grid-template-columns: 1fr; }
+}
+
 .wg-peer {
   margin-top: 4px;
 }

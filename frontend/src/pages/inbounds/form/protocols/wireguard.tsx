@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Divider, Form, Input, InputNumber, Space, Switch } from 'antd';
-import { MinusOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-
+import { Button, Divider, Field, Input, Switch } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 import { Wireguard } from '@/utils';
 
 interface WireguardFieldsProps {
@@ -10,7 +9,15 @@ interface WireguardFieldsProps {
   regenWgPeerKeypair: (name: number) => void;
 }
 
-function nextWgPeerAllowedIP(peers: Array<{ allowedIPs?: string[] }> | undefined): string {
+interface Peer {
+  privateKey?: string;
+  publicKey?: string;
+  preSharedKey?: string;
+  allowedIPs?: string[];
+  keepAlive?: number;
+}
+
+function nextWgPeerAllowedIP(peers: Peer[] | undefined): string {
   const fallback = '10.0.0.2/32';
   let maxInt = -1;
   let prefix = 32;
@@ -38,111 +45,88 @@ function nextWgPeerAllowedIP(peers: Array<{ allowedIPs?: string[] }> | undefined
 
 export default function WireguardFields({ wgPubKey, regenInboundWg, regenWgPeerKeypair }: WireguardFieldsProps) {
   const { t } = useTranslation();
-  const form = Form.useFormInstance();
+  const ctl = useFormCtl();
+  const peers = ctl.get<Peer[]>(['settings', 'peers']) ?? [];
+  const setPeers = (next: Peer[]) => ctl.set(['settings', 'peers'], next);
+  const patchPeer = (idx: number, p: Partial<Peer>) => setPeers(peers.map((r, i) => (i === idx ? { ...r, ...p } : r)));
+
   return (
     <>
-      <Form.Item label={t('pages.xray.wireguard.secretKey')}>
-        <Space.Compact block>
-          <Form.Item name={['settings', 'secretKey']} noStyle>
-            <Input style={{ width: 'calc(100% - 32px)' }} />
-          </Form.Item>
-          <Button icon={<ReloadOutlined />} onClick={regenInboundWg} />
-        </Space.Compact>
-      </Form.Item>
-      <Form.Item label={t('pages.xray.wireguard.publicKey')}>
+      <Field label={t('pages.xray.wireguard.secretKey')}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Input value={ctl.get(['settings', 'secretKey']) ?? ''} onChange={(e) => ctl.set(['settings', 'secretKey'], e.target.value)} />
+          <Button variant="default" onClick={regenInboundWg}>↻</Button>
+        </div>
+      </Field>
+      <Field label={t('pages.xray.wireguard.publicKey')}>
         <Input value={wgPubKey} disabled />
-      </Form.Item>
-      <Form.Item name={['settings', 'mtu']} label="MTU">
-        <InputNumber />
-      </Form.Item>
-      <Form.Item
-        name={['settings', 'noKernelTun']}
-        label={t('pages.inbounds.info.noKernelTun')}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
-      <Form.List name={['settings', 'peers']}>
-        {(fields, { add, remove }) => (
-          <>
-            <Form.Item label={t('pages.inbounds.form.peers')}>
-              <Button
-                size="small"
-                onClick={() => {
-                  const kp = Wireguard.generateKeypair();
-                  const peers = form.getFieldValue(['settings', 'peers']) as Array<{ allowedIPs?: string[] }> | undefined;
-                  add({
-                    privateKey: kp.privateKey,
-                    publicKey: kp.publicKey,
-                    allowedIPs: [nextWgPeerAllowedIP(peers)],
-                    keepAlive: 0,
-                  });
-                }}
-              >
-                <PlusOutlined /> {t('pages.inbounds.form.addPeer')}
-              </Button>
-            </Form.Item>
-            {fields.map((field, idx) => (
-              <div key={field.key} className="wg-peer">
-                <Divider titlePlacement="center">
-                  <Space>
-                    <span>{t('pages.inbounds.info.peerNumber', { n: idx + 1 })}</span>
-                    {fields.length > 1 && (
-                      <Button
-                        size="small"
-                        danger
-                        icon={<MinusOutlined />}
-                        onClick={() => remove(field.name)}
-                      />
-                    )}
-                  </Space>
-                </Divider>
-                <Form.Item label={t('pages.xray.wireguard.secretKey')}>
-                  <Space.Compact block>
-                    <Form.Item name={[field.name, 'privateKey']} noStyle>
-                      <Input style={{ width: 'calc(100% - 32px)' }} />
-                    </Form.Item>
-                    <Button
-                      icon={<ReloadOutlined />}
-                      onClick={() => regenWgPeerKeypair(field.name)}
-                    />
-                  </Space.Compact>
-                </Form.Item>
-                <Form.Item name={[field.name, 'publicKey']} label={t('pages.xray.wireguard.publicKey')}>
-                  <Input />
-                </Form.Item>
-                <Form.Item name={[field.name, 'preSharedKey']} label="PSK">
-                  <Input />
-                </Form.Item>
-                <Form.List name={[field.name, 'allowedIPs']}>
-                  {(ipFields, { add: addIp, remove: removeIp }) => (
-                    <Form.Item label={t('pages.xray.wireguard.allowedIPs')}>
-                      <Button size="small" onClick={() => addIp('')}>
-                        <PlusOutlined />
-                      </Button>
-                      {ipFields.map((ipField) => (
-                        <Space.Compact key={ipField.key} block className="mt-4">
-                          <Form.Item name={ipField.name} noStyle>
-                            <Input />
-                          </Form.Item>
-                          {ipFields.length > 1 && (
-                            <Button size="small" onClick={() => removeIp(ipField.name)}>
-                              <MinusOutlined />
-                            </Button>
-                          )}
-                        </Space.Compact>
-                      ))}
-                    </Form.Item>
-                  )}
-                </Form.List>
-                <Form.Item name={[field.name, 'keepAlive']} label={t('pages.inbounds.form.keepAlive')}>
-                  <InputNumber min={0} />
-                </Form.Item>
+      </Field>
+      <Field label="MTU">
+        <Input type="number" value={ctl.get(['settings', 'mtu']) ?? ''} onChange={(e) => ctl.set(['settings', 'mtu'], Number(e.target.value) || 0)} />
+      </Field>
+      <Field label={t('pages.inbounds.info.noKernelTun')}>
+        <Switch checked={!!ctl.get(['settings', 'noKernelTun'])} onChange={(v) => ctl.set(['settings', 'noKernelTun'], v)} />
+      </Field>
+
+      <Field label={t('pages.inbounds.form.peers')}>
+        <Button
+          size="sm"
+          variant="default"
+          onClick={() => {
+            const kp = Wireguard.generateKeypair();
+            setPeers([
+              ...peers,
+              { privateKey: kp.privateKey, publicKey: kp.publicKey, allowedIPs: [nextWgPeerAllowedIP(peers)], keepAlive: 0 },
+            ]);
+          }}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          + {t('pages.inbounds.form.addPeer')}
+        </Button>
+      </Field>
+
+      {peers.map((peer, idx) => {
+        const ips = peer.allowedIPs ?? [];
+        const setIps = (next: string[]) => patchPeer(idx, { allowedIPs: next });
+        return (
+          <div key={idx} className="wg-peer">
+            <Divider>
+              <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                {t('pages.inbounds.info.peerNumber', { n: idx + 1 })}
+                {peers.length > 1 && (
+                  <Button size="sm" variant="text" danger onClick={() => setPeers(peers.filter((_, i) => i !== idx))}>−</Button>
+                )}
+              </span>
+            </Divider>
+            <Field label={t('pages.xray.wireguard.secretKey')}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Input value={peer.privateKey ?? ''} onChange={(e) => patchPeer(idx, { privateKey: e.target.value })} />
+                <Button variant="default" onClick={() => regenWgPeerKeypair(idx)}>↻</Button>
               </div>
-            ))}
-          </>
-        )}
-      </Form.List>
+            </Field>
+            <Field label={t('pages.xray.wireguard.publicKey')}>
+              <Input value={peer.publicKey ?? ''} onChange={(e) => patchPeer(idx, { publicKey: e.target.value })} />
+            </Field>
+            <Field label="PSK">
+              <Input value={peer.preSharedKey ?? ''} onChange={(e) => patchPeer(idx, { preSharedKey: e.target.value })} />
+            </Field>
+            <Field label={t('pages.xray.wireguard.allowedIPs')}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {ips.map((ip, j) => (
+                  <div key={j} style={{ display: 'flex', gap: 6 }}>
+                    <Input value={ip ?? ''} onChange={(e) => setIps(ips.map((x, i) => (i === j ? e.target.value : x)))} />
+                    {ips.length > 1 && <Button size="sm" variant="default" onClick={() => setIps(ips.filter((_, i) => i !== j))}>−</Button>}
+                  </div>
+                ))}
+                <Button size="sm" variant="default" onClick={() => setIps([...ips, ''])} style={{ alignSelf: 'flex-start' }}>+</Button>
+              </div>
+            </Field>
+            <Field label={t('pages.inbounds.form.keepAlive')}>
+              <Input type="number" min={0} value={peer.keepAlive ?? ''} onChange={(e) => patchPeer(idx, { keepAlive: Number(e.target.value) || 0 })} />
+            </Field>
+          </div>
+        );
+      })}
     </>
   );
 }

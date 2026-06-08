@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { Form, type FormInstance } from 'antd';
 import type { ReactNode } from 'react';
 
 import {
@@ -13,24 +12,22 @@ import {
   XhttpForm,
 } from '@/pages/inbounds/form/transport';
 import { RealityForm, TlsForm } from '@/pages/inbounds/form/security';
-import type { InboundFormValues } from '@/schemas/forms/inbound-form';
-import { renderWithProviders, fieldLabels } from './test-utils';
+import { useFormState } from '@/lib/form/useFormState';
+import { FormProvider } from '@/lib/form/FormContext';
+import { renderWithProviders, dsFieldLabels } from './test-utils';
 
 function FormHarness({
   children,
   initialValues,
 }: {
-  children: (form: FormInstance<InboundFormValues>) => ReactNode;
+  children: ReactNode;
   initialValues?: Record<string, unknown>;
 }) {
-  const [form] = Form.useForm<InboundFormValues>();
-  return <Form form={form} initialValues={initialValues}>{children(form)}</Form>;
+  const ctl = useFormState<Record<string, unknown>>(() => initialValues ?? {});
+  return <FormProvider ctl={ctl}>{children}</FormProvider>;
 }
 
-function renderInForm(
-  node: (form: FormInstance<InboundFormValues>) => ReactNode,
-  initialValues?: Record<string, unknown>,
-) {
+function renderInForm(node: ReactNode, initialValues?: Record<string, unknown>) {
   return renderWithProviders(<FormHarness initialValues={initialValues}>{node}</FormHarness>);
 }
 
@@ -38,38 +35,38 @@ const noop = () => {};
 
 describe('inbound transport forms', () => {
   it('RawForm field structure is stable', () => {
-    renderInForm(() => <RawForm />);
-    expect(fieldLabels()).toMatchSnapshot();
+    renderInForm(<RawForm />);
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('WsForm field structure is stable', () => {
-    renderInForm(() => <WsForm />);
-    expect(fieldLabels()).toMatchSnapshot();
+    renderInForm(<WsForm />);
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('GrpcForm field structure is stable', () => {
-    renderInForm(() => <GrpcForm />);
-    expect(fieldLabels()).toMatchSnapshot();
+    renderInForm(<GrpcForm />);
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('KcpForm field structure is stable', () => {
-    renderInForm(() => <KcpForm />);
-    expect(fieldLabels()).toMatchSnapshot();
+    renderInForm(<KcpForm />);
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('HttpUpgradeForm field structure is stable', () => {
-    renderInForm(() => <HttpUpgradeForm />);
-    expect(fieldLabels()).toMatchSnapshot();
+    renderInForm(<HttpUpgradeForm />);
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('XhttpForm field structure is stable', () => {
-    renderInForm((form) => <XhttpForm form={form} />);
-    expect(fieldLabels()).toMatchSnapshot();
+    renderInForm(<XhttpForm />);
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('ExternalProxyForm field structure is stable (one TLS entry)', () => {
     renderInForm(
-      () => <ExternalProxyForm toggleExternalProxy={noop} />,
+      <ExternalProxyForm toggleExternalProxy={noop} />,
       {
         streamSettings: {
           externalProxy: [{
@@ -84,21 +81,21 @@ describe('inbound transport forms', () => {
         },
       },
     );
-    expect(fieldLabels()).toMatchSnapshot();
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('SockoptForm field structure is stable (enabled + happy eyeballs)', () => {
     renderInForm(
-      () => <SockoptForm toggleSockopt={noop} />,
+      <SockoptForm toggleSockopt={noop} />,
       { streamSettings: { sockopt: { happyEyeballs: {} } } },
     );
-    expect(fieldLabels()).toMatchSnapshot();
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 });
 
 describe('inbound security forms', () => {
   it('TlsForm field structure is stable', () => {
-    renderInForm(() => (
+    renderInForm(
       <TlsForm
         saving={false}
         setCertFromPanel={noop}
@@ -106,13 +103,13 @@ describe('inbound security forms', () => {
         generateRandomPinHash={noop}
         getNewEchCert={noop}
         clearEchCert={noop}
-      />
-    ));
-    expect(fieldLabels()).toMatchSnapshot();
+      />,
+    );
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 
   it('RealityForm field structure is stable', () => {
-    renderInForm(() => (
+    renderInForm(
       <RealityForm
         saving={false}
         randomizeRealityTarget={noop}
@@ -121,8 +118,8 @@ describe('inbound security forms', () => {
         clearRealityKeypair={noop}
         genMldsa65={noop}
         clearMldsa65={noop}
-      />
-    ));
-    expect(fieldLabels()).toMatchSnapshot();
+      />,
+    );
+    expect(dsFieldLabels()).toMatchSnapshot();
   });
 });

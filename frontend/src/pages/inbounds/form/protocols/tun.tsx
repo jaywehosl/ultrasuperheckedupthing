@@ -1,93 +1,51 @@
+import type { FieldPath } from '@/lib/form/useFormState';
 import { useTranslation } from 'react-i18next';
-import { Button, Form, Input, InputNumber, Space, Tooltip } from 'antd';
-import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Field, Input, Tooltip } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
+
+function StringList({ path, label, placeholders }: { path: FieldPath; label: React.ReactNode; placeholders: (j: number) => string }) {
+  const ctl = useFormCtl();
+  const arr = ctl.get<string[]>(path) ?? [];
+  const setArr = (next: string[]) => ctl.set(path, next);
+  return (
+    <Field label={label}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {arr.map((v, j) => (
+          <div key={j} style={{ display: 'flex', gap: 6 }}>
+            <Input placeholder={placeholders(j)} value={v ?? ''} onChange={(e) => setArr(arr.map((x, i) => (i === j ? e.target.value : x)))} />
+            <Button size="sm" variant="default" danger onClick={() => setArr(arr.filter((_, i) => i !== j))}>−</Button>
+          </div>
+        ))}
+        <Button size="sm" variant="default" onClick={() => setArr([...arr, ''])} style={{ alignSelf: 'flex-start' }}>+</Button>
+      </div>
+    </Field>
+  );
+}
 
 export default function TunFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item name={['settings', 'name']} label={t('pages.inbounds.info.interfaceName')}>
-        <Input placeholder="xray0" />
-      </Form.Item>
-      <Form.Item name={['settings', 'mtu']} label="MTU">
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.List name={['settings', 'gateway']}>
-        {(fields, { add, remove }) => (
-          <Form.Item label={t('pages.inbounds.info.gateway')}>
-            <Button size="small" onClick={() => add('')}>
-              <PlusOutlined />
-            </Button>
-            {fields.map((field, j) => (
-              <Space.Compact key={field.key} block className="mt-4">
-                <Form.Item name={field.name} noStyle>
-                  <Input placeholder={j === 0 ? '10.0.0.1/16' : 'fc00::1/64'} />
-                </Form.Item>
-                <Button size="small" onClick={() => remove(field.name)}>
-                  <MinusOutlined />
-                </Button>
-              </Space.Compact>
-            ))}
-          </Form.Item>
-        )}
-      </Form.List>
-      <Form.List name={['settings', 'dns']}>
-        {(fields, { add, remove }) => (
-          <Form.Item label="DNS">
-            <Button size="small" onClick={() => add('')}>
-              <PlusOutlined />
-            </Button>
-            {fields.map((field, j) => (
-              <Space.Compact key={field.key} block className="mt-4">
-                <Form.Item name={field.name} noStyle>
-                  <Input placeholder={j === 0 ? '1.1.1.1' : '8.8.8.8'} />
-                </Form.Item>
-                <Button size="small" onClick={() => remove(field.name)}>
-                  <MinusOutlined />
-                </Button>
-              </Space.Compact>
-            ))}
-          </Form.Item>
-        )}
-      </Form.List>
-      <Form.Item name={['settings', 'userLevel']} label={t('pages.xray.tun.userLevel')}>
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.List name={['settings', 'autoSystemRoutingTable']}>
-        {(fields, { add, remove }) => (
-          <Form.Item
-            label={
-              <Tooltip title={t('pages.inbounds.form.autoSystemRoutesTooltip')}>
-                {t('pages.inbounds.info.autoSystemRoutes')}
-              </Tooltip>
-            }
-          >
-            <Button size="small" onClick={() => add('')}>
-              <PlusOutlined />
-            </Button>
-            {fields.map((field, j) => (
-              <Space.Compact key={field.key} block className="mt-4">
-                <Form.Item name={field.name} noStyle>
-                  <Input placeholder={j === 0 ? '0.0.0.0/0' : '::/0'} />
-                </Form.Item>
-                <Button size="small" onClick={() => remove(field.name)}>
-                  <MinusOutlined />
-                </Button>
-              </Space.Compact>
-            ))}
-          </Form.Item>
-        )}
-      </Form.List>
-      <Form.Item
-        name={['settings', 'autoOutboundsInterface']}
-        label={
-          <Tooltip title={t('pages.inbounds.form.autoOutboundsInterfaceTooltip')}>
-            {t('pages.inbounds.form.autoOutboundsInterface')}
-          </Tooltip>
-        }
-      >
-        <Input placeholder="auto" />
-      </Form.Item>
+      <Field label={t('pages.inbounds.info.interfaceName')}>
+        <Input placeholder="xray0" value={ctl.get(['settings', 'name']) ?? ''} onChange={(e) => ctl.set(['settings', 'name'], e.target.value)} />
+      </Field>
+      <Field label="MTU">
+        <Input type="number" min={0} value={ctl.get(['settings', 'mtu']) ?? ''} onChange={(e) => ctl.set(['settings', 'mtu'], Number(e.target.value) || 0)} />
+      </Field>
+      <StringList path={['settings', 'gateway']} label={t('pages.inbounds.info.gateway')} placeholders={(j) => (j === 0 ? '10.0.0.1/16' : 'fc00::1/64')} />
+      <StringList path={['settings', 'dns']} label="DNS" placeholders={(j) => (j === 0 ? '1.1.1.1' : '8.8.8.8')} />
+      <Field label={t('pages.xray.tun.userLevel')}>
+        <Input type="number" min={0} value={ctl.get(['settings', 'userLevel']) ?? ''} onChange={(e) => ctl.set(['settings', 'userLevel'], Number(e.target.value) || 0)} />
+      </Field>
+      <StringList
+        path={['settings', 'autoSystemRoutingTable']}
+        label={<Tooltip title={t('pages.inbounds.form.autoSystemRoutesTooltip')}><span>{t('pages.inbounds.info.autoSystemRoutes')}</span></Tooltip>}
+        placeholders={(j) => (j === 0 ? '0.0.0.0/0' : '::/0')}
+      />
+      <Field label={<Tooltip title={t('pages.inbounds.form.autoOutboundsInterfaceTooltip')}><span>{t('pages.inbounds.form.autoOutboundsInterface')}</span></Tooltip>}>
+        <Input placeholder="auto" value={ctl.get(['settings', 'autoOutboundsInterface']) ?? ''} onChange={(e) => ctl.set(['settings', 'autoOutboundsInterface'], e.target.value)} />
+      </Field>
     </>
   );
 }

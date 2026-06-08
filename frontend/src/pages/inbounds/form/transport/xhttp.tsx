@@ -1,218 +1,110 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, InputNumber, Select, Switch, type FormInstance } from 'antd';
-
+import { Field, Input, Select, Switch } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
-import type { InboundFormValues } from '@/schemas/forms/inbound-form';
+import { useFormCtl } from '@/lib/form/FormContext';
 
-export default function XhttpForm({ form }: { form: FormInstance<InboundFormValues> }) {
+const X = ['streamSettings', 'xhttpSettings'] as const;
+
+export default function XhttpForm() {
   const { t } = useTranslation();
-  const xhttpMode = Form.useWatch(['streamSettings', 'xhttpSettings', 'mode'], form);
-  const xhttpObfsMode = Form.useWatch(['streamSettings', 'xhttpSettings', 'xPaddingObfsMode'], form) ?? false;
-  const xhttpSessionPlacement = Form.useWatch(['streamSettings', 'xhttpSettings', 'sessionPlacement'], form);
-  const xhttpSeqPlacement = Form.useWatch(['streamSettings', 'xhttpSettings', 'seqPlacement'], form);
-  const xhttpUplinkPlacement = Form.useWatch(['streamSettings', 'xhttpSettings', 'uplinkDataPlacement'], form);
+  const ctl = useFormCtl();
+
+  const mode = ctl.get<string>([...X, 'mode']);
+  const obfsMode = !!ctl.get([...X, 'xPaddingObfsMode']);
+  const sessionPlacement = ctl.get<string>([...X, 'sessionPlacement']);
+  const seqPlacement = ctl.get<string>([...X, 'seqPlacement']);
+  const uplinkPlacement = ctl.get<string>([...X, 'uplinkDataPlacement']);
+
+  const text = (key: string, label: string, placeholder?: string) => (
+    <Field label={label}>
+      <Input placeholder={placeholder} value={ctl.get([...X, key]) ?? ''} onChange={(e) => ctl.set([...X, key], e.target.value)} />
+    </Field>
+  );
+  const number = (key: string, label: string, min?: number, placeholder?: string) => (
+    <Field label={label}>
+      <Input type="number" min={min} placeholder={placeholder} value={ctl.get([...X, key]) ?? ''} onChange={(e) => ctl.set([...X, key], Number(e.target.value) || 0)} />
+    </Field>
+  );
+  const sel = (key: string, label: string, options: { value: string; label: string; disabled?: boolean }[]) => (
+    <Field label={label}>
+      <Select value={(ctl.get([...X, key]) as string) ?? ''} onChange={(v) => ctl.set([...X, key], v)} options={options} />
+    </Field>
+  );
+  const sw = (key: string, label: string) => (
+    <Field label={label}><Switch checked={!!ctl.get([...X, key])} onChange={(v) => ctl.set([...X, key], v)} /></Field>
+  );
+
   return (
     <>
-      <Form.Item name={['streamSettings', 'xhttpSettings', 'host']} label={t('host')}>
-        <Input />
-      </Form.Item>
-      <Form.Item name={['streamSettings', 'xhttpSettings', 'path']} label={t('path')}>
-        <Input />
-      </Form.Item>
-      <Form.Item name={['streamSettings', 'xhttpSettings', 'mode']} label={t('pages.inbounds.info.mode')}>
-        <Select
-          style={{ width: '50%' }}
-          options={(['auto', 'packet-up', 'stream-up', 'stream-one'] as const).map((m) => ({
-            value: m,
-            label: m,
-          }))}
-        />
-      </Form.Item>
-      {xhttpMode === 'packet-up' && (
+      {text('host', t('host'))}
+      {text('path', t('path'))}
+      {sel('mode', t('pages.inbounds.info.mode'), (['auto', 'packet-up', 'stream-up', 'stream-one'] as const).map((m) => ({ value: m, label: m })))}
+      {mode === 'packet-up' && (
         <>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'scMaxBufferedPosts']}
-            label={t('pages.inbounds.form.maxBufferedUpload')}
-          >
-            <InputNumber />
-          </Form.Item>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'scMaxEachPostBytes']}
-            label={t('pages.inbounds.form.maxUploadSize')}
-          >
-            <Input />
-          </Form.Item>
+          {number('scMaxBufferedPosts', t('pages.inbounds.form.maxBufferedUpload'))}
+          {text('scMaxEachPostBytes', t('pages.inbounds.form.maxUploadSize'))}
         </>
       )}
-      {xhttpMode === 'stream-up' && (
-        <Form.Item
-          name={['streamSettings', 'xhttpSettings', 'scStreamUpServerSecs']}
-          label={t('pages.inbounds.form.streamUpServer')}
-        >
-          <Input />
-        </Form.Item>
-      )}
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'serverMaxHeaderBytes']}
-        label={t('pages.inbounds.form.serverMaxHeaderBytes')}
-      >
-        <InputNumber min={0} placeholder="0 (default)" />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'xPaddingBytes']}
-        label={t('pages.inbounds.form.paddingBytes')}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'headers']}
-        label={t('pages.inbounds.form.headers')}
-      >
-        <HeaderMapEditor mode="v1" />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'uplinkHTTPMethod']}
-        label={t('pages.inbounds.form.uplinkHttpMethod')}
-      >
-        <Select
-          options={[
-            { value: '', label: 'Default (POST)' },
-            { value: 'POST', label: 'POST' },
-            { value: 'PUT', label: 'PUT' },
-            {
-              value: 'GET',
-              label: 'GET (packet-up only)',
-              disabled: xhttpMode !== 'packet-up',
-            },
-          ]}
-        />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'xPaddingObfsMode']}
-        label={t('pages.inbounds.form.paddingObfsMode')}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
-      {xhttpObfsMode && (
+      {mode === 'stream-up' && text('scStreamUpServerSecs', t('pages.inbounds.form.streamUpServer'))}
+      {number('serverMaxHeaderBytes', t('pages.inbounds.form.serverMaxHeaderBytes'), 0, '0 (default)')}
+      {text('xPaddingBytes', t('pages.inbounds.form.paddingBytes'))}
+      <Field label={t('pages.inbounds.form.headers')}>
+        <HeaderMapEditor mode="v1" value={ctl.get([...X, 'headers'])} onChange={(v) => ctl.set([...X, 'headers'], v)} />
+      </Field>
+      {sel('uplinkHTTPMethod', t('pages.inbounds.form.uplinkHttpMethod'), [
+        { value: '', label: 'Default (POST)' },
+        { value: 'POST', label: 'POST' },
+        { value: 'PUT', label: 'PUT' },
+        { value: 'GET', label: 'GET (packet-up only)', disabled: mode !== 'packet-up' },
+      ])}
+      {sw('xPaddingObfsMode', t('pages.inbounds.form.paddingObfsMode'))}
+      {obfsMode && (
         <>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'xPaddingKey']}
-            label={t('pages.inbounds.form.paddingKey')}
-          >
-            <Input placeholder="x_padding" />
-          </Form.Item>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'xPaddingHeader']}
-            label={t('pages.inbounds.form.paddingHeader')}
-          >
-            <Input placeholder="X-Padding" />
-          </Form.Item>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'xPaddingPlacement']}
-            label={t('pages.inbounds.form.paddingPlacement')}
-          >
-            <Select
-              options={[
-                { value: '', label: 'Default (queryInHeader)' },
-                { value: 'queryInHeader', label: 'queryInHeader' },
-                { value: 'header', label: 'header' },
-                { value: 'cookie', label: 'cookie' },
-                { value: 'query', label: 'query' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'xPaddingMethod']}
-            label={t('pages.inbounds.form.paddingMethod')}
-          >
-            <Select
-              options={[
-                { value: '', label: 'Default (repeat-x)' },
-                { value: 'repeat-x', label: 'repeat-x' },
-                { value: 'tokenish', label: 'tokenish' },
-              ]}
-            />
-          </Form.Item>
-        </>
-      )}
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'sessionPlacement']}
-        label={t('pages.inbounds.form.sessionPlacement')}
-      >
-        <Select
-          options={[
-            { value: '', label: 'Default (path)' },
-            { value: 'path', label: 'path' },
+          {text('xPaddingKey', t('pages.inbounds.form.paddingKey'), 'x_padding')}
+          {text('xPaddingHeader', t('pages.inbounds.form.paddingHeader'), 'X-Padding')}
+          {sel('xPaddingPlacement', t('pages.inbounds.form.paddingPlacement'), [
+            { value: '', label: 'Default (queryInHeader)' },
+            { value: 'queryInHeader', label: 'queryInHeader' },
             { value: 'header', label: 'header' },
             { value: 'cookie', label: 'cookie' },
             { value: 'query', label: 'query' },
-          ]}
-        />
-      </Form.Item>
-      {xhttpSessionPlacement && xhttpSessionPlacement !== 'path' && (
-        <Form.Item
-          name={['streamSettings', 'xhttpSettings', 'sessionKey']}
-          label={t('pages.inbounds.form.sessionKey')}
-        >
-          <Input placeholder="x_session" />
-        </Form.Item>
+          ])}
+          {sel('xPaddingMethod', t('pages.inbounds.form.paddingMethod'), [
+            { value: '', label: 'Default (repeat-x)' },
+            { value: 'repeat-x', label: 'repeat-x' },
+            { value: 'tokenish', label: 'tokenish' },
+          ])}
+        </>
       )}
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'seqPlacement']}
-        label={t('pages.inbounds.form.sequencePlacement')}
-      >
-        <Select
-          options={[
-            { value: '', label: 'Default (path)' },
-            { value: 'path', label: 'path' },
+      {sel('sessionPlacement', t('pages.inbounds.form.sessionPlacement'), [
+        { value: '', label: 'Default (path)' },
+        { value: 'path', label: 'path' },
+        { value: 'header', label: 'header' },
+        { value: 'cookie', label: 'cookie' },
+        { value: 'query', label: 'query' },
+      ])}
+      {sessionPlacement && sessionPlacement !== 'path' && text('sessionKey', t('pages.inbounds.form.sessionKey'), 'x_session')}
+      {sel('seqPlacement', t('pages.inbounds.form.sequencePlacement'), [
+        { value: '', label: 'Default (path)' },
+        { value: 'path', label: 'path' },
+        { value: 'header', label: 'header' },
+        { value: 'cookie', label: 'cookie' },
+        { value: 'query', label: 'query' },
+      ])}
+      {seqPlacement && seqPlacement !== 'path' && text('seqKey', t('pages.inbounds.form.sequenceKey'), 'x_seq')}
+      {mode === 'packet-up' && (
+        <>
+          {sel('uplinkDataPlacement', t('pages.inbounds.form.uplinkDataPlacement'), [
+            { value: '', label: 'Default (body)' },
+            { value: 'body', label: 'body' },
             { value: 'header', label: 'header' },
             { value: 'cookie', label: 'cookie' },
             { value: 'query', label: 'query' },
-          ]}
-        />
-      </Form.Item>
-      {xhttpSeqPlacement && xhttpSeqPlacement !== 'path' && (
-        <Form.Item
-          name={['streamSettings', 'xhttpSettings', 'seqKey']}
-          label={t('pages.inbounds.form.sequenceKey')}
-        >
-          <Input placeholder="x_seq" />
-        </Form.Item>
-      )}
-      {xhttpMode === 'packet-up' && (
-        <>
-          <Form.Item
-            name={['streamSettings', 'xhttpSettings', 'uplinkDataPlacement']}
-            label={t('pages.inbounds.form.uplinkDataPlacement')}
-          >
-            <Select
-              options={[
-                { value: '', label: 'Default (body)' },
-                { value: 'body', label: 'body' },
-                { value: 'header', label: 'header' },
-                { value: 'cookie', label: 'cookie' },
-                { value: 'query', label: 'query' },
-              ]}
-            />
-          </Form.Item>
-          {xhttpUplinkPlacement && xhttpUplinkPlacement !== 'body' && (
-            <Form.Item
-              name={['streamSettings', 'xhttpSettings', 'uplinkDataKey']}
-              label={t('pages.inbounds.form.uplinkDataKey')}
-            >
-              <Input placeholder="x_data" />
-            </Form.Item>
-          )}
+          ])}
+          {uplinkPlacement && uplinkPlacement !== 'body' && text('uplinkDataKey', t('pages.inbounds.form.uplinkDataKey'), 'x_data')}
         </>
       )}
-      <Form.Item
-        name={['streamSettings', 'xhttpSettings', 'noSSEHeader']}
-        label={t('pages.inbounds.form.noSseHeader')}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
+      {sw('noSSEHeader', t('pages.inbounds.form.noSseHeader'))}
     </>
   );
 }

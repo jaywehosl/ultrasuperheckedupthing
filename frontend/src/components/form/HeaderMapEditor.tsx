@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Input, Space } from 'antd';
 import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
-
-import { InputAddon } from '@/components/ui';
+import { Button, Input } from '@/components/ds';
 
 // Reusable header-map editor. Handles the two wire shapes Xray uses for
 // HTTP-style header maps:
@@ -116,26 +114,16 @@ export default function HeaderMapEditor({ mode, value, onChange }: HeaderMapEdit
   }
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {rows.map((row, idx) => (
-        <Space.Compact key={idx} block className="mb-8">
-          <InputAddon>{`${idx + 1}`}</InputAddon>
-          <Input
-            value={row.name}
-            placeholder="Name"
-            onChange={(e) => setRow(idx, { name: e.target.value })}
-          />
-          <Input
-            value={row.value}
-            placeholder="Value"
-            onChange={(e) => setRow(idx, { value: e.target.value })}
-          />
-          <Button icon={<MinusOutlined />} onClick={() => removeRow(idx)} />
-        </Space.Compact>
+        <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span className="ds-muted" style={{ width: 18 }}>{idx + 1}</span>
+          <Input value={row.name} placeholder="Name" onChange={(e) => setRow(idx, { name: e.target.value })} />
+          <Input value={row.value} placeholder="Value" onChange={(e) => setRow(idx, { value: e.target.value })} />
+          <Button size="sm" icon={<MinusOutlined />} onClick={() => removeRow(idx)} />
+        </div>
       ))}
-      <Button size="small" type="primary" icon={<PlusOutlined />} onClick={addRow}>
-        Add
-      </Button>
-    </>
+      <Button size="sm" variant="primary" icon={<PlusOutlined />} onClick={addRow} style={{ alignSelf: 'flex-start' }}>Add</Button>
+    </div>
   );
 }

@@ -1,157 +1,68 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Input, Switch } from 'antd';
-
+import { Field, Input, Switch } from '@/components/ds';
 import { HeaderMapEditor } from '@/components/form';
+import { useFormCtl } from '@/lib/form/FormContext';
+
+const HEADER = ['streamSettings', 'tcpSettings', 'header'] as const;
 
 export default function RawForm() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
+  const headerType = ctl.get<string | undefined>([...HEADER, 'type']);
+
   return (
     <>
-      <Form.Item
-        name={['streamSettings', 'tcpSettings', 'acceptProxyProtocol']}
-        label={t('pages.inbounds.form.proxyProtocol')}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
-      <Form.Item label={`HTTP ${t('camouflage')}`}>
-        <Form.Item
-          noStyle
-          shouldUpdate={(prev, curr) =>
-            prev.streamSettings?.tcpSettings?.header?.type
-            !== curr.streamSettings?.tcpSettings?.header?.type
-          }
-        >
-          {({ getFieldValue, setFieldValue }) => {
-            const headerType = getFieldValue(
-              ['streamSettings', 'tcpSettings', 'header', 'type'],
-            ) as string | undefined;
-            return (
-              <Switch
-                checked={headerType === 'http'}
-                onChange={(v) => {
-                  setFieldValue(
-                    ['streamSettings', 'tcpSettings', 'header'],
-                    v
-                      ? {
-                        type: 'http',
-                        request: {
-                          version: '1.1',
-                          method: 'GET',
-                          path: ['/'],
-                          headers: {},
-                        },
-                        response: {
-                          version: '1.1',
-                          status: '200',
-                          reason: 'OK',
-                          headers: {},
-                        },
-                      }
-                      : { type: 'none' },
-                  );
-                }}
-              />
-            );
-          }}
-        </Form.Item>
-      </Form.Item>
-      <Form.Item
-        noStyle
-        shouldUpdate={(prev, curr) =>
-          prev.streamSettings?.tcpSettings?.header?.type
-          !== curr.streamSettings?.tcpSettings?.header?.type
-        }
-      >
-        {({ getFieldValue }) => {
-          const headerType = getFieldValue(
-            ['streamSettings', 'tcpSettings', 'header', 'type'],
-          ) as string | undefined;
-          if (headerType !== 'http') return null;
-          return (
-            <>
-              <Form.Item
-                label={t('pages.inbounds.form.requestVersion')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'request', 'version',
-                ]}
-              >
-                <Input placeholder="1.1" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.requestMethod')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'request', 'method',
-                ]}
-              >
-                <Input placeholder="GET" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.requestPath')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'request', 'path',
-                ]}
-                getValueProps={(v) => ({ value: Array.isArray(v) ? v.join(',') : v })}
-                getValueFromEvent={(e) => {
-                  const raw = (e?.target?.value ?? '') as string;
-                  const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
-                  return parts.length > 0 ? parts : ['/'];
-                }}
-              >
-                <Input placeholder="/" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.requestHeaders')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'request', 'headers',
-                ]}
-              >
-                <HeaderMapEditor mode="v2" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.responseVersion')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'response', 'version',
-                ]}
-              >
-                <Input placeholder="1.1" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.responseStatus')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'response', 'status',
-                ]}
-              >
-                <Input placeholder="200" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.responseReason')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'response', 'reason',
-                ]}
-              >
-                <Input placeholder="OK" />
-              </Form.Item>
-              <Form.Item
-                label={t('pages.inbounds.form.responseHeaders')}
-                name={[
-                  'streamSettings', 'tcpSettings', 'header',
-                  'response', 'headers',
-                ]}
-              >
-                <HeaderMapEditor mode="v2" />
-              </Form.Item>
-            </>
-          );
-        }}
-      </Form.Item>
+      <Field label={t('pages.inbounds.form.proxyProtocol')}>
+        <Switch
+          checked={!!ctl.get(['streamSettings', 'tcpSettings', 'acceptProxyProtocol'])}
+          onChange={(v) => ctl.set(['streamSettings', 'tcpSettings', 'acceptProxyProtocol'], v)}
+        />
+      </Field>
+
+      <Field label={`HTTP ${t('camouflage')}`}>
+        <Switch
+          checked={headerType === 'http'}
+          onChange={(v) => ctl.set([...HEADER], v
+            ? { type: 'http', request: { version: '1.1', method: 'GET', path: ['/'], headers: {} }, response: { version: '1.1', status: '200', reason: 'OK', headers: {} } }
+            : { type: 'none' })}
+        />
+      </Field>
+
+      {headerType === 'http' && (
+        <>
+          <Field label={t('pages.inbounds.form.requestVersion')}>
+            <Input value={ctl.get([...HEADER, 'request', 'version']) ?? ''} placeholder="1.1" onChange={(e) => ctl.set([...HEADER, 'request', 'version'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.requestMethod')}>
+            <Input value={ctl.get([...HEADER, 'request', 'method']) ?? ''} placeholder="GET" onChange={(e) => ctl.set([...HEADER, 'request', 'method'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.requestPath')}>
+            <Input
+              value={(() => { const v = ctl.get([...HEADER, 'request', 'path']); return Array.isArray(v) ? v.join(',') : (v as string) ?? ''; })()}
+              placeholder="/"
+              onChange={(e) => {
+                const parts = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                ctl.set([...HEADER, 'request', 'path'], parts.length > 0 ? parts : ['/']);
+              }}
+            />
+          </Field>
+          <Field label={t('pages.inbounds.form.requestHeaders')}>
+            <HeaderMapEditor mode="v2" value={ctl.get([...HEADER, 'request', 'headers'])} onChange={(v) => ctl.set([...HEADER, 'request', 'headers'], v)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.responseVersion')}>
+            <Input value={ctl.get([...HEADER, 'response', 'version']) ?? ''} placeholder="1.1" onChange={(e) => ctl.set([...HEADER, 'response', 'version'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.responseStatus')}>
+            <Input value={ctl.get([...HEADER, 'response', 'status']) ?? ''} placeholder="200" onChange={(e) => ctl.set([...HEADER, 'response', 'status'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.responseReason')}>
+            <Input value={ctl.get([...HEADER, 'response', 'reason']) ?? ''} placeholder="OK" onChange={(e) => ctl.set([...HEADER, 'response', 'reason'], e.target.value)} />
+          </Field>
+          <Field label={t('pages.inbounds.form.responseHeaders')}>
+            <HeaderMapEditor mode="v2" value={ctl.get([...HEADER, 'response', 'headers'])} onChange={(v) => ctl.set([...HEADER, 'response', 'headers'], v)} />
+          </Field>
+        </>
+      )}
     </>
   );
 }

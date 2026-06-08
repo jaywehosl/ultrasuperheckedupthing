@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
-
+import { Button, Field, Input, Select, Switch, Tag } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 import {
   Address_Port_Strategy,
   DOMAIN_STRATEGY_OPTION,
@@ -8,263 +9,107 @@ import {
 } from '@/schemas/primitives';
 import { HappyEyeballsSchema } from '@/schemas/protocols/stream/sockopt';
 
-export default function SockoptForm({
-  toggleSockopt,
-}: {
-  toggleSockopt: (on: boolean) => void;
-}) {
+const S = ['streamSettings', 'sockopt'] as const;
+const XFF_PRESETS = ['CF-Connecting-IP', 'X-Real-IP', 'True-Client-IP', 'X-Client-IP'];
+
+interface CustomSockopt { system?: string; type?: string; level?: string; opt?: string; value?: string }
+
+export default function SockoptForm({ toggleSockopt }: { toggleSockopt: (on: boolean) => void }) {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
+  const [xffText, setXffText] = useState('');
+  const sock = ctl.get<Record<string, unknown> | undefined>([...S]);
+  const on = !!sock && typeof sock === 'object' && Object.keys(sock).length > 0;
+
+  const num = (key: string, label: string, min?: number, max?: number, placeholder?: string) => (
+    <Field label={label}>
+      <Input type="number" min={min} max={max} placeholder={placeholder} value={ctl.get([...S, key]) ?? ''} onChange={(e) => ctl.set([...S, key], Number(e.target.value) || 0)} />
+    </Field>
+  );
+  const sw = (key: string, label: string) => (
+    <Field label={label}><Switch checked={!!ctl.get([...S, key])} onChange={(v) => ctl.set([...S, key], v)} /></Field>
+  );
+  const sel = (key: string, label: string, options: { value: string; label: string }[]) => (
+    <Field label={label}><Select value={(ctl.get([...S, key]) as string) ?? ''} onChange={(v) => ctl.set([...S, key], v)} options={options} /></Field>
+  );
+
+  const xff = (ctl.get<string[]>([...S, 'trustedXForwardedFor']) ?? []);
+  const toggleXff = (v: string) => ctl.set([...S, 'trustedXForwardedFor'], xff.includes(v) ? xff.filter((x) => x !== v) : [...xff, v]);
+
+  const he = ctl.get([...S, 'happyEyeballs']);
+  const hasHe = he != null;
+
+  const custom = (ctl.get<CustomSockopt[]>([...S, 'customSockopt']) ?? []);
+  const setCustom = (next: CustomSockopt[]) => ctl.set([...S, 'customSockopt'], next);
+
   return (
-    <Form.Item
-      noStyle
-      shouldUpdate={(prev, curr) => {
-        const a = (prev.streamSettings as { sockopt?: object } | undefined)?.sockopt;
-        const b = (curr.streamSettings as { sockopt?: object } | undefined)?.sockopt;
-        return !!a !== !!b;
-      }}
-    >
-      {({ getFieldValue }) => {
-        const sock = getFieldValue(['streamSettings', 'sockopt']);
-        const on = !!sock && typeof sock === 'object' && Object.keys(sock).length > 0;
-        return (
-          <>
-            <Form.Item label="Sockopt">
-              <Switch checked={on} onChange={toggleSockopt} />
-            </Form.Item>
-            {on && (
-              <>
-                <Form.Item name={['streamSettings', 'sockopt', 'mark']} label={t('pages.inbounds.form.routeMark')}>
-                  <InputNumber min={0} />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpKeepAliveInterval']}
-                  label={t('pages.inbounds.form.tcpKeepAliveInterval')}
-                >
-                  <InputNumber min={0} />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpKeepAliveIdle']}
-                  label={t('pages.inbounds.form.tcpKeepAliveIdle')}
-                >
-                  <InputNumber min={0} />
-                </Form.Item>
-                <Form.Item name={['streamSettings', 'sockopt', 'tcpMaxSeg']} label={t('pages.inbounds.form.tcpMaxSeg')}>
-                  <InputNumber min={0} />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpUserTimeout']}
-                  label={t('pages.inbounds.form.tcpUserTimeout')}
-                >
-                  <InputNumber min={0} />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpWindowClamp']}
-                  label={t('pages.inbounds.form.tcpWindowClamp')}
-                >
-                  <InputNumber min={0} />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'acceptProxyProtocol']}
-                  label={t('pages.inbounds.form.proxyProtocol')}
-                  valuePropName="checked"
-                >
-                  <Switch />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpFastOpen']}
-                  label={t('pages.inbounds.form.tcpFastOpen')}
-                  valuePropName="checked"
-                >
-                  <Switch />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpMptcp']}
-                  label={t('pages.inbounds.form.multipathTcp')}
-                  valuePropName="checked"
-                >
-                  <Switch />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'penetrate']}
-                  label={t('pages.inbounds.form.penetrate')}
-                  valuePropName="checked"
-                >
-                  <Switch />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'V6Only']}
-                  label={t('pages.inbounds.form.v6Only')}
-                  valuePropName="checked"
-                >
-                  <Switch />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'domainStrategy']}
-                  label={t('pages.xray.wireguard.domainStrategy')}
-                >
-                  <Select
-                    style={{ width: '50%' }}
-                    options={Object.values(DOMAIN_STRATEGY_OPTION).map((d) => ({ value: d, label: d }))}
-                  />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'tcpcongestion']}
-                  label={t('pages.inbounds.form.tcpCongestion')}
-                >
-                  <Select
-                    style={{ width: '50%' }}
-                    options={Object.values(TCP_CONGESTION_OPTION).map((c) => ({ value: c, label: c }))}
-                  />
-                </Form.Item>
-                <Form.Item name={['streamSettings', 'sockopt', 'tproxy']} label="TProxy">
-                  <Select
-                    style={{ width: '50%' }}
-                    options={[
-                      { value: 'off', label: 'Off' },
-                      { value: 'redirect', label: 'Redirect' },
-                      { value: 'tproxy', label: 'TProxy' },
-                    ]}
-                  />
-                </Form.Item>
-                <Form.Item name={['streamSettings', 'sockopt', 'dialerProxy']} label={t('pages.inbounds.form.dialerProxy')}>
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'interface']}
-                  label={t('pages.inbounds.info.interfaceName')}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'trustedXForwardedFor']}
-                  label={t('pages.inbounds.form.trustedXForwardedFor')}
-                >
-                  <Select
-                    mode="tags"
-                    style={{ width: '100%' }}
-                    tokenSeparators={[',']}
-                    options={[
-                      { value: 'CF-Connecting-IP', label: 'CF-Connecting-IP' },
-                      { value: 'X-Real-IP', label: 'X-Real-IP' },
-                      { value: 'True-Client-IP', label: 'True-Client-IP' },
-                      { value: 'X-Client-IP', label: 'X-Client-IP' },
-                    ]}
-                  />
-                </Form.Item>
-                <Form.Item
-                  name={['streamSettings', 'sockopt', 'addressPortStrategy']}
-                  label={t('pages.inbounds.form.addressPortStrategy')}
-                >
-                  <Select
-                    style={{ width: '50%' }}
-                    options={Object.values(Address_Port_Strategy).map((v) => ({ value: v, label: v }))}
-                  />
-                </Form.Item>
-                <Form.Item shouldUpdate noStyle>
-                  {({ getFieldValue, setFieldValue }) => {
-                    const he = getFieldValue(['streamSettings', 'sockopt', 'happyEyeballs']);
-                    const hasHe = he != null;
-                    return (
-                      <>
-                        <Form.Item label="Happy Eyeballs">
-                          <Switch
-                            checked={hasHe}
-                            onChange={(v) => {
-                              setFieldValue(
-                                ['streamSettings', 'sockopt', 'happyEyeballs'],
-                                v ? HappyEyeballsSchema.parse({}) : undefined,
-                              );
-                            }}
-                          />
-                        </Form.Item>
-                        {hasHe && (
-                          <>
-                            <Form.Item
-                              name={['streamSettings', 'sockopt', 'happyEyeballs', 'tryDelayMs']}
-                              label={t('pages.inbounds.form.tryDelayMs')}
-                            >
-                              <InputNumber min={0} placeholder="0 disabled — 250 recommended" />
-                            </Form.Item>
-                            <Form.Item
-                              name={['streamSettings', 'sockopt', 'happyEyeballs', 'prioritizeIPv6']}
-                              label={t('pages.inbounds.form.prioritizeIPv6')}
-                              valuePropName="checked"
-                            >
-                              <Switch />
-                            </Form.Item>
-                            <Form.Item
-                              name={['streamSettings', 'sockopt', 'happyEyeballs', 'interleave']}
-                              label={t('pages.inbounds.form.interleave')}
-                            >
-                              <InputNumber min={1} />
-                            </Form.Item>
-                            <Form.Item
-                              name={['streamSettings', 'sockopt', 'happyEyeballs', 'maxConcurrentTry']}
-                              label={t('pages.inbounds.form.maxConcurrentTry')}
-                            >
-                              <InputNumber min={0} />
-                            </Form.Item>
-                          </>
-                        )}
-                      </>
-                    );
-                  }}
-                </Form.Item>
-                <Form.List name={['streamSettings', 'sockopt', 'customSockopt']}>
-                  {(fields, { add, remove }) => (
-                    <>
-                      <Form.Item label={t('pages.inbounds.form.customSockopt')}>
-                        <Button
-                          type="dashed"
-                          size="small"
-                          onClick={() => add({ type: 'int', level: '6', opt: '', value: '' })}
-                        >
-                          + {t('pages.inbounds.form.addCustomOption')}
-                        </Button>
-                      </Form.Item>
-                      {fields.map((field) => (
-                        <Space.Compact key={field.key} style={{ display: 'flex', marginBottom: 8 }}>
-                          <Form.Item name={[field.name, 'system']} noStyle>
-                            <Select
-                              placeholder="all"
-                              allowClear
-                              style={{ width: 100 }}
-                              options={[
-                                { value: 'linux', label: 'linux' },
-                                { value: 'windows', label: 'windows' },
-                                { value: 'darwin', label: 'darwin' },
-                              ]}
-                            />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'type']} noStyle>
-                            <Select
-                              style={{ width: 80 }}
-                              options={[
-                                { value: 'int', label: 'int' },
-                                { value: 'str', label: 'str' },
-                              ]}
-                            />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'level']} noStyle>
-                            <Input placeholder="level (6=TCP)" style={{ width: 100 }} />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'opt']} noStyle>
-                            <Input placeholder="opt" style={{ width: 120 }} />
-                          </Form.Item>
-                          <Form.Item name={[field.name, 'value']} noStyle>
-                            <Input placeholder="value" style={{ flex: 1 }} />
-                          </Form.Item>
-                          <Button danger onClick={() => remove(field.name)}>−</Button>
-                        </Space.Compact>
-                      ))}
-                    </>
-                  )}
-                </Form.List>
-              </>
-            )}
-          </>
-        );
-      }}
-    </Form.Item>
+    <>
+      <Field label="Sockopt"><Switch checked={on} onChange={toggleSockopt} /></Field>
+      {on && (
+        <>
+          {num('mark', t('pages.inbounds.form.routeMark'), 0)}
+          {num('tcpKeepAliveInterval', t('pages.inbounds.form.tcpKeepAliveInterval'), 0)}
+          {num('tcpKeepAliveIdle', t('pages.inbounds.form.tcpKeepAliveIdle'), 0)}
+          {num('tcpMaxSeg', t('pages.inbounds.form.tcpMaxSeg'), 0)}
+          {num('tcpUserTimeout', t('pages.inbounds.form.tcpUserTimeout'), 0)}
+          {num('tcpWindowClamp', t('pages.inbounds.form.tcpWindowClamp'), 0)}
+          {sw('acceptProxyProtocol', t('pages.inbounds.form.proxyProtocol'))}
+          {sw('tcpFastOpen', t('pages.inbounds.form.tcpFastOpen'))}
+          {sw('tcpMptcp', t('pages.inbounds.form.multipathTcp'))}
+          {sw('penetrate', t('pages.inbounds.form.penetrate'))}
+          {sw('V6Only', t('pages.inbounds.form.v6Only'))}
+          {sel('domainStrategy', t('pages.xray.wireguard.domainStrategy'), Object.values(DOMAIN_STRATEGY_OPTION).map((d) => ({ value: d, label: d })))}
+          {sel('tcpcongestion', t('pages.inbounds.form.tcpCongestion'), Object.values(TCP_CONGESTION_OPTION).map((c) => ({ value: c, label: c })))}
+          {sel('tproxy', 'TProxy', [{ value: 'off', label: 'Off' }, { value: 'redirect', label: 'Redirect' }, { value: 'tproxy', label: 'TProxy' }])}
+          <Field label={t('pages.inbounds.form.dialerProxy')}><Input value={ctl.get([...S, 'dialerProxy']) ?? ''} onChange={(e) => ctl.set([...S, 'dialerProxy'], e.target.value)} /></Field>
+          <Field label={t('pages.inbounds.info.interfaceName')}><Input value={ctl.get([...S, 'interface']) ?? ''} onChange={(e) => ctl.set([...S, 'interface'], e.target.value)} /></Field>
+
+          <Field label={t('pages.inbounds.form.trustedXForwardedFor')}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {[...new Set([...XFF_PRESETS, ...xff])].map((p) => (
+                  <Tag key={p} tone={xff.includes(p) ? 'primary' : 'neutral'} onClick={() => toggleXff(p)} style={{ cursor: 'pointer' }}>{p}</Tag>
+                ))}
+              </div>
+              <Input value={xffText} placeholder="custom header — Enter to add" onChange={(e) => setXffText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && xffText.trim()) { toggleXff(xffText.trim()); setXffText(''); } }} />
+            </div>
+          </Field>
+
+          {sel('addressPortStrategy', t('pages.inbounds.form.addressPortStrategy'), Object.values(Address_Port_Strategy).map((v) => ({ value: v, label: v })))}
+
+          <Field label="Happy Eyeballs">
+            <Switch checked={hasHe} onChange={(v) => ctl.set([...S, 'happyEyeballs'], v ? HappyEyeballsSchema.parse({}) : undefined)} />
+          </Field>
+          {hasHe && (
+            <>
+              <Field label={t('pages.inbounds.form.tryDelayMs')}><Input type="number" min={0} placeholder="0 disabled — 250 recommended" value={ctl.get([...S, 'happyEyeballs', 'tryDelayMs']) ?? ''} onChange={(e) => ctl.set([...S, 'happyEyeballs', 'tryDelayMs'], Number(e.target.value) || 0)} /></Field>
+              <Field label={t('pages.inbounds.form.prioritizeIPv6')}><Switch checked={!!ctl.get([...S, 'happyEyeballs', 'prioritizeIPv6'])} onChange={(v) => ctl.set([...S, 'happyEyeballs', 'prioritizeIPv6'], v)} /></Field>
+              <Field label={t('pages.inbounds.form.interleave')}><Input type="number" min={1} value={ctl.get([...S, 'happyEyeballs', 'interleave']) ?? ''} onChange={(e) => ctl.set([...S, 'happyEyeballs', 'interleave'], Number(e.target.value) || 0)} /></Field>
+              <Field label={t('pages.inbounds.form.maxConcurrentTry')}><Input type="number" min={0} value={ctl.get([...S, 'happyEyeballs', 'maxConcurrentTry']) ?? ''} onChange={(e) => ctl.set([...S, 'happyEyeballs', 'maxConcurrentTry'], Number(e.target.value) || 0)} /></Field>
+            </>
+          )}
+
+          <Field label={t('pages.inbounds.form.customSockopt')}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Button variant="default" size="sm" onClick={() => setCustom([...custom, { type: 'int', level: '6', opt: '', value: '' }])} style={{ alignSelf: 'flex-start' }}>+ {t('pages.inbounds.form.addCustomOption')}</Button>
+              {custom.map((row, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div style={{ width: 110 }}>
+                    <Select value={row.system ?? ''} onChange={(v) => setCustom(custom.map((r, i) => (i === idx ? { ...r, system: v } : r)))} options={[{ value: '', label: 'all' }, { value: 'linux', label: 'linux' }, { value: 'windows', label: 'windows' }, { value: 'darwin', label: 'darwin' }]} />
+                  </div>
+                  <div style={{ width: 90 }}>
+                    <Select value={row.type ?? 'int'} onChange={(v) => setCustom(custom.map((r, i) => (i === idx ? { ...r, type: v } : r)))} options={[{ value: 'int', label: 'int' }, { value: 'str', label: 'str' }]} />
+                  </div>
+                  <Input value={row.level ?? ''} placeholder="level" style={{ width: 90 }} onChange={(e) => setCustom(custom.map((r, i) => (i === idx ? { ...r, level: e.target.value } : r)))} />
+                  <Input value={row.opt ?? ''} placeholder="opt" style={{ width: 110 }} onChange={(e) => setCustom(custom.map((r, i) => (i === idx ? { ...r, opt: e.target.value } : r)))} />
+                  <Input value={row.value ?? ''} placeholder="value" onChange={(e) => setCustom(custom.map((r, i) => (i === idx ? { ...r, value: e.target.value } : r)))} />
+                  <Button size="sm" danger onClick={() => setCustom(custom.filter((_, i) => i !== idx))}>−</Button>
+                </div>
+              ))}
+            </div>
+          </Field>
+        </>
+      )}
+    </>
   );
 }

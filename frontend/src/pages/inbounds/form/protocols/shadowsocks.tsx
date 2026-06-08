@@ -1,67 +1,52 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Form, Input, Select, Space, Switch, type FormInstance } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
-
+import { Button, Field, Input, Select, Switch } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 import { RandomUtil } from '@/utils';
 import { SSMethodSchema } from '@/schemas/protocols/shared/shadowsocks';
-import type { InboundFormValues } from '@/schemas/forms/inbound-form';
 
-interface ShadowsocksFieldsProps {
-  form: FormInstance<InboundFormValues>;
-  isSSWith2022: boolean;
-}
-
-export default function ShadowsocksFields({ form, isSSWith2022 }: ShadowsocksFieldsProps) {
+export default function ShadowsocksFields({ isSSWith2022 }: { isSSWith2022: boolean }) {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item name={['settings', 'method']} label={t('pages.inbounds.form.encryptionMethod')}>
+      <Field label={t('pages.inbounds.form.encryptionMethod')}>
         <Select
+          value={(ctl.get(['settings', 'method']) as string) ?? ''}
           onChange={(v) => {
-            form.setFieldValue(
-              ['settings', 'password'],
-              RandomUtil.randomShadowsocksPassword(v as string),
-            );
+            ctl.set(['settings', 'method'], v);
+            ctl.set(['settings', 'password'], RandomUtil.randomShadowsocksPassword(v));
           }}
           options={SSMethodSchema.options.map((m) => ({ value: m, label: m }))}
         />
-      </Form.Item>
+      </Field>
       {isSSWith2022 && (
-        <Form.Item label={t('password')}>
-          <Space.Compact block>
-            <Form.Item name={['settings', 'password']} noStyle>
-              <Input style={{ width: 'calc(100% - 32px)' }} />
-            </Form.Item>
+        <Field label={t('password')}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <Input value={ctl.get(['settings', 'password']) ?? ''} onChange={(e) => ctl.set(['settings', 'password'], e.target.value)} />
             <Button
-              icon={<ReloadOutlined />}
+              variant="default"
               onClick={() => {
-                const method = form.getFieldValue(['settings', 'method']);
-                form.setFieldValue(
-                  ['settings', 'password'],
-                  RandomUtil.randomShadowsocksPassword(method as string),
-                );
+                const method = ctl.get<string>(['settings', 'method']);
+                ctl.set(['settings', 'password'], RandomUtil.randomShadowsocksPassword(method));
               }}
-            />
-          </Space.Compact>
-        </Form.Item>
+            >↻</Button>
+          </div>
+        </Field>
       )}
-      <Form.Item name={['settings', 'network']} label={t('pages.inbounds.network')}>
+      <Field label={t('pages.inbounds.network')}>
         <Select
-          style={{ width: 120 }}
+          value={(ctl.get(['settings', 'network']) as string) ?? 'tcp,udp'}
+          onChange={(v) => ctl.set(['settings', 'network'], v)}
           options={[
             { value: 'tcp,udp', label: 'TCP, UDP' },
             { value: 'tcp', label: 'TCP' },
             { value: 'udp', label: 'UDP' },
           ]}
         />
-      </Form.Item>
-      <Form.Item
-        name={['settings', 'ivCheck']}
-        label="ivCheck"
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
+      </Field>
+      <Field label="ivCheck">
+        <Switch checked={!!ctl.get(['settings', 'ivCheck'])} onChange={(v) => ctl.set(['settings', 'ivCheck'], v)} />
+      </Field>
     </>
   );
 }

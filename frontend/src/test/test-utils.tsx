@@ -13,6 +13,13 @@ export function fieldLabels(): string[] {
     .filter(Boolean);
 }
 
+/** DS (controlled-form) equivalent of fieldLabels — reads .ds-field__label. */
+export function dsFieldLabels(): string[] {
+  return Array.from(document.querySelectorAll('.ds-field__label'))
+    .map((el) => (el.textContent ?? '').trim())
+    .filter(Boolean);
+}
+
 function selectRootForField(fieldId: string): HTMLElement {
   const control = document.getElementById(fieldId);
   const select = control?.closest('.ant-select') as HTMLElement | null;

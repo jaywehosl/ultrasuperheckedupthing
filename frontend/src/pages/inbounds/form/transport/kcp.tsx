@@ -1,34 +1,25 @@
 import { useTranslation } from 'react-i18next';
-import { Form, InputNumber } from 'antd';
+import { Field, Input } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
+
+const K = ['streamSettings', 'kcpSettings'] as const;
 
 export default function KcpForm() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
+  const num = (key: string, label: string, min?: number, max?: number) => (
+    <Field label={label}>
+      <Input type="number" min={min} max={max} value={ctl.get([...K, key]) ?? ''} onChange={(e) => ctl.set([...K, key], Number(e.target.value) || 0)} />
+    </Field>
+  );
   return (
     <>
-      <Form.Item name={['streamSettings', 'kcpSettings', 'mtu']} label="MTU">
-        <InputNumber min={576} max={1460} />
-      </Form.Item>
-      <Form.Item name={['streamSettings', 'kcpSettings', 'tti']} label={t('pages.inbounds.form.ttiMs')}>
-        <InputNumber min={10} max={100} />
-      </Form.Item>
-      <Form.Item name={['streamSettings', 'kcpSettings', 'uplinkCapacity']} label={t('pages.inbounds.form.uplinkMbps')}>
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.Item name={['streamSettings', 'kcpSettings', 'downlinkCapacity']} label={t('pages.inbounds.form.downlinkMbps')}>
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'kcpSettings', 'cwndMultiplier']}
-        label={t('pages.inbounds.form.cwndMultiplier')}
-      >
-        <InputNumber min={1} />
-      </Form.Item>
-      <Form.Item
-        name={['streamSettings', 'kcpSettings', 'maxSendingWindow']}
-        label={t('pages.inbounds.form.maxSendingWindow')}
-      >
-        <InputNumber min={0} />
-      </Form.Item>
+      {num('mtu', 'MTU', 576, 1460)}
+      {num('tti', t('pages.inbounds.form.ttiMs'), 10, 100)}
+      {num('uplinkCapacity', t('pages.inbounds.form.uplinkMbps'), 0)}
+      {num('downlinkCapacity', t('pages.inbounds.form.downlinkMbps'), 0)}
+      {num('cwndMultiplier', t('pages.inbounds.form.cwndMultiplier'), 1)}
+      {num('maxSendingWindow', t('pages.inbounds.form.maxSendingWindow'), 0)}
     </>
   );
 }

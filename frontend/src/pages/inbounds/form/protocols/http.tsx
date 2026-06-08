@@ -1,20 +1,18 @@
 import { useTranslation } from 'react-i18next';
-import { Form, Switch } from 'antd';
+import { Field, Switch } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 import AccountsList from './accounts-list';
 
 export default function HttpFields() {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
       <AccountsList />
-      <Form.Item
-        name={['settings', 'allowTransparent']}
-        label={t('pages.inbounds.form.allowTransparent')}
-        valuePropName="checked"
-      >
-        <Switch />
-      </Form.Item>
+      <Field label={t('pages.inbounds.form.allowTransparent')}>
+        <Switch checked={!!ctl.get(['settings', 'allowTransparent'])} onChange={(v) => ctl.set(['settings', 'allowTransparent'], v)} />
+      </Field>
     </>
   );
 }

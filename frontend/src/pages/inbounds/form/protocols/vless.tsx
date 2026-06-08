@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Form, Input, InputNumber, Space, Typography } from 'antd';
+import { Button, Field, Input } from '@/components/ds';
+import { useFormCtl } from '@/lib/form/FormContext';
 
 interface VlessFieldsProps {
   saving: boolean;
@@ -10,6 +11,8 @@ interface VlessFieldsProps {
   clearVlessEnc: () => void;
 }
 
+const TESTSEED_DEFAULTS = [900, 500, 900, 256];
+
 export default function VlessFields({
   saving,
   selectedVlessAuth,
@@ -19,41 +22,48 @@ export default function VlessFields({
   clearVlessEnc,
 }: VlessFieldsProps) {
   const { t } = useTranslation();
+  const ctl = useFormCtl();
   return (
     <>
-      <Form.Item name={['settings', 'decryption']} label={t('pages.inbounds.decryption')}>
-        <Input />
-      </Form.Item>
-      <Form.Item name={['settings', 'encryption']} label={t('pages.inbounds.encryption')}>
-        <Input />
-      </Form.Item>
-      <Form.Item label=" ">
-        <Space size={8} wrap>
-          <Button type="primary" loading={saving} onClick={() => getNewVlessEnc('x25519')}>
-            {t('pages.inbounds.vlessAuthX25519')}
-          </Button>
-          <Button type="primary" loading={saving} onClick={() => getNewVlessEnc('mlkem768')}>
-            {t('pages.inbounds.vlessAuthMlkem768')}
-          </Button>
-          <Button danger onClick={clearVlessEnc}>{t('clear')}</Button>
-        </Space>
-        <Typography.Text type="secondary" className="vless-auth-state">
-          {t('pages.inbounds.vlessAuthSelected', { auth: selectedVlessAuth })}
-        </Typography.Text>
-      </Form.Item>
+      <Field label={t('pages.inbounds.decryption')}>
+        <Input value={ctl.get(['settings', 'decryption']) ?? ''} onChange={(e) => ctl.set(['settings', 'decryption'], e.target.value)} />
+      </Field>
+      <Field label={t('pages.inbounds.encryption')}>
+        <Input value={ctl.get(['settings', 'encryption']) ?? ''} onChange={(e) => ctl.set(['settings', 'encryption'], e.target.value)} />
+      </Field>
+      <Field label=" ">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button variant="primary" loading={saving} onClick={() => getNewVlessEnc('x25519')}>
+              {t('pages.inbounds.vlessAuthX25519')}
+            </Button>
+            <Button variant="primary" loading={saving} onClick={() => getNewVlessEnc('mlkem768')}>
+              {t('pages.inbounds.vlessAuthMlkem768')}
+            </Button>
+            <Button danger onClick={clearVlessEnc}>{t('clear')}</Button>
+          </div>
+          <span className="vless-auth-state" style={{ opacity: 0.6 }}>
+            {t('pages.inbounds.vlessAuthSelected', { auth: selectedVlessAuth })}
+          </span>
+        </div>
+      </Field>
       {network === 'tcp' && (security === 'tls' || security === 'reality') && (
-        <Form.Item
-          label={t('pages.inbounds.form.visionTestseed')}
-          extra="Applies only to clients using the xtls-rprx-vision flow; ignored otherwise."
-        >
-          <Space.Compact block>
-            {[900, 500, 900, 256].map((def, i) => (
-              <Form.Item key={i} name={['settings', 'testseed', i]} noStyle initialValue={def}>
-                <InputNumber min={1} style={{ width: '25%' }} />
-              </Form.Item>
+        <Field label={t('pages.inbounds.form.visionTestseed')}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {TESTSEED_DEFAULTS.map((def, i) => (
+              <Input
+                key={i}
+                type="number"
+                min={1}
+                value={(ctl.get(['settings', 'testseed', i]) as number | undefined) ?? def}
+                onChange={(e) => ctl.set(['settings', 'testseed', i], Number(e.target.value) || 0)}
+              />
             ))}
-          </Space.Compact>
-        </Form.Item>
+          </div>
+          <span style={{ opacity: 0.55, fontSize: 12 }}>
+            Applies only to clients using the xtls-rprx-vision flow; ignored otherwise.
+          </span>
+        </Field>
       )}
     </>
   );
