@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Input, Modal } from 'antd';
-import type { InputRef } from 'antd';
+import { Dialog, Input, Textarea } from '@/components/ds';
 import { useTranslation } from 'react-i18next';
 
 interface PromptModalProps {
@@ -27,7 +26,7 @@ export default function PromptModal({
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const inputRef = useRef<InputRef | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -52,23 +51,22 @@ export default function PromptModal({
   }
 
   return (
-    <Modal
+    <Dialog
       open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
       title={title}
       okText={okText ?? t('confirm')}
       cancelText={t('cancel')}
-      mask={{ closable: false }}
       confirmLoading={loading}
       onOk={() => onConfirm(value)}
-      onCancel={onClose}
-      destroyOnHidden
+      width={480}
     >
       {type === 'textarea' ? (
-        <Input.TextArea
-          ref={(el) => { textareaRef.current = (el as unknown as { resizableTextArea?: { textArea: HTMLTextAreaElement } })?.resizableTextArea?.textArea ?? null; }}
+        <Textarea
+          ref={textareaRef}
           value={value}
+          rows={12}
           onChange={(e) => setValue(e.target.value)}
-          autoSize={{ minRows: 10, maxRows: 20 }}
           onKeyDown={onKeydown}
         />
       ) : (
@@ -79,6 +77,6 @@ export default function PromptModal({
           onKeyDown={onKeydown}
         />
       )}
-    </Modal>
+    </Dialog>
   );
 }

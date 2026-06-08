@@ -1,12 +1,17 @@
 .setting-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--ant-color-border-secondary);
+  border-bottom: 1px solid var(--hairline-soft);
 }
 
 .setting-list-item:last-child {
   border-bottom: 0;
+}
+
+.setting-list-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  align-items: center;
+  width: 100%;
 }
 
 .setting-list-meta {
@@ -17,12 +22,16 @@
 
 .setting-list-title {
   font-size: 14px;
-  color: var(--ant-color-text);
+  color: var(--text-1);
   font-weight: 500;
 }
 
 .setting-list-description {
   font-size: 14px;
-  color: var(--ant-color-text-tertiary);
+  color: var(--text-3);
   line-height: 1.5715;
+}
+
+@media (max-width: 992px) {
+  .setting-list-grid { grid-template-columns: 1fr; }
 }

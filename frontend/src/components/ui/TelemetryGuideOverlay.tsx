@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Button } from 'antd';
+import { Button } from '@/components/ds';
 import { CloseOutlined, ArrowRightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import './TelemetryGuideOverlay.css';
 
@@ -210,10 +210,10 @@ export default function TelemetryGuideOverlay({ active, onClose, page }: Telemet
       <div className="guide-callout-card" style={getCalloutStyles()}>
         <div className="guide-card-header">
           <span className="guide-step-indicator">COCKPIT MANUAL // STEP {currentStep + 1} OF {steps.length}</span>
-          <Button 
-            type="text" 
-            size="small" 
-            icon={<CloseOutlined style={{ color: '#3279F9' }} />} 
+          <Button
+            variant="text"
+            size="sm"
+            icon={<CloseOutlined style={{ color: '#3279F9' }} />}
             onClick={onClose}
           />
         </div>
@@ -222,9 +222,9 @@ export default function TelemetryGuideOverlay({ active, onClose, page }: Telemet
           <p className="guide-step-description">{stepInfo.description}</p>
         </div>
         <div className="guide-card-footer">
-          <Button 
-            size="small"
-            type="text"
+          <Button
+            size="sm"
+            variant="text"
             disabled={currentStep === 0}
             onClick={() => setCurrentStep(prev => prev - 1)}
             icon={<ArrowLeftOutlined />}
@@ -242,9 +242,9 @@ export default function TelemetryGuideOverlay({ active, onClose, page }: Telemet
             ))}
           </div>
           {currentStep < steps.length - 1 ? (
-            <Button 
-              size="small"
-              type="text"
+            <Button
+              size="sm"
+              variant="text"
               onClick={() => setCurrentStep(prev => prev + 1)}
               icon={<ArrowRightOutlined />}
               className="guide-nav-btn"
@@ -252,9 +252,9 @@ export default function TelemetryGuideOverlay({ active, onClose, page }: Telemet
               NEXT
             </Button>
           ) : (
-            <Button 
-              size="small"
-              type="text"
+            <Button
+              size="sm"
+              variant="text"
               onClick={onClose}
               className="guide-nav-btn guide-finish-btn"
             >

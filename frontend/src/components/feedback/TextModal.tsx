@@ -1,8 +1,9 @@
-import { Button, Input, Modal, message } from 'antd';
+import { Button, Dialog, Textarea } from '@/components/ds';
 import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 import { ClipboardManager, FileManager } from '@/utils';
+import { getMessage } from '@/utils/messageBus';
 
 interface TextModalProps {
   open: boolean;
@@ -14,11 +15,11 @@ interface TextModalProps {
 
 export default function TextModal({ open, onClose, title, content, fileName = '' }: TextModalProps) {
   const { t } = useTranslation();
-  const [messageApi, messageContextHolder] = message.useMessage();
+
   async function copy() {
     const ok = await ClipboardManager.copyText(content || '');
     if (ok) {
-      messageApi.success(t('copied'));
+      getMessage().success(t('copied'));
       onClose();
     }
   }
@@ -29,33 +30,30 @@ export default function TextModal({ open, onClose, title, content, fileName = ''
   }
 
   return (
-    <>
-      {messageContextHolder}
-      <Modal
-        open={open}
-        title={title}
-        onCancel={onClose}
-        destroyOnHidden
+    <Dialog
+      open={open}
+      onOpenChange={(o) => { if (!o) onClose(); }}
+      title={title}
+      width={640}
       footer={(
         <>
           {fileName && (
             <Button icon={<DownloadOutlined />} onClick={download}>{fileName}</Button>
           )}
-          <Button type="primary" icon={<CopyOutlined />} onClick={copy}>{t('copy')}</Button>
+          <Button variant="primary" icon={<CopyOutlined />} onClick={copy}>{t('copy')}</Button>
         </>
       )}
     >
-      <Input.TextArea
+      <Textarea
         value={content}
         readOnly
-        autoSize={{ minRows: 10, maxRows: 20 }}
+        rows={14}
         style={{
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
           fontSize: 12,
           overflowY: 'auto',
         }}
       />
-      </Modal>
-    </>
+    </Dialog>
   );
 }

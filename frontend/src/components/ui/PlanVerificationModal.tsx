@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Button, Alert } from 'antd';
+import { Alert, Button, Dialog } from '@/components/ds';
 import { SafetyCertificateOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import './PlanVerificationModal.css';
 
@@ -114,34 +114,32 @@ export default function PlanVerificationModal({
   }, [original, modified, tasks, t]);
 
   return (
-    <Modal
+    <Dialog
       open={open}
-      title={<div className="plan-title">{title}</div>}
-      onCancel={onCancel}
+      onOpenChange={(o) => { if (!o) onCancel(); }}
+      title={<span className="plan-title">{title}</span>}
       width={720}
-      centered
-      className="plan-verification-modal"
-      footer={[
-        <Button key="cancel" onClick={onCancel} icon={<CloseCircleOutlined />}>
-          {t('cancel') || 'Cancel'}
-        </Button>,
-        <Button
-          key="confirm"
-          type="primary"
-          onClick={onConfirm}
-          loading={confirmLoading}
-          icon={<SafetyCertificateOutlined />}
-          className="btn-execute-plan"
-        >
-          Verify & Execute Change
-        </Button>,
-      ]}
+      footer={(
+        <>
+          <Button onClick={onCancel} icon={<CloseCircleOutlined />}>
+            {t('cancel') || 'Cancel'}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={onConfirm}
+            loading={confirmLoading}
+            icon={<SafetyCertificateOutlined />}
+            className="btn-execute-plan"
+          >
+            Verify & Execute Change
+          </Button>
+        </>
+      )}
     >
       <Alert
-        message="Trust Verification Required"
+        tone="info"
+        title="Trust Verification Required"
         description="Verify proposed configuration changes below before deployment. Review the auto-generated implementation plan and code diff."
-        type="info"
-        showIcon
         className="plan-alert"
       />
 
@@ -165,6 +163,6 @@ export default function PlanVerificationModal({
           </div>
         ))}
       </div>
-    </Modal>
+    </Dialog>
   );
 }
