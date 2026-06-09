@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@/hooks/useTheme';
+import './VerticalTabs.css';
 
 interface TabItem {
   key: string;
@@ -83,42 +84,9 @@ export default function VerticalTabs({ items, activeKey, onChange }: VerticalTab
             data-tab-key={item.key}
             type="button"
             onClick={() => onChange(item.key)}
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '12px 16px',
-              width: '100%',
-              background: 'transparent',
-              border: 'none',
-              borderRadius: 12,
-              textAlign: 'left',
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-              fontWeight: isActive ? 600 : 450,
-              fontSize: '14.5px',
-              color: isActive
-                ? '#3279F9'
-                : isDark
-                ? 'rgba(255, 255, 255, 0.65)'
-                : 'rgba(18, 19, 23, 0.65)',
-              cursor: 'pointer',
-              zIndex: 1,
-              transition: 'color 0.2s ease',
-            }}
+            className={`vtab-btn ${isActive ? 'is-active' : ''}`}
           >
-            {item.icon && (
-              <span
-                style={{
-                  fontSize: 16,
-                  color: isActive ? '#3279F9' : 'inherit',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                }}
-              >
-                {item.icon}
-              </span>
-            )}
+            {item.icon && <span className="vtab-icon">{item.icon}</span>}
             <span>{item.label}</span>
           </button>
         );

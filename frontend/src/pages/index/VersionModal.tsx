@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Dialog, Tag, Tooltip, TooltipProvider } from '@/components/ds';
+import { Alert, Button, Dialog, Tabs, Tag, Tooltip, TooltipProvider } from '@/components/ds';
 import { Spin } from '@/components/ui';
 import { ReloadOutlined } from '@ant-design/icons';
 
@@ -95,9 +95,6 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
     });
   }
 
-  function toggle(key: string, isOpen: boolean) {
-    setActiveKey(isOpen ? key : '');
-  }
 
   return (
     <Dialog
@@ -108,55 +105,62 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
     >
       <TooltipProvider>
         <Spin spinning={loading}>
-          <div className="version-collapse">
-            <details className="ds-collapse" open={activeKey === '1'} onToggle={(e) => toggle('1', (e.currentTarget as HTMLDetailsElement).open)}>
-              <summary>Xray</summary>
-              <div className="ds-collapse__body">
-                <Alert tone="warning" className="mb-12" title={t('pages.index.xraySwitchClickDesk')} />
-                <div className="version-list">
-                  {versions.map((version, index) => (
-                    <div key={version} className="version-list-item">
-                      <Tag tone={index % 2 === 0 ? 'primary' : 'success'}>{version}</Tag>
-                      <input
-                        type="radio"
-                        className="ds-check"
-                        checked={version === `v${status?.xray?.version}`}
-                        onChange={() => switchXrayVersion(version)}
-                      />
+          <Tabs
+            activeKey={activeKey}
+            onChange={setActiveKey}
+            items={[
+              {
+                key: '1',
+                label: 'Xray',
+                children: (
+                  <>
+                    <Alert tone="warning" className="mb-12" title={t('pages.index.xraySwitchClickDesk')} />
+                    <div className="version-list">
+                      {versions.map((version, index) => (
+                        <div key={version} className="version-list-item">
+                          <Tag tone={index % 2 === 0 ? 'primary' : 'success'}>{version}</Tag>
+                          <input
+                            type="radio"
+                            className="ds-check"
+                            checked={version === `v${status?.xray?.version}`}
+                            onChange={() => switchXrayVersion(version)}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            </details>
-
-            <details className="ds-collapse" open={activeKey === '2'} onToggle={(e) => toggle('2', (e.currentTarget as HTMLDetailsElement).open)}>
-              <summary>Geofiles</summary>
-              <div className="ds-collapse__body">
-                <div className="version-list">
-                  {GEOFILES.map((file, index) => (
-                    <div key={file} className="version-list-item">
-                      <Tag tone={index % 2 === 0 ? 'primary' : 'success'}>{file}</Tag>
-                      <Tooltip title={t('update')}>
-                        <ReloadOutlined className="reload-icon" onClick={() => updateGeofile(file)} />
-                      </Tooltip>
+                  </>
+                ),
+              },
+              {
+                key: '2',
+                label: 'Geofiles',
+                children: (
+                  <>
+                    <div className="version-list">
+                      {GEOFILES.map((file, index) => (
+                        <div key={file} className="version-list-item">
+                          <Tag tone={index % 2 === 0 ? 'primary' : 'success'}>{file}</Tag>
+                          <Tooltip title={t('update')}>
+                            <ReloadOutlined className="reload-icon" onClick={() => updateGeofile(file)} />
+                          </Tooltip>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="actions-row">
-                  <Button onClick={() => updateGeofile('')}>
-                    {t('pages.index.geofilesUpdateAll')}
-                  </Button>
-                </div>
-              </div>
-            </details>
-
-            <details className="ds-collapse" open={activeKey === '3'} onToggle={(e) => toggle('3', (e.currentTarget as HTMLDetailsElement).open)}>
-              <summary>{t('pages.index.customGeoTitle')}</summary>
-              <div className="ds-collapse__body">
-                <CustomGeoSection active={activeKey === '3'} />
-              </div>
-            </details>
-          </div>
+                    <div className="actions-row">
+                      <Button onClick={() => updateGeofile('')}>
+                        {t('pages.index.geofilesUpdateAll')}
+                      </Button>
+                    </div>
+                  </>
+                ),
+              },
+              {
+                key: '3',
+                label: t('pages.index.customGeoTitle'),
+                children: <CustomGeoSection active={activeKey === '3'} />,
+              },
+            ]}
+          />
         </Spin>
       </TooltipProvider>
 
