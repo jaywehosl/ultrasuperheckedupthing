@@ -23,7 +23,7 @@ If you don't accept the above, don't use the project.
 3X-UI is a mature, widely used panel, but its frontend is built on Ant Design. The goal of this fork was **not** to make "a better panel" — it was to **learn** by taking a real, non-trivial codebase and rebuilding its entire UI:
 
 - migrating the frontend **off Ant Design** onto a small, hand-rolled component library;
-- exploring a single cohesive design language (a glassmorphic, "Antigravity"-style look);
+- exploring a single cohesive design language (a glassmorphic, glossy-style look);
 - doing all of this **in close collaboration with AI assistants**, as a practical study of AI-assisted software development on a real project.
 
 The backend (Go + Xray-core integration, REST API, subscription engine, database) is kept **intentionally close to upstream 3X-UI** so the panel keeps working; the meaningful divergence is the frontend and the surrounding build/UX glue.
