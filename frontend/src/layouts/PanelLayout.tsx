@@ -1,7 +1,12 @@
 import { Outlet } from 'react-router-dom';
 import AppSidebar from '@/layouts/AppSidebar';
 import { MetricsPanelProvider } from '@/layouts/MetricsPanelContext';
+import { SettingsControllerProvider } from '@/layouts/SettingsController';
+import { XrayControllerProvider } from '@/layouts/XrayController';
+import { HeaderActionsProvider } from '@/layouts/header-actions-context';
+import { BusyOverlayProvider } from '@/layouts/BusyOverlayProvider';
 import MetricsPanel from '@/pages/index/MetricsPanel';
+import NotificationsBar from '@/pages/index/NotificationsBar';
 import { useWebSocketBridge } from '@/api/websocketBridge';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useTheme } from '@/hooks/useTheme';
@@ -23,15 +28,26 @@ export default function PanelLayout() {
         density={1}
       />
       <MetricsPanelProvider>
-        {/* Header + metrics bar share ONE fixed glass shell (single
-            backdrop-filter) so there's no seam between the two surfaces. */}
-        <div className="topbar-shell">
-          <AppSidebar />
-          <MetricsPanel />
-        </div>
-        <div className="panel-main-content">
-          <Outlet />
-        </div>
+        <BusyOverlayProvider>
+          <HeaderActionsProvider>
+            {/* Always-mounted editor controllers: their drafts (and thus the
+                global Save/Restart) survive navigating away from their pages. */}
+            <SettingsControllerProvider>
+              <XrayControllerProvider>
+                {/* Header + metrics bar share ONE fixed glass shell (single
+                    backdrop-filter) so there's no seam between the two surfaces. */}
+                <div className="topbar-shell">
+                  <AppSidebar />
+                  <MetricsPanel />
+                  <NotificationsBar />
+                </div>
+                <div className="panel-main-content">
+                  <Outlet />
+                </div>
+              </XrayControllerProvider>
+            </SettingsControllerProvider>
+          </HeaderActionsProvider>
+        </BusyOverlayProvider>
       </MetricsPanelProvider>
     </div>
   );

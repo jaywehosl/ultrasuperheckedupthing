@@ -498,7 +498,7 @@ identically on **panel + login + sub** (SubPage gained a `.sub-particle-canvas`)
 If revisited: the technique is just particles easing to shape-sampled target
 points — the feel is all in fast/staggered easing + nearest-particle assignment.
 
-### 10.5 Phase 2 (notifications — NOT started)
+### 10.5 Phase 2 (notifications — IN PROGRESS)
 
 The user wants the bar to also host actionable notifications (separate phase):
 - An **"unsaved changes / restart needed"** banner with **Save** + **Restart
@@ -507,9 +507,42 @@ The user wants the bar to also host actionable notifications (separate phase):
 - Xray-core crash errors (already available via `status.xray.errorMsg` — the bar
   already shows the state dot; a full error surface can live here too).
 
-> Next agent: §10.4 is fully done (header/bar polish + seam). The particle-morph
-> idea was abandoned (§10.4b) — field is back to the puck variant, unified across
-> panel/login/sub. **Open: §10.5 phase-2 notifications** (unsaved/restart banner,
-> security warnings, xray-error surface). Keep the glass-rule max-height
-> animation on the bar. tsc/suite/build must stay green; never stage
-> `vite.config.js`.
+**Progress so far:**
+- ✅ **Notifications strip + bell toggle** (`src/pages/index/NotificationsBar.{tsx,css}`).
+  A THIRD topbar row that drops BELOW the metrics status-bar inside the shared
+  `.topbar-shell`. Self-stacks via DOM order (header → metrics-bar → notif-bar),
+  every row in-flow + animated via `max-height` ONLY (glass-rule). Toggled by a
+  new header **bell** button (left of Logout, styled like the theme/lang pills)
+  with a red unread **badge**. New state lives in `MetricsPanelContext`
+  (`notifyOpen`/`toggleNotify`), independent of the metrics-bar open-state.
+  **Currently shows placeholder rows** — real content (xray-error / security /
+  restart) is the next wiring step.
+- ✅ **Global Save / Restart-panel buttons in the header** (left of the bell).
+  New **`src/layouts/SettingsController.tsx`** provider (mounted in `PanelLayout`,
+  wraps header + content): calls `useAllSettings()` ONCE so the settings *draft*
+  and `dirty` state are shared app-wide (previously the draft was local to
+  `SettingsPage`, so the header couldn't see unsaved edits). It owns the save/
+  restart orchestration + renders the confirm Dialog and the PlanVerificationModal
+  globally. `SettingsPage` now consumes `useSettingsController()` and **no longer
+  renders its own Save/Restart buttons or modals**. Header buttons appear ONLY
+  when relevant (user's choice): **Save** when `dirty`, **Restart panel** when
+  `restartNeeded && !dirty` (`restartNeeded` set after a successful save) — header
+  is clean when idle.
+
+**Bespoke frontend feature flags (remember this):**
+- The **"Settings Implementation Plan" diff modal** (`PlanVerificationModal`) is
+  OURS, not upstream 3x-ui (added in `41a6649`). The user likes it but wants it
+  **OFF by default** → `PLAN_VERIFICATION_ENABLED = false` in `SettingsController.tsx`;
+  Save now applies directly. The modal code is kept intact. **Planned:** a
+  frontend-only settings layer (our own UI prefs on top of the backend settings)
+  that will expose this (and similar) toggles — wire the flag to that store when
+  it exists. (Note: `InboundFormModal` also uses PlanVerificationModal; that path
+  is still unconditional.)
+
+> Next agent: §10.4 done. §10.5 **in progress** — notifications strip + bell +
+> global Save/Restart header buttons landed; the strip still shows placeholder
+> rows. **Open: wire real notification content** (xray crash via
+> `status.xray.errorMsg`, security warnings from the settings `confAlerts`
+> logic now reachable via the global `useSettingsController`, restart-needed
+> banner). Keep the glass-rule max-height animation on every topbar row.
+> tsc/suite/build must stay green; never stage `vite.config.js`.

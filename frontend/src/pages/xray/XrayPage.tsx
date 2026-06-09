@@ -2,24 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Alert,
   Button,
   Card,
   Col,
   ConfigProvider,
   Layout,
   message,
-  Modal,
-  Popover,
   Radio,
   Result,
   Row,
-  Space,
   Spin,
 } from '@/components/ui';
 import BackToTop from '@/components/ui/BackToTop';
 import {
-  QuestionCircleOutlined,
   SettingOutlined,
   SwapOutlined,
   UploadOutlined,
@@ -31,7 +26,7 @@ import { VerticalTabs } from '@/components/ui';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useXraySetting } from '@/hooks/useXraySetting';
+import { useXrayController } from '@/layouts/xray-controller-context';
 import type { XraySettingsValue } from '@/hooks/useXraySetting';
 import { JsonEditor } from '@/components/form';
 import { setMessageInstance } from '@/utils/messageBus';
@@ -54,11 +49,9 @@ export default function XrayPage() {
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
-  const xs = useXraySetting();
+  const xs = useXrayController();
   const {
     fetched,
-    spinning,
-    saveDisabled,
     fetchError,
     xraySetting,
     setXraySetting,
@@ -68,7 +61,6 @@ export default function XrayPage() {
     setOutboundTestUrl,
     inboundTags,
     clientReverseTags,
-    restartResult,
     outboundsTraffic,
     outboundTestStates,
     testingAll,
@@ -76,12 +68,9 @@ export default function XrayPage() {
     resetOutboundsTraffic,
     testOutbound,
     testAllOutbounds,
-    saveAll,
     resetToDefault,
-    restartXray,
   } = xs;
 
-  const [modal, modalContextHolder] = Modal.useModal();
   const [warpOpen, setWarpOpen] = useState(false);
   const [nordOpen, setNordOpen] = useState(false);
   const [advSettings, setAdvSettings] = useState<AdvKey>('xraySetting');
@@ -197,26 +186,9 @@ export default function XrayPage() {
     });
   }
 
-  function confirmRestart() {
-    modal.confirm({
-      title: t('pages.xray.restartConfirmTitle'),
-      content: t('pages.xray.restartConfirmContent'),
-      okText: t('pages.xray.restart'),
-      cancelText: t('cancel'),
-      onOk: () => restartXray(),
-    });
-  }
-
-  function onSaveAll() {
-    try {
-      JSON.parse(xraySetting);
-    } catch (e) {
-      messageApi.error(`Advanced JSON: ${(e as Error).message}`);
-      navigate('/xray#advanced');
-      return;
-    }
-    saveAll();
-  }
+  // Save / restart orchestration + the 'xray' header-action registration now
+  // live in XrayControllerProvider (layout level), so unsaved template edits —
+  // and the global Save/Restart buttons — survive navigating away from here.
 
   const scrollTarget = () => document.getElementById('content-layout') || window;
 
@@ -310,11 +282,10 @@ export default function XrayPage() {
   return (
     <ConfigProvider>
       {messageContextHolder}
-      {modalContextHolder}
       <div className={pageClass}>
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
-            <Spin spinning={spinning || !fetched} delay={200} description={t('loading')} size="large">
+            <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
               {!fetched ? (
                 <div className="loading-spacer" />
               ) : fetchError ? (
@@ -326,35 +297,9 @@ export default function XrayPage() {
                 />
               ) : (
                 <Row gutter={[isMobile ? 8 : 16, isMobile ? 0 : 12]}>
-                  <Col span={24}>
-                    <Card hoverable>
-                      <Row className="header-row">
-                        <Col xs={24} sm={14} className="header-actions">
-                          <Space>
-                            <Button type="primary" disabled={saveDisabled} onClick={onSaveAll}>
-                              {t('pages.xray.save')}
-                            </Button>
-                            <Button type="primary" danger disabled={!saveDisabled} onClick={confirmRestart}>
-                              {t('pages.xray.restart')}
-                            </Button>
-                            {restartResult && (
-                              <Popover
-                                placement="rightTop"
-                                title={t('pages.xray.restartOutputTitle')}
-                                content={<pre className="restart-result">{restartResult}</pre>}
-                              >
-                                <QuestionCircleOutlined className="restart-icon" />
-                              </Popover>
-                            )}
-                          </Space>
-                        </Col>
-                        <Col xs={24} sm={10} className="header-info">
-                          <BackToTop target={scrollTarget} visibilityHeight={200} />
-                          <Alert type="warning" showIcon title={t('pages.settings.infoDesc')} />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
+                  {/* The "needs restart" alert now lives in the global
+                      status-bar notification strip, not on-page. */}
+                  <BackToTop target={scrollTarget} visibilityHeight={200} />
 
                   <Col xs={24} md={6}>
                     <VerticalTabs

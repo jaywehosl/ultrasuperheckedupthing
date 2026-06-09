@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  BellOutlined,
   CloseOutlined,
   MenuOutlined,
   MoonFilled,
@@ -10,10 +11,12 @@ import {
   SunOutlined,
   TranslationOutlined,
 } from '@ant-design/icons';
-import { DropdownMenu } from '@/components/ds';
+import { Button, DropdownMenu } from '@/components/ds';
 import type { MenuEntry } from '@/components/ds';
 
 import { useMetricsPanel } from '@/layouts/MetricsPanelContext';
+import { useNotifications } from '@/pages/index/useNotifications';
+import { useHeaderActions } from '@/layouts/header-actions-context';
 import { HttpUtil, LanguageManager } from '@/utils';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import {
@@ -107,7 +110,11 @@ export default function AppSidebar() {
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
-  const { open: metricsOpen, toggle: toggleMetrics } = useMetricsPanel();
+  const { open: metricsOpen, toggle: toggleMetrics, notifyOpen, toggleNotify } = useMetricsPanel();
+  const headerActions = useHeaderActions();
+
+  // Real unread count, shared with the NotificationsBar strip.
+  const notifyCount = useNotifications().length;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -238,6 +245,32 @@ export default function AppSidebar() {
         </div>
 
         <div className="header-right">
+          {headerActions && (headerActions.dirty || headerActions.restartNeeded) && (
+            <div className="header-save-actions">
+              {headerActions.dirty && (
+                <Button variant="primary" loading={headerActions.busy} onClick={headerActions.onSave}>
+                  {headerActions.saveText}
+                </Button>
+              )}
+              {headerActions.restartNeeded && !headerActions.dirty && (
+                <Button variant="primary" danger loading={headerActions.busy} onClick={headerActions.onRestart}>
+                  {headerActions.restartText}
+                </Button>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`sidebar-theme-cycle sidebar-bell ${notifyOpen ? 'is-active' : ''}`}
+            aria-label={t('menu.notifications', { defaultValue: 'Notifications' })}
+            title={t('menu.notifications', { defaultValue: 'Notifications' })}
+            onClick={toggleNotify}
+          >
+            <BellOutlined />
+            {notifyCount > 0 && (
+              <span className="notif-badge">{notifyCount > 99 ? '99+' : notifyCount}</span>
+            )}
+          </button>
           <button
             type="button"
             className="logout-pill-btn"

@@ -1,0 +1,114 @@
+/* ============================================================================
+   BusyOverlay — full-screen frosted takeover while the panel/core restarts.
+   Glass-rule safe: the backdrop is the glass layer and animates only its own
+   opacity; the card has NO backdrop-filter so it can scale/fade freely.
+   ========================================================================== */
+.busy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1900; /* above topbar-shell (1000) + dialogs, below toasts (2000) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 249, 252, 0.42);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong, 44px)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur-strong, 44px)) saturate(160%);
+  opacity: 0;
+  animation: busy-overlay-in 0.35s var(--ease-out-quint) forwards;
+}
+body.dark .busy-overlay { background: rgba(10, 12, 18, 0.46); }
+html[data-theme="ultra-dark"] body.dark .busy-overlay { background: rgba(0, 0, 0, 0.6); }
+
+@keyframes busy-overlay-in { to { opacity: 1; } }
+
+.busy-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 38px 48px;
+  border-radius: var(--radius-xl, 24px);
+  background: var(--surface-2, rgba(255, 255, 255, 0.7));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transform: translateY(10px) scale(0.97);
+  opacity: 0;
+  animation: busy-card-in 0.5s var(--ease-out-expo) 0.06s forwards;
+}
+body.dark .busy-overlay__card {
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+@keyframes busy-card-in {
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ---- Branded orbiting mark ------------------------------------------- */
+.busy-overlay__mark {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+}
+.busy-overlay__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(var(--color-primary-rgb, 50, 121, 249), 0) 0deg,
+    rgba(var(--color-primary-rgb, 50, 121, 249), 0) 200deg,
+    rgba(var(--color-primary-rgb, 50, 121, 249), 0.85) 320deg,
+    var(--color-primary, #3279f9) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+  animation: busy-spin 0.95s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(var(--color-primary-rgb, 50, 121, 249), 0.45));
+}
+.busy-overlay__logo {
+  width: 36px;
+  height: 36px;
+  animation: busy-pulse 1.7s var(--ease-out-quint) infinite;
+}
+
+@keyframes busy-spin { to { transform: rotate(360deg); } }
+@keyframes busy-pulse {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.92; }
+  50% { transform: translateY(-2px) scale(1.07); opacity: 1; }
+}
+
+/* ---- Text ------------------------------------------------------------- */
+.busy-overlay__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.busy-overlay__title {
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.busy-overlay__subtitle {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-2);
+  max-width: 340px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .busy-overlay,
+  .busy-overlay__card { animation-duration: 0.01ms; opacity: 1; transform: none; }
+  .busy-overlay__ring { animation-duration: 1.5s; }
+  .busy-overlay__logo { animation: none; }
+}
