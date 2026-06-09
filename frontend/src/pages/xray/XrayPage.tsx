@@ -7,7 +7,6 @@ import {
   Card,
   Col,
   ConfigProvider,
-  FloatButton,
   Layout,
   message,
   Modal,
@@ -18,6 +17,7 @@ import {
   Space,
   Spin,
 } from '@/components/ui';
+import BackToTop from '@/components/ui/BackToTop';
 import {
   QuestionCircleOutlined,
   SettingOutlined,
@@ -349,7 +349,7 @@ export default function XrayPage() {
                           </Space>
                         </Col>
                         <Col xs={24} sm={10} className="header-info">
-                          <FloatButton.BackTop target={scrollTarget} visibilityHeight={200} />
+                          <BackToTop target={scrollTarget} visibilityHeight={200} />
                           <Alert type="warning" showIcon title={t('pages.settings.infoDesc')} />
                         </Col>
                       </Row>

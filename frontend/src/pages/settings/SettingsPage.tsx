@@ -10,7 +10,8 @@ import {
 } from '@ant-design/icons';
 
 import { Alert, Button, Card, Dialog } from '@/components/ds';
-import { FloatButton, Spin, VerticalTabs } from '@/components/ui';
+import { Spin, VerticalTabs } from '@/components/ui';
+import BackToTop from '@/components/ui/BackToTop';
 import { HttpUtil, PromiseUtil } from '@/utils';
 import { getMessage } from '@/utils/messageBus';
 import { useTheme } from '@/hooks/useTheme';
@@ -248,7 +249,7 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                     <div className="header-info" style={{ flex: 1, minWidth: 220 }}>
-                      <FloatButton.BackTop target={scrollTarget} visibilityHeight={200} />
+                      <BackToTop target={scrollTarget} visibilityHeight={200} />
                       <Alert tone="warning" title={t('pages.settings.infoDesc')} />
                     </div>
                   </div>

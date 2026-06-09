@@ -1,5 +1,11 @@
 .setting-list-item {
   border-bottom: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-out-quint);
+}
+
+.setting-list-item:hover {
+  background: var(--surface-hover);
 }
 
 .setting-list-item:last-child {
@@ -27,9 +33,9 @@
 }
 
 .setting-list-description {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-3);
-  line-height: 1.5715;
+  line-height: 1.5;
 }
 
 @media (max-width: 992px) {
