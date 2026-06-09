@@ -217,7 +217,7 @@ export default function AppSidebar() {
               <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
               <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
             </svg>
-            <span className="brand-text">3X-UI Antigravity</span>
+            <span className="brand-text">Community</span>
           </div>
         </div>
 
@@ -302,7 +302,7 @@ export default function AppSidebar() {
           <div className="custom-drawer-content" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
               <div className="brand-block">
-                <span className="drawer-brand">3X-UI</span>
+                <span className="drawer-brand">Community</span>
               </div>
               <div className="drawer-header-actions">
                 <LanguageSelector />

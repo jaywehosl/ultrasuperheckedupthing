@@ -2,60 +2,127 @@
 
 [English](/README.md) | [Русский](/README.ru_RU.md)
 
-An advanced, premium-styled web control panel for managing [Xray-core](https://github.com/XTLS/Xray-core) servers, redesigned with a high-end **Google Antigravity** visual theme, single-page dashboard layout, and localized diagnostics.
-
-This is a custom edition of the 3X-UI control panel. It removes page division in favor of a single continuous feed, introduces responsive glassmorphism styles, and integrates an organic particle gravity engine.
+A community fork of [3X-UI](https://github.com/MHSanaei/3x-ui) — a web management panel for [Xray-core](https://github.com/XTLS/Xray-core) — with a **completely rebuilt React frontend**. The Go backend stays close to upstream; the user interface is the part we reworked from the ground up.
 
 ---
 
-## Key Enhancements
+## ⚠️ Disclaimer — read before using
 
-* **Antigravity Particle Engine**: A global `<GravityVortexCanvas />` renders an organic particle swarm. Orbiting rings distort dynamically with waves and swirl cyclone-style around the user's cursor.
-* **Single-Page Dashboard (SPA)**: Telemetry, inbounds, clients, groups, nodes, and system status widgets are consolidated into a single vertical scrolling landing page.
-* **Premium Glassmorphic Styling**: Transparent overlays, harmonious color palettes, and `backdrop-filter: blur(16px)` allow the particle vortex to be viewed clearly behind content cards.
-* **Localization Fixes**: Fully translated server telemetry, dashboard statistics, and diagnostic sections in Russian and English.
-* **Local Dev & Automation Scripts**: Added local runner (`run.sh`) and build-and-deploy server script (`deploy.sh`).
+- This project is provided **"as is", with no warranty of any kind**, express or implied. There is no guarantee of fitness for any purpose, stability, or security.
+- It is a **purely technical, educational project**, built largely **with the help of AI coding assistants** as an exercise in rebuilding a real-world admin interface. It is **not intended for commercial use**.
+- Installing this edition **on top of an existing original 3X-UI deployment can cause problems** (schema / asset / behaviour differences). Back up your data first and assume things may break.
+- **All responsibility lies with the end user.** You alone are accountable for how, where, and why you deploy and run it.
+- This project is **not designed to bypass, evade, or circumvent any restrictions, filtering, or blocks imposed by government regulators or any other body with legal authority in any country.** Use it only in ways that are lawful in your jurisdiction.
+
+If you don't accept the above, don't use the project.
+
+---
+
+## What this is, and why it exists
+
+3X-UI is a mature, widely used panel, but its frontend is built on Ant Design. The goal of this fork was **not** to make "a better panel" — it was to **learn** by taking a real, non-trivial codebase and rebuilding its entire UI:
+
+- migrating the frontend **off Ant Design** onto a small, hand-rolled component library;
+- exploring a single cohesive design language (a glassmorphic, "Antigravity"-style look);
+- doing all of this **in close collaboration with AI assistants**, as a practical study of AI-assisted software development on a real project.
+
+The backend (Go + Xray-core integration, REST API, subscription engine, database) is kept **intentionally close to upstream 3X-UI** so the panel keeps working; the meaningful divergence is the frontend and the surrounding build/UX glue.
+
+### How it was built
+
+- The original Ant Design UI was incrementally replaced by a custom set of components (dialogs, tables, forms, tabs, menus, cards) built on **Radix UI** primitives and **TanStack Table/Query**.
+- Page layout was reorganized (header + status bar + notifications, a consolidated dashboard, settings / xray editors with shared save-and-restart logic).
+- A WebGL particle field and CSS `backdrop-filter` glass surfaces provide the visual layer.
+- The Go backend serves the Vite-built frontend embedded into the binary.
+
+### What it's built with
+
+- **Backend:** Go, Xray-core, the upstream 3X-UI server / API.
+- **Frontend:** React 19, TypeScript, Vite, Radix UI, TanStack Query & Table, CodeMirror (JSON editor), i18next (EN / RU), Zod.
+- **Tooling:** Vitest + Testing Library, a generated OpenAPI client, a GitHub Actions release pipeline.
 
 ---
 
 ## Quick Start
 
-### 1. One-click Installation (Recommended)
-You can deploy this custom precompiled Antigravity edition directly on any Linux AMD64 VPS with a single command:
+### 1. One-click install (precompiled binary)
+
+Deploy the latest release binary on a Linux (amd64 / arm64) VPS:
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install.sh)
 ```
 
-This installer script will automatically fetch our latest custom binary release from GitHub Releases, register systemd service endpoints, and configure dependencies.
+The installer fetches the latest binary from **GitHub Releases**, installs the `x-ui` systemd service, and sets up dependencies. Read the disclaimer above before running this over an existing 3X-UI install.
 
-### 2. Run Locally (Developer Mode)
-Prerequisites: Go 1.21+ and Node.js 18+.
+### 2. Run locally (developer mode)
+
+Prerequisites: **Go 1.26+** and **Node.js 18+**.
 
 ```bash
-# Clone the repository
 git clone https://github.com/jaywehosl/ultrasuperheckedupthing.git
 cd ultrasuperheckedupthing
 
-# Build assets and start local dev server
+# Build the frontend, compile the Go binary, and run it
 chmod +x run.sh
 ./run.sh
 ```
 
-### 3. Build & Deploy from Source on Server
-To build the assets, compile the Go binary, and register the systemd service on a Linux machine:
+For frontend-only iteration with hot reload:
 
 ```bash
+cd frontend
+npm install
+npm run dev      # Vite dev server (proxies the API to a backend you configure)
+```
+
+### 3. Build from source
+
+```bash
+# 1) Build the frontend (outputs to web/dist, which the Go binary embeds)
+cd frontend
+npm install
+npm run build
+cd ..
+
+# 2) Compile the Go binary
+go build -o x-ui main.go
+
+# 3) (Linux server) build + install the systemd service
 sudo chmod +x deploy.sh
 sudo ./deploy.sh
 ```
 
 ---
 
-## Project Structure
+## Project structure
 
-* `/frontend`: React + TypeScript Single Page Application.
-* `/web`: Go web server, REST API, controllers, and translation dictionaries.
-* `/xray`: Go wrapper for interacting with the Xray-core daemon.
-* `/util`, `/logger`, `/sub`: Helper modules, logging, subscription engine, and utils.
-* `/install.sh`, `/update.sh`: Classic installer scripts.
+| Path | Description |
+|------|-------------|
+| `/frontend` | React + TypeScript SPA (the rebuilt UI). The Vite build output is embedded into the Go binary. |
+| `/web` | Go web server: REST API, controllers, middleware, translation dictionaries, embedded frontend. |
+| `/xray` | Go wrapper around the Xray-core process. |
+| `/sub` | Subscription engine. |
+| `/database`, `/util`, `/logger` | Persistence, helpers, logging. |
+| `install.sh`, `update.sh`, `run.sh`, `deploy.sh` | Installer / updater / local runner / server build-and-deploy scripts. |
+
+---
+
+## License
+
+Licensed under the **GNU General Public License v3.0** (GPL-3.0) — inherited from the upstream 3X-UI project. See [LICENSE](/LICENSE).
+
+You are **free to use, study, modify, and redistribute** this project, including borrowing parts of it for your own work, **provided you comply with GPL-3.0** (notably: keep the source open and preserve the license and attribution). Credit to the original [3X-UI](https://github.com/MHSanaei/3x-ui) authors and contributors, and to [Xray-core](https://github.com/XTLS/Xray-core), is gratefully acknowledged.
+
+---
+
+## Roadmap
+
+These are intentions, not promises:
+
+- **Interface polish** — continued refinement of the design system, consistency passes, and bug fixes.
+- **Customization settings** — frontend-only preferences (colour palette, blur strength, particle / effect presets, hover styles) layered on top of the backend settings.
+- **Telegram bot** — a partial rewrite and an expansion of the bot's functionality.
+- **Upstream collaboration** — possibly reaching out to the original 3X-UI developers and contributors to share findings or align where it makes sense.
+
+Contributions, issues, and forks are welcome.

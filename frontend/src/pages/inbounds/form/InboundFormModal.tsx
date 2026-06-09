@@ -82,6 +82,8 @@ const NODE_ELIGIBLE_PROTOCOLS = new Set<string>([
   Protocols.WIREGUARD,
 ]);
 
+const PLAN_VERIFICATION_ENABLED = false;
+
 interface InboundFormModalProps {
   open: boolean;
   onClose: () => void;
@@ -373,31 +375,13 @@ export default function InboundFormModal({
     }
   };
 
-  const submit = async () => {
-    const values = ctl.values;
-    const parsed = InboundFormSchema.safeParse(values);
-    if (!parsed.success) {
-      const issues = parsed.error.issues;
-      getMessage().error(formatInboundValidation(issues, values, t));
-      console.error(
-        '[InboundFormModal] schema validation failed:',
-        issues.map((issue) => formatInboundIssue(issue, values, t)),
-      );
-      return;
-    }
-    const payload = formValuesToWirePayload(parsed.data);
-    setPendingPayload(payload);
-    setShowPlan(true);
-  };
-
-  const executeSave = async () => {
-    if (!pendingPayload) return;
+  const saveInbound = async (payload: any) => {
     setSaving(true);
     try {
       const url = mode === 'edit' && dbInbound
         ? `/panel/api/inbounds/update/${dbInbound.id}`
         : '/panel/api/inbounds/add';
-      const msg = await HttpUtil.post(url, pendingPayload);
+      const msg = await HttpUtil.post(url, payload);
       if (msg?.success) {
         if (isFallbackHost) {
           const obj = msg.obj as { id?: number; Id?: number } | null;
@@ -413,6 +397,32 @@ export default function InboundFormModal({
     } finally {
       setSaving(false);
     }
+  };
+
+  const submit = async () => {
+    const values = ctl.values;
+    const parsed = InboundFormSchema.safeParse(values);
+    if (!parsed.success) {
+      const issues = parsed.error.issues;
+      getMessage().error(formatInboundValidation(issues, values, t));
+      console.error(
+        '[InboundFormModal] schema validation failed:',
+        issues.map((issue) => formatInboundIssue(issue, values, t)),
+      );
+      return;
+    }
+    const payload = formValuesToWirePayload(parsed.data);
+    if (PLAN_VERIFICATION_ENABLED) {
+      setPendingPayload(payload);
+      setShowPlan(true);
+    } else {
+      await saveInbound(payload);
+    }
+  };
+
+  const executeSave = async () => {
+    if (!pendingPayload) return;
+    await saveInbound(pendingPayload);
   };
 
   const title = mode === 'edit'

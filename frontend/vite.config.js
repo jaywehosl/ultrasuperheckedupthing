@@ -5,7 +5,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 const outDir = path.resolve(__dirname, '../web/dist');
-const BACKEND_TARGET = 'http://62.60.155.31:2053';
+const BACKEND_TARGET = 'https://antigravity.largepenis.ru:8080';
 
 function resolveDBPath() {
   const envFolder = process.env.XUI_DB_FOLDER;
@@ -24,7 +24,7 @@ function resolveDBPath() {
 
 const PANEL_API_PREFIXES = ['panel/api/', 'panel/setting/', 'panel/xray/', 'panel/csrf-token'];
 
-let cachedBasePath = '/';
+let cachedBasePath = '/qYIRelBGyCxHH2fa07/';
 
 function readBasePathFromDB() {
   const dbPath = resolveDBPath();
@@ -32,16 +32,16 @@ function readBasePathFromDB() {
   try {
     db = new DatabaseSync(dbPath, { readOnly: true });
   } catch (_e) {
-    return '/';
+    return '/qYIRelBGyCxHH2fa07/';
   }
   try {
     const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('webBasePath');
-    let value = row && typeof row.value === 'string' ? row.value : '/';
+    let value = row && typeof row.value === 'string' ? row.value : '/qYIRelBGyCxHH2fa07/';
     if (!value.startsWith('/')) value = '/' + value;
     if (!value.endsWith('/')) value += '/';
     return value;
   } catch (_e) {
-    return '/';
+    return '/qYIRelBGyCxHH2fa07/';
   } finally {
     db.close();
   }
@@ -148,6 +148,7 @@ function makeBackendProxy(target) {
   return {
     target,
     changeOrigin: true,
+    secure: false,
     rewrite: rewriteToBackend,
     bypass: bypassMigratedRoute,
     configure(proxy) {
@@ -269,9 +270,10 @@ export default defineConfig({
       '^/$': makeBackendProxy(BACKEND_TARGET),
       '^/[^/]+/$': makeBackendProxy(BACKEND_TARGET),
       '^/(?:[^/]+/)?ws$': {
-        target: 'ws://62.60.155.31:2053',
+        target: 'wss://antigravity.largepenis.ru:8080',
         ws: true,
         changeOrigin: true,
+        secure: false,
         rewrite: rewriteToBackend,
       },
     },

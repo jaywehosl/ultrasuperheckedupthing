@@ -148,7 +148,7 @@ export default function SubPage() {
                 <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
                 <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
               </svg>
-              <span className="brand-text">3X-UI Antigravity</span>
+              <span className="brand-text">Community</span>
             </div>
             <div className="sub-topbar__actions">
               <button type="button" className="sub-topbar__btn" aria-label={t('menu.theme')} title={t('menu.theme')} onClick={cycleTheme}>
