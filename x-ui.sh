@@ -4,6 +4,9 @@ red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'
 yellow='\033[0;33m'
+cyan='\033[0;36m'
+gray='\033[0;90m'
+bold='\033[1m'
 plain='\033[0m'
 
 #Add some basic function here
@@ -48,6 +51,59 @@ is_ip() {
 }
 is_domain() {
     [[ "$1" =~ ^([A-Za-z0-9](-*[A-Za-z0-9])*\.)+(xn--[a-z0-9]{2,}|[A-Za-z]{2,})$ ]] && return 0 || return 1
+}
+
+# ============================================================================
+#  UI framework (Phase A.1) — consistent prompts + a spinner that hides noisy
+#  command output behind one animated line and tees it to a log file. Used by
+#  run_step; the menus below render in airy grouped style instead of a box.
+# ============================================================================
+XUI_CLI_LOG="${XUI_LOG_FOLDER:-/var/log/x-ui}/x-ui-cli.log"
+
+# message helpers — one visual language everywhere
+msg_info()  { echo -e "${gray}$*${plain}"; }
+msg_ok()    { echo -e "${green}✔${plain} $*"; }
+msg_warn()  { echo -e "${yellow}!${plain} $*"; }
+msg_err()   { echo -e "${red}✗${plain} $*"; }
+hr()        { echo -e "${gray}────────────────────────────────────────────────${plain}"; }
+
+# prompts — ask shows the question, read_input reads into a variable
+ask()        { echo -e "${green}[?]${plain} ${yellow}$*${plain}"; }
+read_input() { read -rp " $(ask "$1")" "$2"; }
+
+# panel version straight from the installed binary (empty if not installed yet)
+panel_version() {
+    [[ -x "${xui_folder}/x-ui" ]] && "${xui_folder}/x-ui" -v 2>/dev/null | head -n1
+}
+
+# spinner: animate one line on the tty while $1 (a PID) is alive
+spinner() {
+    local pid=$1 text=$2
+    local frames='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏' i=0
+    [[ -t 1 ]] || { wait "$pid" 2>/dev/null; return; }
+    printf "  ${cyan}%s${plain} %s" "${frames:0:1}" "$text" > /dev/tty
+    while kill -0 "$pid" 2>/dev/null; do
+        i=$(((i + 1) % ${#frames}))
+        printf "\r  ${cyan}%s${plain} %s" "${frames:$i:1}" "$text" > /dev/tty
+        sleep 0.1
+    done
+    printf "\r\033[K" > /dev/tty
+}
+
+# run_step "Doing the thing" cmd arg...  → quiet run, spinner, ✔/✗ + log on fail
+run_step() {
+    local text=$1; shift
+    mkdir -p "$(dirname "$XUI_CLI_LOG")" 2>/dev/null
+    echo "=== $(date '+%F %T') :: ${text} :: $*" >> "$XUI_CLI_LOG"
+    ("$@") >> "$XUI_CLI_LOG" 2>&1 &
+    local pid=$!
+    spinner "$pid" "$text"
+    if wait "$pid"; then
+        msg_ok "$text"
+        return 0
+    fi
+    msg_err "$text  ${gray}(подробности: ${XUI_CLI_LOG})${plain}"
+    return 1
 }
 
 # check root
@@ -2963,48 +3019,46 @@ show_usage() {
 }
 
 show_menu() {
-    echo -e "
-╔────────────────────────────────────────────────╗
-│   ${green}3X-UI Panel Management Script${plain}                │
-│   ${green}0.${plain} Exit Script                               │
-│────────────────────────────────────────────────│
-│   ${green}1.${plain} Install                                   │
-│   ${green}2.${plain} Update                                    │
-│   ${green}3.${plain} Update Menu                               │
-│   ${green}4.${plain} Legacy Version                            │
-│   ${green}5.${plain} Uninstall                                 │
-│────────────────────────────────────────────────│
-│   ${green}6.${plain} Reset Username & Password                 │
-│   ${green}7.${plain} Reset Web Base Path                       │
-│   ${green}8.${plain} Reset Settings                            │
-│   ${green}9.${plain} Change Port                               │
-│  ${green}10.${plain} View Current Settings                     │
-│────────────────────────────────────────────────│
-│  ${green}11.${plain} Start                                     │
-│  ${green}12.${plain} Stop                                      │
-│  ${green}13.${plain} Restart                                   │
-|  ${green}14.${plain} Restart Xray                              │
-│  ${green}15.${plain} Check Status                              │
-│  ${green}16.${plain} Logs Management                           │
-│────────────────────────────────────────────────│
-│  ${green}17.${plain} Enable Autostart                          │
-│  ${green}18.${plain} Disable Autostart                         │
-│────────────────────────────────────────────────│
-│  ${green}19.${plain} SSL Certificate Management                │
-│  ${green}20.${plain} Cloudflare SSL Certificate                │
-│  ${green}21.${plain} IP Limit Management                       │
-│  ${green}22.${plain} Firewall Management                       │
-│  ${green}23.${plain} SSH Port Forwarding Management            │
-│────────────────────────────────────────────────│
-│  ${green}24.${plain} Enable BBR                                │
-│  ${green}25.${plain} Update Geo Files                          │
-│  ${green}26.${plain} Speedtest by Ookla                        │
-│────────────────────────────────────────────────│
-│  ${green}27.${plain} PostgreSQL Management                     │
-╚────────────────────────────────────────────────╝
-"
+    local ver
+    ver=$(panel_version)
+    echo
+    echo -e "  ${bold}${green}3X-UI Community${plain} ${gray}— panel management${plain}"
+    [[ -n "$ver" ]] && echo -e "  ${gray}version ${ver}${plain}"
+    echo
+
+    echo -e "  ${gray}Lifecycle${plain}"
+    echo -e "   ${green} 1${plain}. Install        ${green} 2${plain}. Update         ${green} 3${plain}. Update menu"
+    echo -e "   ${green} 4${plain}. Legacy version ${green} 5${plain}. Uninstall"
+    echo
+
+    echo -e "  ${gray}Identity & access${plain}"
+    echo -e "   ${green} 6${plain}. Reset login    ${green} 7${plain}. Reset basePath ${green} 8${plain}. Reset settings"
+    echo -e "   ${green} 9${plain}. Change port    ${green}10${plain}. View settings"
+    echo
+
+    echo -e "  ${gray}Service${plain}"
+    echo -e "   ${green}11${plain}. Start          ${green}12${plain}. Stop           ${green}13${plain}. Restart"
+    echo -e "   ${green}14${plain}. Restart Xray   ${green}15${plain}. Status         ${green}16${plain}. Logs"
+    echo
+
+    echo -e "  ${gray}Autostart${plain}"
+    echo -e "   ${green}17${plain}. Enable         ${green}18${plain}. Disable"
+    echo
+
+    echo -e "  ${gray}Security & hardening${plain}"
+    echo -e "   ${green}19${plain}. SSL cert       ${green}20${plain}. Cloudflare SSL ${green}21${plain}. IP limit"
+    echo -e "   ${green}22${plain}. Firewall       ${green}23${plain}. SSH forwarding"
+    echo
+
+    echo -e "  ${gray}System & database${plain}"
+    echo -e "   ${green}24${plain}. BBR            ${green}25${plain}. Geo files      ${green}26${plain}. Speedtest"
+    echo -e "   ${green}27${plain}. PostgreSQL"
+    echo
+    echo -e "   ${green} 0${plain}. Exit"
+    echo
+    hr
     show_status
-    echo && read -rp "Please enter your selection [0-27]: " num
+    echo && read -rp " $(ask 'Select [0-27]:') " num
 
     case "${num}" in
         0)
