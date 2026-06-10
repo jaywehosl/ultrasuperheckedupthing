@@ -1132,10 +1132,33 @@ _rp_preconfig() {
       sniffing:{enabled:true,destOverride:["http","tls","quic"],metadataOnly:false,routeOnly:false,ipsExcluded:[],domainsExcluded:[]}}')
     [[ "$(api "$BASE/panel/api/inbounds/add" -d "$IB"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}inbound add failed.${plain}"; rm -f "$JAR"; return 1; }
 
+    # Hysteria2 (UDP/443) — terminates its own TLS with the selfsteal cert (no
+    # nginx). Same subId so it joins the 'turnkey' subscription as a 2nd key;
+    # externalProxy pins the link host to the selfsteal domain. Modelled on a
+    # known-working Theta inbound (force-brutal QUIC, h3 ALPN, no obfs).
+    local HYAUTH; HYAUTH=$(gen_random_string 16)
+    local HY
+    HY=$(jq -n --arg auth "$HYAUTH" --arg sni "$SS" \
+        --arg cert "/etc/x-ui/ssl/$SS/fullchain.pem" --arg key "/etc/x-ui/ssl/$SS/privkey.pem" '{
+      enable:true,remark:"Hysteria2 443 (turnkey)",listen:"",port:443,protocol:"hysteria",expiryTime:0,total:0,
+      settings:{clients:[{auth:$auth,email:"admin-hy2",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],version:2},
+      streamSettings:{network:"hysteria",hysteriaSettings:{version:2,udpIdleTimeout:60},security:"tls",
+        externalProxy:[{forceTls:"same",dest:$sni,port:443,remark:""}],
+        tlsSettings:{serverName:$sni,minVersion:"1.3",maxVersion:"1.3",cipherSuites:"",rejectUnknownSni:false,disableSystemRoot:false,enableSessionResumption:false,
+          certificates:[{certificateFile:$cert,keyFile:$key,oneTimeLoading:false,usage:"encipherment",buildChain:false,useFile:true}],
+          alpn:["h3"],echServerKeys:"",settings:{fingerprint:"chrome",echConfigList:"",pinnedPeerCertSha256:[]}},
+        finalmask:{quicParams:{congestion:"force-brutal",brutalUp:"650000000",brutalDown:"850000000",initStreamReceiveWindow:8388608,maxStreamReceiveWindow:8388608,initConnectionReceiveWindow:20971520,maxConnectionReceiveWindow:20971520,keepAlivePeriod:5,maxIncomingStreams:1024}}},
+      sniffing:{enabled:true,destOverride:["http","tls","quic"]}}')
+    if [[ "$(api "$BASE/panel/api/inbounds/add" -d "$HY"|jq -r '.success')" == "true" ]]; then
+        echo -e "  ${green}✔${plain} Hysteria2 (UDP/443) added"
+    else
+        echo -e "  ${yellow}! Hysteria2 inbound add failed (Reality still works); add it manually if needed.${plain}"
+    fi
+
     api "$BASE/panel/api/server/restartXrayService" -X POST > /dev/null
     api "$BASE/panel/setting/restartPanel" -X POST > /dev/null
     rm -f "$JAR"
-    echo -e "  ${green}✔${plain} Panel preconfigured (domains + Reality inbound)"
+    echo -e "  ${green}✔${plain} Panel preconfigured (domains + Reality + Hysteria2)"
     return 0
 }
 
