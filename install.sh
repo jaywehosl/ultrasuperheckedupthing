@@ -902,7 +902,259 @@ prompt_and_setup_ssl() {
     esac
 }
 
+# ============================================================================
+#  TURNKEY REVERSE PROXY (install mode A) — validated end-to-end 2026-06-10.
+#  Runs AFTER the panel is installed + started. Args: user pass port basePath.
+#  Pipeline: prompt 3 domains -> LE certs (HTTP-01) -> nginx (3 SNI vhosts on a
+#  unix socket) -> decoy -> panel API preconfig (domains + Reality inbound with
+#  externalProxy=selfsteal) -> restart. Single port 443, no ports in URLs.
+# ============================================================================
+rp_resolve_ip() {
+    getent hosts "$1" 2> /dev/null | awk '{print $1}' | head -1
+}
+
+setup_reverse_proxy() {
+    local RP_USER="$1" RP_PASS="$2" RP_PORT="$3" RP_BP="$4"
+    local SUB_PORT=2096 SOCK=/dev/shm/xui.sock SSLDIR=/etc/x-ui/ssl
+
+    echo
+    echo -e "  ${green}═══ Reverse-proxy (domain / turnkey) setup ═══${plain}"
+    local server_ip
+    server_ip=$(curl -s4 --max-time 5 https://api.ipify.org)
+
+    # --- domains (asked explicitly, validated, must resolve here & be unique) ---
+    local PANEL_DOMAIN SUB_DOMAIN SELFSTEAL_DOMAIN
+    _ask_domain() {
+        local prompt="$1" __var="$2" d ip
+        while :; do
+            read -rp " $(echo -e "${green}[?]${plain} ${yellow}${prompt}${plain}") " d
+            d="${d// /}"; d="${d#http://}"; d="${d#https://}"; d="${d%%/*}"
+            if ! is_domain "$d"; then echo -e "  ${red}Invalid domain.${plain}"; continue; fi
+            ip=$(rp_resolve_ip "$d")
+            if [[ -n "$server_ip" && "$ip" != "$server_ip" ]]; then
+                echo -e "  ${yellow}! ${d} resolves to ${ip:-nothing}, not ${server_ip}.${plain}"
+                read -rp "    Continue anyway? [y/N]: " yn; [[ "$yn" =~ ^[Yy]$ ]] || continue
+            fi
+            printf -v "$__var" '%s' "$d"; break
+        done
+    }
+    _ask_domain "Укажите домен, по которому будет доступна панель управления:" PANEL_DOMAIN
+    _ask_domain "Укажите домен, по которому будет доступна страница подписок:" SUB_DOMAIN
+    _ask_domain "Укажите домен, по которому будет доступен selfsteal-шаблон для Reality:" SELFSTEAL_DOMAIN
+    if [[ "$PANEL_DOMAIN" == "$SUB_DOMAIN" || "$PANEL_DOMAIN" == "$SELFSTEAL_DOMAIN" || "$SUB_DOMAIN" == "$SELFSTEAL_DOMAIN" ]]; then
+        echo -e "  ${red}The three domains must be unique. Aborting reverse-proxy setup.${plain}"; return 1
+    fi
+    local ACME_EMAIL
+    read -rp " $(echo -e "${green}[?]${plain} ${yellow}Email for Let's Encrypt (renewal notices):${plain}") " ACME_EMAIL
+    ACME_EMAIL="${ACME_EMAIL:-admin@${PANEL_DOMAIN#*.}}"
+
+    # --- access style: classic webBasePath vs clean-domain cookie-gate ---
+    echo
+    echo -e "  ${gray}Как защитить доступ к панели?${plain}"
+    echo -e "   ${green}1${plain}. Секретный путь (webBasePath) — привычный способ"
+    echo -e "   ${green}2${plain}. Cookie-gate — чистый домен, вход по секретной ссылке"
+    local style; read -rp " $(echo -e "${green}[?]${plain} ${yellow}Выбор [1]:${plain}") " style; style="${style:-1}"
+    local COOKIE_KEY="" COOKIE_VAL="" PANEL_PATH="/${RP_BP}/"
+    if [[ "$style" == "2" ]]; then
+        COOKIE_KEY=$(gen_random_string 12); COOKIE_VAL=$(gen_random_string 24); PANEL_PATH="/"
+    fi
+
+    # --- certificates (acme.sh, HTTP-01 standalone, ECDSA) ---
+    if [[ ! -f ~/.acme.sh/acme.sh ]]; then
+        run_step "Installing acme.sh" bash -c "curl -s https://get.acme.sh | sh -s email=${ACME_EMAIL}" || return 1
+    fi
+    local ACME=~/.acme.sh/acme.sh
+    "$ACME" --set-default-ca --server letsencrypt > /dev/null 2>&1
+    local d
+    for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
+        # acme --issue exit codes: 0 = issued, 2 = already valid (skipped) —
+        # both fine; only a real failure (DNS/:80) should abort. Then always
+        # (re)install the cert to our paths.
+        run_step "Issuing certificate for ${d}" bash -c \
+            "$ACME --issue -d '$d' --standalone --httpport 80 --keylength ec-256; rc=\$?; \
+             [ \$rc -eq 0 ] || [ \$rc -eq 2 ] || exit 1; \
+             mkdir -p '$SSLDIR/$d'; \
+             $ACME --install-cert -d '$d' --ecc --key-file '$SSLDIR/$d/privkey.pem' \
+                   --fullchain-file '$SSLDIR/$d/fullchain.pem' --reloadcmd 'systemctl reload nginx 2>/dev/null || true'" \
+            || { echo -e "  ${red}Cert failed for ${d} (DNS/:80?). Aborting.${plain}"; return 1; }
+    done
+
+    # --- nginx + decoy + branded error pages ---
+    run_step "Installing nginx + jq" bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx jq" || return 1
+    mkdir -p /etc/x-ui/errorpages "/var/www/$SELFSTEAL_DOMAIN"
+    cat > /etc/x-ui/errorpages/__xui_4xx.html <<'H'
+<!doctype html><meta charset=utf-8><title>Not found</title><style>body{font:16px system-ui;background:#0b0c10;color:#cfd3dc;display:grid;place-items:center;height:100vh;margin:0}</style><div style=opacity:.6>404</div>
+H
+    cp /etc/x-ui/errorpages/__xui_4xx.html /etc/x-ui/errorpages/__xui_5xx.html
+    [[ -f "/var/www/$SELFSTEAL_DOMAIN/index.html" ]] || cat > "/var/www/$SELFSTEAL_DOMAIN/index.html" <<'H'
+<!doctype html><meta charset=utf-8><title>Welcome</title><style>body{font:16px system-ui;background:#f6f7f9;color:#222;display:grid;place-items:center;height:100vh;margin:0}</style><h1>It works.</h1>
+H
+    _render_nginx "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN" "$RP_PORT" "$SUB_PORT" "$SOCK" "$SSLDIR" "$PANEL_PATH" "$COOKIE_KEY" "$COOKIE_VAL"
+    rm -f /etc/nginx/sites-enabled/default
+    if ! nginx -t > /tmp/nginxt.log 2>&1; then echo -e "  ${red}nginx config test failed:${plain}"; tail -3 /tmp/nginxt.log; return 1; fi
+    run_step "Starting nginx" systemctl restart nginx || return 1
+
+    # --- panel API preconfig (validated sequence) ---
+    _rp_preconfig "$RP_USER" "$RP_PASS" "$RP_PORT" "$RP_BP" "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN" "$SUB_PORT" "$SOCK" "$PANEL_PATH" || return 1
+
+    # --- summary ---
+    echo
+    echo -e "${green}═══════════════════════════════════════════${plain}"
+    echo -e "${green}   Reverse proxy ready — single port 443   ${plain}"
+    echo -e "${green}═══════════════════════════════════════════${plain}"
+    if [[ "$style" == "2" ]]; then
+        echo -e "${green}Panel:   https://${PANEL_DOMAIN}/?${COOKIE_KEY}=${COOKIE_VAL}${plain}  ${yellow}(entry link — save it!)${plain}"
+    else
+        echo -e "${green}Panel:   https://${PANEL_DOMAIN}/${RP_BP}/${plain}"
+    fi
+    echo -e "${green}Sub:     https://${SUB_DOMAIN}/sub/<subId>${plain}"
+    echo -e "${green}Decoy:   https://${SELFSTEAL_DOMAIN}/${plain}"
+    echo -e "${green}Login:   ${RP_USER} / ${RP_PASS}${plain}"
+    echo -e "${green}═══════════════════════════════════════════${plain}"
+}
+
+# render /etc/nginx/conf.d/xui.conf
+_render_nginx() {
+    local P="$1" S="$2" D="$3" WP="$4" SP="$5" SOCK="$6" SSL="$7" BP="$8" CK="$9" CV="${10}"
+    local gate_map="" gate_block=""
+    if [[ -n "$CK" ]]; then
+        gate_map="
+map \$http_cookie \$xui_ok { default 0; \"~*${CK}=${CV}\" 1; }
+map \$arg_${CK} \$xui_q { default 0; \"${CV}\" 1; }
+map \"\$xui_ok\$xui_q\" \$xui_auth { \"00\" 0; default 1; }
+map \$arg_${CK} \$xui_setck { \"${CV}\" \"${CK}=${CV}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000\"; default \"\"; }
+"
+        gate_block="    add_header Set-Cookie \$xui_setck;
+    if (\$xui_auth = 0) { return 404; }"
+    fi
+    cat > /etc/nginx/conf.d/xui.conf <<EOF
+set_real_ip_from 127.0.0.1;
+set_real_ip_from unix:;
+real_ip_header proxy_protocol;
+${gate_map}
+upstream xui_panel { server 127.0.0.1:${WP}; keepalive 16; }
+upstream xui_sub   { server 127.0.0.1:${SP}; keepalive 16; }
+
+server {
+    listen unix:${SOCK} ssl proxy_protocol;
+    server_name ${P};
+    ssl_certificate ${SSL}/${P}/fullchain.pem;
+    ssl_certificate_key ${SSL}/${P}/privkey.pem;
+    error_page 400 401 403 404 405 429 /__xui_4xx.html;
+    error_page 500 502 503 504 /__xui_5xx.html;
+    location = /__xui_4xx.html { root /etc/x-ui/errorpages; internal; }
+    location = /__xui_5xx.html { root /etc/x-ui/errorpages; internal; }
+${gate_block}
+    location ${BP}ws {
+        proxy_pass http://xui_panel; proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade; proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host; proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr; proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 3600s;
+    }
+    location / {
+        proxy_pass http://xui_panel;
+        proxy_set_header Host \$host; proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+server {
+    listen unix:${SOCK} ssl proxy_protocol;
+    server_name ${S};
+    ssl_certificate ${SSL}/${S}/fullchain.pem;
+    ssl_certificate_key ${SSL}/${S}/privkey.pem;
+    location / {
+        proxy_pass http://xui_sub;
+        proxy_set_header Host \$host; proxy_set_header X-Forwarded-Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+server {
+    listen unix:${SOCK} ssl proxy_protocol;
+    server_name ${D};
+    ssl_certificate ${SSL}/${D}/fullchain.pem;
+    ssl_certificate_key ${SSL}/${D}/privkey.pem;
+    root /var/www/${D}; index index.html;
+}
+server {
+    listen unix:${SOCK} ssl proxy_protocol default_server;
+    server_name _;
+    ssl_certificate ${SSL}/${D}/fullchain.pem;
+    ssl_certificate_key ${SSL}/${D}/privkey.pem;
+    return 444;
+}
+EOF
+}
+
+# panel API preconfig: domains + Reality inbound (externalProxy=selfsteal)
+_rp_preconfig() {
+    local U="$1" P="$2" PORT="$3" BP="$4" PD="$5" SD="$6" SS="$7" SP="$8" SOCK="$9" PANELPATH="${10}"
+    local BASE="http://127.0.0.1:${PORT}/${BP}" JAR; JAR=$(mktemp)
+    local CSRF; CSRF=$(curl -s -c "$JAR" "$BASE/csrf-token" | jq -r '.obj // empty')
+    local ok; ok=$(curl -s -c "$JAR" -b "$JAR" -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' \
+        -d "{\"username\":\"$U\",\"password\":\"$P\"}" "$BASE/login" | jq -r '.success')
+    [[ "$ok" == "true" ]] || { echo -e "  ${red}Panel API login failed.${plain}"; rm -f "$JAR"; return 1; }
+    api() { curl -s -c "$JAR" -b "$JAR" -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' "$@"; }
+
+    local X PRIV PUB UUID SID
+    X=$(api "$BASE/panel/api/server/getNewX25519Cert"); PRIV=$(echo "$X"|jq -r '.obj.privateKey'); PUB=$(echo "$X"|jq -r '.obj.publicKey')
+    UUID=$(api "$BASE/panel/api/server/getNewUUID"|jq -r '.obj.uuid'); SID=$(openssl rand -hex 8)
+    [[ -n "$PRIV" && "$PRIV" != null && -n "$UUID" && "$UUID" != null ]] || { echo -e "  ${red}Key/UUID generation failed.${plain}"; rm -f "$JAR"; return 1; }
+
+    local WBP="$BP"; [[ "$PANELPATH" == "/" ]] && WBP=""
+    local ALL NEW
+    ALL=$(api "$BASE/panel/setting/all" -X POST)
+    NEW=$(echo "$ALL"|jq -c --arg pd "$PD" --arg sd "$SD" --arg su "https://$SD/sub/" --argjson sp "$SP" --arg wbp "$WBP" \
+        '.obj | .webDomain=$pd | .webListen="127.0.0.1" | .webCertFile="" | .webKeyFile=""
+              | (if $wbp=="" then .webBasePath="/" else . end)
+              | .subEnable=true | .subDomain=$sd | .subListen="127.0.0.1" | .subPort=$sp
+              | .subURI=$su | .subCertFile="" | .subKeyFile=""')
+    [[ "$(api "$BASE/panel/setting/update" -d "$NEW"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}setting/update failed.${plain}"; rm -f "$JAR"; return 1; }
+
+    local IB
+    IB=$(jq -n --arg u "$UUID" --arg pv "$PRIV" --arg pb "$PUB" --arg sid "$SID" --arg sni "$SS" --arg sock "$SOCK" '{
+      enable:true,remark:"VLESS Reality 443 (turnkey)",listen:"",port:443,protocol:"vless",expiryTime:0,total:0,
+      settings:{clients:[{id:$u,email:"admin",flow:"xtls-rprx-vision",limitIp:0,totalGB:0,expiryTime:0,enable:true,tgId:0,subId:"turnkey",comment:"",reset:0}],decryption:"none",encryption:"none",fallbacks:[]},
+      streamSettings:{network:"tcp",tcpSettings:{header:{type:"none"}},security:"reality",
+        externalProxy:[{forceTls:"same",dest:$sni,port:443,remark:""}],
+        realitySettings:{show:false,xver:1,target:$sock,serverNames:[$sni],privateKey:$pv,minClientVer:"",maxClientVer:"",maxTimediff:0,shortIds:[$sid],mldsa65Seed:"",settings:{publicKey:$pb,fingerprint:"chrome",serverName:"",spiderX:"/",mldsa65Verify:""}}},
+      sniffing:{enabled:true,destOverride:["http","tls","quic"],metadataOnly:false,routeOnly:false,ipsExcluded:[],domainsExcluded:[]}}')
+    [[ "$(api "$BASE/panel/api/inbounds/add" -d "$IB"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}inbound add failed.${plain}"; rm -f "$JAR"; return 1; }
+
+    api "$BASE/panel/api/server/restartXrayService" -X POST > /dev/null
+    api "$BASE/panel/setting/restartPanel" -X POST > /dev/null
+    rm -f "$JAR"
+    echo -e "  ${green}✔${plain} Panel preconfigured (domains + Reality inbound)"
+    return 0
+}
+
 config_after_install() {
+    # ── Install mode (asked up front; independent of the fragile settings
+    #    parsing below) ──────────────────────────────────────────────────────
+    echo ""
+    echo -e "${green}═══════════════════════════════════════════${plain}"
+    echo -e "${green}     Access mode                           ${plain}"
+    echo -e "${green}═══════════════════════════════════════════${plain}"
+    echo -e "  1) By DOMAIN  — turnkey reverse proxy, clean :443 URLs, decoy site"
+    echo -e "  2) By IP      — quick, self-signed TLS, no domains needed"
+    read -rp "Choose [2]: " RP_INSTALL_MODE
+    [[ "$RP_INSTALL_MODE" == "1" ]] && RP_INSTALL_MODE="A" || RP_INSTALL_MODE="B"
+
+    if [[ "$RP_INSTALL_MODE" == "A" ]]; then
+        # Self-contained, deterministic base config for the turnkey path:
+        # fresh creds + random port + random basePath. setup_reverse_proxy
+        # (after service start) does certs/nginx/decoy/domain-preconfig.
+        RP_U=$(gen_random_string 10); RP_P=$(gen_random_string 10)
+        RP_BP=$(gen_random_string 18); RP_PORT=$(shuf -i 1024-62000 -n 1)
+        ${xui_folder}/x-ui setting -username "${RP_U}" -password "${RP_P}" -port "${RP_PORT}" -webBasePath "${RP_BP}" > /dev/null 2>&1
+        ${xui_folder}/x-ui migrate
+        echo -e "  ${green}✔${plain} Base panel configured (port ${RP_PORT}); reverse proxy runs after start."
+        return 0
+    fi
+
     local existing_hasDefaultCredential=$(${xui_folder}/x-ui setting -show true | grep -Eo 'hasDefaultCredential: .+' | awk '{print $2}')
     local existing_webBasePath=$(${xui_folder}/x-ui setting -show true | grep -Eo 'webBasePath: .+' | awk '{print $2}' | sed 's#^/##')
     local existing_port=$(${xui_folder}/x-ui setting -show true | grep -Eo 'port: .+' | awk '{print $2}')
@@ -1360,6 +1612,17 @@ install_x-ui() {
             echo -e "${red}Failed to install x-ui.service file${plain}"
             exit 1
         fi
+    fi
+
+    # Mode A: the panel is up now — run the turnkey reverse-proxy pipeline.
+    if [[ "$RP_INSTALL_MODE" == "A" ]]; then
+        local i
+        for i in $(seq 1 30); do
+            curl -fsS -o /dev/null "http://127.0.0.1:${RP_PORT}/${RP_BP}/csrf-token" 2> /dev/null && break
+            sleep 0.5
+        done
+        setup_reverse_proxy "$RP_U" "$RP_P" "$RP_PORT" "$RP_BP" \
+            || echo -e "${red}Reverse-proxy setup did not complete. The panel is installed; fix the above and re-run, or use it on its IP.${plain}"
     fi
 
     echo -e "${green}✔ x-ui ${tag_version}${plain} installed and running."
