@@ -4,9 +4,42 @@ red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'
 yellow='\033[0;33m'
+cyan='\033[0;36m'
+gray='\033[0;90m'
+bold='\033[1m'
 plain='\033[0m'
 
 cur_dir=$(pwd)
+
+# ── quiet-step UI: hide noisy command output behind one spinner line + a log ──
+XUI_INSTALL_LOG="/var/log/x-ui-install.log"
+spinner() {
+    local pid=$1 text=$2 frames='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏' i=0
+    [[ -t 1 ]] || { wait "$pid" 2>/dev/null; return; }
+    while kill -0 "$pid" 2>/dev/null; do
+        i=$(((i + 1) % ${#frames}))
+        printf "\r  ${cyan}%s${plain} %s" "${frames:$i:1}" "$text" > /dev/tty
+        sleep 0.1
+    done
+    printf "\r\033[K" > /dev/tty
+}
+# run_step "Message" cmd args... → quiet run; ✔ on success, ✗ + log tail on fail
+run_step() {
+    local text=$1; shift
+    mkdir -p "$(dirname "$XUI_INSTALL_LOG")" 2>/dev/null
+    echo "=== $(date '+%F %T') :: ${text} :: $*" >> "$XUI_INSTALL_LOG"
+    ("$@") >> "$XUI_INSTALL_LOG" 2>&1 &
+    local pid=$!
+    spinner "$pid" "$text"
+    if wait "$pid"; then
+        echo -e "  ${green}✔${plain} $text"
+        return 0
+    fi
+    echo -e "  ${red}✗${plain} $text"
+    echo -e "  ${gray}--- last log lines (${XUI_INSTALL_LOG}) ---${plain}"
+    tail -n 8 "$XUI_INSTALL_LOG" | sed 's/^/    /'
+    return 1
+}
 
 xui_folder="${XUI_MAIN_FOLDER:=/usr/local/x-ui}"
 xui_service="${XUI_SERVICE:=/etc/systemd/system}"
@@ -79,35 +112,39 @@ is_port_in_use() {
 }
 
 install_base() {
+    # Build the dependency-install command per distro, then run it quietly
+    # behind one spinner line (no streaming package-manager output).
+    local cmd
     case "${release}" in
         ubuntu | debian | armbian)
-            apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl
+            cmd='apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl'
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
             # install dependencies only — never run a full system upgrade
-            dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl
+            cmd='dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl'
             ;;
         centos)
             if [[ "${VERSION_ID}" =~ ^7 ]]; then
-                yum install -y cronie curl tar tzdata socat ca-certificates openssl
+                cmd='yum install -y cronie curl tar tzdata socat ca-certificates openssl'
             else
-                dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl
+                cmd='dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl'
             fi
             ;;
         arch | manjaro | parch)
             # -Sy = refresh package metadata only (no -Syu full upgrade)
-            pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl
+            cmd='pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl'
             ;;
         opensuse-tumbleweed | opensuse-leap)
-            zypper refresh && zypper -q install -y cron curl tar timezone socat ca-certificates openssl
+            cmd='zypper refresh && zypper -q install -y cron curl tar timezone socat ca-certificates openssl'
             ;;
         alpine)
-            apk update && apk add dcron curl tar tzdata socat ca-certificates openssl
+            cmd='apk update && apk add dcron curl tar tzdata socat ca-certificates openssl'
             ;;
         *)
-            apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl
+            cmd='apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl'
             ;;
     esac
+    DEBIAN_FRONTEND=noninteractive run_step "Installing dependencies" bash -c "$cmd"
 }
 
 gen_random_string() {
@@ -1158,7 +1195,7 @@ install_x-ui() {
             fi
         fi
         echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
-        curl -4fLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
+        curl -4fsSLRo ${xui_folder}-linux-$(arch).tar.gz https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Downloading x-ui failed, please be sure that your server can access GitHub ${plain}"
             exit 1
@@ -1175,7 +1212,7 @@ install_x-ui() {
 
         url="https://github.com/jaywehosl/ultrasuperheckedupthing/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
         echo -e "Beginning to install x-ui $1"
-        curl -4fLRo ${xui_folder}-linux-$(arch).tar.gz ${url}
+        curl -4fsSLRo ${xui_folder}-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Download x-ui $1 failed, please check if the version exists ${plain}"
             exit 1
@@ -1192,7 +1229,7 @@ install_x-ui() {
     fi
 
     # Extract resources and set permissions
-    tar zxvf x-ui-linux-$(arch).tar.gz
+    tar zxf x-ui-linux-$(arch).tar.gz
     rm x-ui-linux-$(arch).tar.gz -f
 
     cd x-ui
@@ -1325,26 +1362,15 @@ install_x-ui() {
         fi
     fi
 
-    echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
-    echo -e ""
-    echo -e "┌───────────────────────────────────────────────────────┐
-│  ${blue}x-ui control menu usages (subcommands):${plain}              │
-│                                                       │
-│  ${blue}x-ui${plain}              - Admin Management Script          │
-│  ${blue}x-ui start${plain}        - Start                            │
-│  ${blue}x-ui stop${plain}         - Stop                             │
-│  ${blue}x-ui restart${plain}      - Restart                          │
-│  ${blue}x-ui status${plain}       - Current Status                   │
-│  ${blue}x-ui settings${plain}     - Current Settings                 │
-│  ${blue}x-ui enable${plain}       - Enable Autostart on OS Startup   │
-│  ${blue}x-ui disable${plain}      - Disable Autostart on OS Startup  │
-│  ${blue}x-ui log${plain}          - Check logs                       │
-│  ${blue}x-ui banlog${plain}       - Check Fail2ban ban logs          │
-│  ${blue}x-ui update${plain}       - Update                           │
-│  ${blue}x-ui legacy${plain}       - Legacy version                   │
-│  ${blue}x-ui install${plain}      - Install                          │
-│  ${blue}x-ui uninstall${plain}    - Uninstall                        │
-└───────────────────────────────────────────────────────┘"
+    echo -e "${green}✔ x-ui ${tag_version}${plain} installed and running."
+    echo
+    echo -e "  ${gray}Manage it any time with the ${bold}x-ui${plain}${gray} command:${plain}"
+    echo -e "    ${blue}x-ui${plain}                    admin management menu"
+    echo -e "    ${blue}x-ui start|stop|restart${plain} service control"
+    echo -e "    ${blue}x-ui status|settings${plain}    status / current settings"
+    echo -e "    ${blue}x-ui log|banlog${plain}         panel logs / Fail2ban bans"
+    echo -e "    ${blue}x-ui update|uninstall${plain}   update / remove"
+    echo
 }
 
 echo -e "${green}Running...${plain}"
