@@ -142,17 +142,17 @@ install_base() {
             apt-get update > /dev/null 2>&1 && apt-get install -y -q cron curl tar tzdata socat openssl > /dev/null 2>&1
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
-            dnf -y update > /dev/null 2>&1 && dnf install -y -q cronie curl tar tzdata socat openssl > /dev/null 2>&1
+            dnf install -y -q cronie curl tar tzdata socat openssl > /dev/null 2>&1
             ;;
         centos)
             if [[ "${VERSION_ID}" =~ ^7 ]]; then
-                yum -y update > /dev/null 2>&1 && yum install -y -q cronie curl tar tzdata socat openssl > /dev/null 2>&1
+                yum install -y -q cronie curl tar tzdata socat openssl > /dev/null 2>&1
             else
-                dnf -y update > /dev/null 2>&1 && dnf install -y -q cronie curl tar tzdata socat openssl > /dev/null 2>&1
+                dnf install -y -q cronie curl tar tzdata socat openssl > /dev/null 2>&1
             fi
             ;;
         arch | manjaro | parch)
-            pacman -Syu > /dev/null 2>&1 && pacman -Syu --noconfirm cronie curl tar tzdata socat openssl > /dev/null 2>&1
+            pacman -Sy --noconfirm cronie curl tar tzdata socat openssl > /dev/null 2>&1
             ;;
         opensuse-tumbleweed | opensuse-leap)
             zypper refresh > /dev/null 2>&1 && zypper -q install -y cron curl tar timezone socat openssl > /dev/null 2>&1
@@ -816,12 +816,20 @@ update_x-ui() {
 
     echo -e "${green}Downloading new x-ui version...${plain}"
 
-    tag_version=$(${curl_bin} -Ls "https://api.github.com/repos/jaywehosl/ultrasuperheckedupthing/releases/latest" 2> /dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    # Resolve the latest release tag WITHOUT the GitHub REST API (rate-limited
+    # to 60 unauthenticated req/h per IP): releases/latest answers with a
+    # redirect to .../releases/tag/<tag> — read the final URL instead.
+    resolve_latest_tag() {
+        ${curl_bin} ${1:-} -fsSLI -o /dev/null -w '%{url_effective}' \
+            "https://github.com/jaywehosl/ultrasuperheckedupthing/releases/latest" 2> /dev/null \
+            | grep -oE '/tag/[^/]+$' | sed 's|^/tag/||'
+    }
+    tag_version=$(resolve_latest_tag)
     if [[ ! -n "$tag_version" ]]; then
         echo -e "${yellow}Trying to fetch version with IPv4...${plain}"
-        tag_version=$(${curl_bin} -4 -Ls "https://api.github.com/repos/jaywehosl/ultrasuperheckedupthing/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        tag_version=$(resolve_latest_tag -4)
         if [[ ! -n "$tag_version" ]]; then
-            _fail "ERROR: Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later"
+            _fail "ERROR: Failed to resolve the latest x-ui release (no published release yet, or GitHub is unreachable), please try it later"
         fi
     fi
     echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
@@ -890,13 +898,19 @@ update_x-ui() {
 
     chmod +x x-ui bin/xray-linux-$(arch) > /dev/null 2>&1
 
-    echo -e "${green}Downloading and installing x-ui.sh script...${plain}"
-    ${curl_bin} -fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.sh > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
-        echo -e "${yellow}Trying to fetch x-ui with IPv4...${plain}"
-        ${curl_bin} -4fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.sh > /dev/null 2>&1
+    echo -e "${green}Installing x-ui.sh script...${plain}"
+    # Prefer the copy shipped inside the release tarball (always matches the
+    # installed binary); fall back to the raw file pinned to the SAME tag.
+    if [ -f "${xui_folder}/x-ui.sh" ]; then
+        cp -f ${xui_folder}/x-ui.sh /usr/bin/x-ui > /dev/null 2>&1
+    else
+        ${curl_bin} -fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.sh > /dev/null 2>&1
         if [[ $? -ne 0 ]]; then
-            _fail "ERROR: Failed to download x-ui.sh script, please be sure that your server can access GitHub"
+            echo -e "${yellow}Trying to fetch x-ui with IPv4...${plain}"
+            ${curl_bin} -4fLRo /usr/bin/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.sh > /dev/null 2>&1
+            if [[ $? -ne 0 ]]; then
+                _fail "ERROR: Failed to download x-ui.sh script, please be sure that your server can access GitHub"
+            fi
         fi
     fi
 
@@ -914,9 +928,9 @@ update_x-ui() {
 
     if [[ $release == "alpine" ]]; then
         echo -e "${green}Downloading and installing startup unit x-ui.rc...${plain}"
-        ${curl_bin} -fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.rc > /dev/null 2>&1
+        ${curl_bin} -fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.rc > /dev/null 2>&1
         if [[ $? -ne 0 ]]; then
-            ${curl_bin} -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.rc > /dev/null 2>&1
+            ${curl_bin} -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.rc > /dev/null 2>&1
             if [[ $? -ne 0 ]]; then
                 _fail "ERROR: Failed to download startup unit x-ui.rc, please be sure that your server can access GitHub"
             fi
@@ -970,13 +984,13 @@ update_x-ui() {
                 echo -e "${yellow}Service files not found in tar.gz, downloading from GitHub...${plain}"
                 case "${release}" in
                     ubuntu | debian | armbian)
-                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.service.debian > /dev/null 2>&1
+                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.debian > /dev/null 2>&1
                         ;;
                     arch | manjaro | parch)
-                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.service.arch > /dev/null 2>&1
+                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.arch > /dev/null 2>&1
                         ;;
                     *)
-                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.service.rhel > /dev/null 2>&1
+                        ${curl_bin} -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.rhel > /dev/null 2>&1
                         ;;
                 esac
 

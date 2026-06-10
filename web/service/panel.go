@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,7 +30,10 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelUpdaterURL      = "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/update.sh"
+	// Updater + version checks MUST target THIS fork — pulling upstream's
+	// update.sh would replace our build with the original 3x-ui.
+	panelRepo            = "jaywehosl/ultrasuperheckedupthing"
+	panelUpdaterURL      = "https://raw.githubusercontent.com/" + panelRepo + "/main/update.sh"
 	maxPanelUpdaterBytes = 2 << 20
 )
 
@@ -169,24 +171,34 @@ func downloadPanelUpdater() (string, error) {
 }
 
 func fetchLatestPanelVersion() (string, error) {
+	// Resolve the latest release tag WITHOUT the GitHub REST API: the API is
+	// rate-limited to 60 unauthenticated requests/hour per source IP, which
+	// real deployments (shared NAT, several panels per host) hit routinely.
+	// github.com/<repo>/releases/latest answers with a 3xx redirect to
+	// .../releases/tag/<tag> — unauthenticated, no rate limit.
 	client := (&SettingService{}).NewProxiedHTTPClient(10 * time.Second)
-	resp, err := client.Get("https://api.github.com/repos/MHSanaei/3x-ui/releases/latest")
+	client.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+	resp, err := client.Get("https://github.com/" + panelRepo + "/releases/latest")
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
+	if resp.StatusCode < 300 || resp.StatusCode > 399 {
+		return "", fmt.Errorf("expected a release redirect, got status %s", resp.Status)
 	}
-
-	var release Release
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", err
+	loc := resp.Header.Get("Location")
+	idx := strings.LastIndex(loc, "/tag/")
+	if idx < 0 {
+		// No full (non-prerelease) release published yet.
+		return "", fmt.Errorf("no release tag in redirect target %q", loc)
 	}
-	if release.TagName == "" {
+	tag := strings.TrimSpace(loc[idx+len("/tag/"):])
+	if tag == "" {
 		return "", fmt.Errorf("latest panel release tag is empty")
 	}
-	return release.TagName, nil
+	return tag, nil
 }
 
 func resolveUpdateFolders() (string, string) {

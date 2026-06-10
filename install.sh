@@ -36,14 +36,13 @@ arch() {
         armv6* | armv6) echo 'armv6' ;;
         armv5* | armv5) echo 'armv5' ;;
         s390x) echo 's390x' ;;
-        *) echo -e "${green}Unsupported CPU architecture! ${plain}" && rm -f install.sh && exit 1 ;;
+        *) echo -e "${green}Unsupported CPU architecture! ${plain}" && exit 1 ;;
     esac
 }
 
 echo "Arch: $(arch)"
 if [[ $(arch) != "amd64" ]]; then
-    echo -e "${red}Error: Only x86_64/amd64 architecture is supported for the custom Antigravity edition!${plain}"
-    rm -f install.sh
+    echo -e "${red}Error: Only x86_64/amd64 architecture is supported for this edition!${plain}"
     exit 1
 fi
 
@@ -85,17 +84,19 @@ install_base() {
             apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl
             ;;
         fedora | amzn | virtuozzo | rhel | almalinux | rocky | ol)
-            dnf -y update && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl
+            # install dependencies only — never run a full system upgrade
+            dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl
             ;;
         centos)
             if [[ "${VERSION_ID}" =~ ^7 ]]; then
-                yum -y update && yum install -y cronie curl tar tzdata socat ca-certificates openssl
+                yum install -y cronie curl tar tzdata socat ca-certificates openssl
             else
-                dnf -y update && dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl
+                dnf install -y -q cronie curl tar tzdata socat ca-certificates openssl
             fi
             ;;
         arch | manjaro | parch)
-            pacman -Syu && pacman -Syu --noconfirm cronie curl tar tzdata socat ca-certificates openssl
+            # -Sy = refresh package metadata only (no -Syu full upgrade)
+            pacman -Sy --noconfirm cronie curl tar tzdata socat ca-certificates openssl
             ;;
         opensuse-tumbleweed | opensuse-leap)
             zypper refresh && zypper -q install -y cron curl tar timezone socat ca-certificates openssl
@@ -262,7 +263,8 @@ ensure_pg_client() {
 install_acme() {
     echo -e "${green}Installing acme.sh for SSL certificate management...${plain}"
     cd ~ || return 1
-    curl -s https://get.acme.sh | sh > /dev/null 2>&1
+    # stdout is noisy → silence it, but KEEP stderr so failures are diagnosable
+    curl -s https://get.acme.sh | sh > /dev/null
     if [ $? -ne 0 ]; then
         echo -e "${red}Failed to install acme.sh${plain}"
         return 1
@@ -1137,12 +1139,21 @@ install_x-ui() {
 
     # Download resources
     if [ $# == 0 ]; then
-        tag_version=$(curl -Ls "https://api.github.com/repos/jaywehosl/ultrasuperheckedupthing/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        # Resolve the latest release tag WITHOUT the GitHub REST API (60 req/h
+        # unauthenticated rate limit per IP — easy to hit on shared hosts).
+        # github.com/<repo>/releases/latest redirects to .../releases/tag/<tag>;
+        # follow it with a HEAD request and read the final URL. No rate limit.
+        resolve_latest_tag() {
+            curl ${1:-} -fsSLI -o /dev/null -w '%{url_effective}' \
+                "https://github.com/jaywehosl/ultrasuperheckedupthing/releases/latest" 2> /dev/null \
+                | grep -oE '/tag/[^/]+$' | sed 's|^/tag/||'
+        }
+        tag_version=$(resolve_latest_tag)
         if [[ ! -n "$tag_version" ]]; then
             echo -e "${yellow}Trying to fetch version with IPv4...${plain}"
-            tag_version=$(curl -4 -Ls "https://api.github.com/repos/jaywehosl/ultrasuperheckedupthing/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+            tag_version=$(resolve_latest_tag -4)
             if [[ ! -n "$tag_version" ]]; then
-                echo -e "${red}Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later${plain}"
+                echo -e "${red}Failed to resolve the latest x-ui release (no published release yet, or GitHub is unreachable), please try it later${plain}"
                 exit 1
             fi
         fi
@@ -1170,12 +1181,6 @@ install_x-ui() {
             exit 1
         fi
     fi
-    curl -4fLRo /usr/bin/x-ui-temp https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.sh
-    if [[ $? -ne 0 ]]; then
-        echo -e "${red}Failed to download x-ui.sh${plain}"
-        exit 1
-    fi
-
     # Stop x-ui service and remove old resources
     if [[ -e ${xui_folder}/ ]]; then
         if [[ $release == "alpine" ]]; then
@@ -1201,8 +1206,19 @@ install_x-ui() {
     fi
     chmod +x x-ui bin/xray-linux-$(arch)
 
-    # Update x-ui cli and se set permission
-    mv -f /usr/bin/x-ui-temp /usr/bin/x-ui
+    # Install the x-ui CLI menu. Prefer the copy shipped INSIDE the release
+    # tarball so the CLI always matches the installed binary (no skew with the
+    # repo's main branch); fall back to the raw file pinned to the SAME tag.
+    if [ -f "x-ui.sh" ]; then
+        cp -f x-ui.sh /usr/bin/x-ui
+    else
+        echo -e "${yellow}x-ui.sh not found in the tarball, downloading the ${tag_version} copy...${plain}"
+        curl -4fLRo /usr/bin/x-ui "https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.sh"
+        if [[ $? -ne 0 ]]; then
+            echo -e "${red}Failed to download x-ui.sh${plain}"
+            exit 1
+        fi
+    fi
     chmod +x /usr/bin/x-ui
     mkdir -p /var/log/x-ui
     config_after_install
@@ -1222,7 +1238,7 @@ install_x-ui() {
     fi
 
     if [[ $release == "alpine" ]]; then
-        curl -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.rc
+        curl -4fLRo /etc/init.d/x-ui https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.rc
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Failed to download x-ui.rc${plain}"
             exit 1
@@ -1279,13 +1295,13 @@ install_x-ui() {
             echo -e "${yellow}Service files not found in tar.gz, downloading from GitHub...${plain}"
             case "${release}" in
                 ubuntu | debian | armbian)
-                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.service.debian > /dev/null 2>&1
+                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.debian > /dev/null 2>&1
                     ;;
                 arch | manjaro | parch)
-                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.service.arch > /dev/null 2>&1
+                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.arch > /dev/null 2>&1
                     ;;
                 *)
-                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/x-ui.service.rhel > /dev/null 2>&1
+                    curl -4fLRo ${xui_service}/x-ui.service https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/refs/tags/${tag_version}/x-ui.service.rhel > /dev/null 2>&1
                     ;;
             esac
 

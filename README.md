@@ -53,6 +53,12 @@ bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupth
 
 The installer fetches the latest binary from **GitHub Releases**, installs the `x-ui` systemd service, and sets up dependencies. Read the disclaimer above before running this over an existing 3X-UI install.
 
+**Prerelease channel** — installs the newest build *including prereleases* (expect rough edges):
+
+```bash
+bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install-prerelease.sh)
+```
+
 ### 2. Run locally (developer mode)
 
 Prerequisites: **Go 1.26+** and **Node.js 18+**.
