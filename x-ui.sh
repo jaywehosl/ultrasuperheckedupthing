@@ -712,10 +712,10 @@ show_log() {
 }
 
 bbr_menu() {
-    echo -e "${green}\t1.${plain} Enable BBR"
-    echo -e "${green}\t2.${plain} Disable BBR"
-    echo -e "${green}\t0.${plain} Back to Main Menu"
-    read -rp "Choose an option: " choice
+    echo && echo -e "  ${gray}BBR congestion control${plain}"
+    echo -e "   ${green}1${plain}. Enable BBR     ${green}2${plain}. Disable BBR     ${green}0${plain}. Back"
+    echo
+    read -rp " $(ask 'Choose an option:') " choice
     case "$choice" in
         0)
             show_menu
@@ -954,15 +954,12 @@ show_xray_status() {
 }
 
 firewall_menu() {
-    echo -e "${green}\t1.${plain} ${green}Install${plain} Firewall"
-    echo -e "${green}\t2.${plain} Port List [numbered]"
-    echo -e "${green}\t3.${plain} ${green}Open${plain} Ports"
-    echo -e "${green}\t4.${plain} ${red}Delete${plain} Ports from List"
-    echo -e "${green}\t5.${plain} ${green}Enable${plain} Firewall"
-    echo -e "${green}\t6.${plain} ${red}Disable${plain} Firewall"
-    echo -e "${green}\t7.${plain} Firewall Status"
-    echo -e "${green}\t0.${plain} Back to Main Menu"
-    read -rp "Choose an option: " choice
+    echo && echo -e "  ${gray}Firewall (ufw)${plain}"
+    echo -e "   ${green}1${plain}. ${green}Install${plain}       ${green}2${plain}. Port list        ${green}3${plain}. ${green}Open${plain} ports"
+    echo -e "   ${green}4${plain}. ${red}Delete${plain} ports ${green}5${plain}. ${green}Enable${plain}        ${green}6${plain}. ${red}Disable${plain}"
+    echo -e "   ${green}7${plain}. Status        ${green}0${plain}. Back"
+    echo
+    read -rp " $(ask 'Choose an option:') " choice
     case "$choice" in
         0)
             show_menu
@@ -2843,17 +2840,14 @@ migrate_to_postgres() {
 }
 
 postgresql_menu() {
-    echo -e "${green}\t1.${plain} ${green}Install${plain} PostgreSQL (server + client + xui db)"
-    echo -e "${green}\t2.${plain} Migrate SQLite ${green}->${plain} PostgreSQL"
-    echo -e "${green}\t3.${plain} Status (clusters & port 5432)"
-    echo -e "${green}\t4.${plain} ${green}Start${plain} PostgreSQL"
-    echo -e "${green}\t5.${plain} ${red}Stop${plain} PostgreSQL"
-    echo -e "${green}\t6.${plain} Restart PostgreSQL"
-    echo -e "${green}\t7.${plain} ${green}Enable${plain} Autostart on boot"
-    echo -e "${green}\t8.${plain} View PostgreSQL Log"
-    echo -e "${green}\t9.${plain} Convert SQLite ${green}.db <-> .dump${plain}"
-    echo -e "${green}\t0.${plain} Back to Main Menu"
-    read -rp "Choose an option: " choice
+    echo && echo -e "  ${gray}PostgreSQL${plain}"
+    echo -e "   ${green}1${plain}. ${green}Install${plain} (server+client+db)   ${green}2${plain}. Migrate SQLite ${green}->${plain} PG"
+    echo -e "   ${green}3${plain}. Status                    ${green}9${plain}. Convert ${green}.db <-> .dump${plain}"
+    echo
+    echo -e "   ${green}4${plain}. ${green}Start${plain}   ${green}5${plain}. ${red}Stop${plain}   ${green}6${plain}. Restart   ${green}7${plain}. ${green}Enable${plain} boot   ${green}8${plain}. Log"
+    echo -e "   ${green}0${plain}. Back"
+    echo
+    read -rp " $(ask 'Choose an option:') " choice
     case "$choice" in
         0)
             show_menu
@@ -2995,27 +2989,22 @@ migrate_db_prompt() {
 }
 
 show_usage() {
-    echo -e "┌────────────────────────────────────────────────────────────────┐
-│  ${blue}x-ui control menu usages (subcommands):${plain}                       │
-│                                                                │
-│  ${blue}x-ui${plain}                       - Admin Management Script          │
-│  ${blue}x-ui start${plain}                 - Start                            │
-│  ${blue}x-ui stop${plain}                  - Stop                             │
-│  ${blue}x-ui restart${plain}               - Restart                          │
-|  ${blue}x-ui restart-xray${plain}          - Restart Xray                     │
-│  ${blue}x-ui status${plain}                - Current Status                   │
-│  ${blue}x-ui settings${plain}              - Current Settings                 │
-│  ${blue}x-ui enable${plain}                - Enable Autostart on OS Startup   │
-│  ${blue}x-ui disable${plain}               - Disable Autostart on OS Startup  │
-│  ${blue}x-ui log${plain}                   - Check logs                       │
-│  ${blue}x-ui banlog${plain}                - Check Fail2ban ban logs          │
-│  ${blue}x-ui update${plain}                - Update                           │
-│  ${blue}x-ui update-all-geofiles${plain}   - Update all geo files             │
-│  ${blue}x-ui migrateDB [file]${plain}      - Convert .db <-> .dump (SQLite)   │
-│  ${blue}x-ui legacy${plain}                - Legacy version                   │
-│  ${blue}x-ui install${plain}               - Install                          │
-│  ${blue}x-ui uninstall${plain}             - Uninstall                        │
-└────────────────────────────────────────────────────────────────┘"
+    echo
+    echo -e "  ${bold}x-ui${plain} ${gray}— management CLI. Run with no arguments for the menu.${plain}"
+    echo
+    echo -e "  ${gray}Subcommands:${plain}"
+    echo -e "    ${blue}x-ui${plain}                       admin management menu"
+    echo -e "    ${blue}x-ui start|stop|restart${plain}    service control"
+    echo -e "    ${blue}x-ui restart-xray${plain}          restart Xray only"
+    echo -e "    ${blue}x-ui status|settings${plain}       current status / settings"
+    echo -e "    ${blue}x-ui enable|disable${plain}        autostart on boot on/off"
+    echo -e "    ${blue}x-ui log|banlog${plain}            panel logs / Fail2ban bans"
+    echo -e "    ${blue}x-ui update${plain}                update to the latest release"
+    echo -e "    ${blue}x-ui update-all-geofiles${plain}   refresh geo files"
+    echo -e "    ${blue}x-ui migrateDB [file]${plain}      convert SQLite .db <-> .dump"
+    echo -e "    ${blue}x-ui legacy${plain}                install a legacy version"
+    echo -e "    ${blue}x-ui install|uninstall${plain}     install / remove the panel"
+    echo
 }
 
 show_menu() {
