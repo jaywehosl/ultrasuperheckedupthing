@@ -1093,10 +1093,18 @@ EOF
 _rp_preconfig() {
     local U="$1" P="$2" PORT="$3" BP="$4" PD="$5" SD="$6" SS="$7" SP="$8" SOCK="$9" PANELPATH="${10}"
     local BASE="http://127.0.0.1:${PORT}/${BP}" JAR; JAR=$(mktemp)
-    local CSRF; CSRF=$(curl -s -c "$JAR" "$BASE/csrf-token" | jq -r '.obj // empty')
-    local ok; ok=$(curl -s -c "$JAR" -b "$JAR" -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' \
-        -d "{\"username\":\"$U\",\"password\":\"$P\"}" "$BASE/login" | jq -r '.success')
-    [[ "$ok" == "true" ]] || { echo -e "  ${red}Panel API login failed.${plain}"; rm -f "$JAR"; return 1; }
+    # Log in — retry to ride out a slow-starting panel (csrf/login race).
+    local CSRF ok i
+    for i in $(seq 1 20); do
+        CSRF=$(curl -s -c "$JAR" "$BASE/csrf-token" | jq -r '.obj // empty')
+        if [[ -n "$CSRF" ]]; then
+            ok=$(curl -s -c "$JAR" -b "$JAR" -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' \
+                -d "{\"username\":\"$U\",\"password\":\"$P\"}" "$BASE/login" | jq -r '.success // empty')
+            [[ "$ok" == "true" ]] && break
+        fi
+        sleep 0.5
+    done
+    [[ "$ok" == "true" ]] || { echo -e "  ${red}Panel API login failed (panel not ready at ${BASE}).${plain}"; rm -f "$JAR"; return 1; }
     api() { curl -s -c "$JAR" -b "$JAR" -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' "$@"; }
 
     local X PRIV PUB UUID SID
