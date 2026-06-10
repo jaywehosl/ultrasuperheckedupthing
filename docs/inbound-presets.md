@@ -170,14 +170,25 @@ comment: "External Proxy remains the way to advertise an arbitrary endpoint") is
 an **externalProxy** entry on the inbound's streamSettings:
 
 ```json
-"externalProxy": [ { "forceTls": "tls", "dest": "${SELFSTEAL_DOMAIN}", "port": 443, "remark": "" } ]
+"externalProxy": [ { "forceTls": "same", "dest": "${SELFSTEAL_DOMAIN}", "port": 443, "remark": "" } ]
 ```
 
-With it, the generated link is `vless://<uuid>@${SELFSTEAL_DOMAIN}:443?...&sni=${SELFSTEAL_DOMAIN}...`
-— connect host = SNI = selfsteal, and that host genuinely serves the decoy.
-Verified live: link host flipped from the request domain to selfsteal, decoy
-still served, :443 still Xray. Does NOT affect the xray runtime config (3x-ui
-strips externalProxy from the generated config — it's share-link metadata only).
+**`forceTls` MUST be `"same"`, NOT `"tls"`.** `"tls"` rewrites the link's
+`security` param to plain TLS — the client then imports VLESS/TCP/**TLS** (no
+pbk/sid) and cannot connect to the Reality server. `"same"` keeps `security=reality`
+and just overrides the host/port. (This bit us live: forceTls:tls → link showed
+`security=tls`, client wouldn't connect.)
+
+With `forceTls:same` the generated link is
+`vless://<uuid>@${SELFSTEAL_DOMAIN}:443?...&security=reality&pbk=...&sid=...&sni=${SELFSTEAL_DOMAIN}...`
+— connect host = SNI = selfsteal, security=reality intact, and that host genuinely
+serves the decoy. Does NOT affect the xray runtime config (3x-ui strips
+externalProxy from the generated config — it's share-link metadata only).
+
+**Proven end-to-end (2026-06-10):** a loopback xray Reality client using this exact
+link tunnelled real traffic — egress IP = the server's IP, `cloudflare/cdn-cgi/trace`
+returned 200. The full chain (Reality :443 → unix socket → nginx SNI → decoy/panel/sub,
+and Reality auth → proxy-out) works.
 
 So the turnkey preset A is created in TWO API calls: `inbounds/add` (the Reality
 inbound) then `inbounds/update/:id` adding externalProxy — OR include
