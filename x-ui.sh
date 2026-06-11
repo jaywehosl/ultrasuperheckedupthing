@@ -137,6 +137,22 @@ T_EN[sv_xray_restart]="Backend restart signal is successfully sent"; T_RU[sv_xra
 T_EN[sv_enabled]="Service autostart on system boot is successfully enabled"; T_RU[sv_enabled]="Автозапуск сервисов при перезагрузке системы успешно включен"
 T_EN[sv_disabled]="Service autostart on system boot is successfully disabled"; T_RU[sv_disabled]="Автозапуск сервисов при перезагрузке системы успешно выключен"
 
+# ── Batch 5: update / CLI-update / uninstall / show_log / view-settings ───────
+T_EN[up_confirm]="This will update all components to the latest version; your data is preserved, continue?"; T_RU[up_confirm]="Внимание, все компоненты будут обновлены до последней версии; ваши данные будут сохранены, продолжить?"
+T_EN[up_done]="Update complete and Community Panel restarted automatically"; T_RU[up_done]="Обновление всех компонентов завершено и Community Panel перезапустилась автоматически"
+T_EN[upcli_title]="Updating the CLI";            T_RU[upcli_title]="Обновление CLI"
+T_EN[upcli_confirm]="This will update the CLI to the latest version, continue?"; T_RU[upcli_confirm]="Внимание, CLI будет обновлен до последней версии, продолжить?"
+T_EN[upcli_done]="CLI updated and Community Panel restarted automatically"; T_RU[upcli_done]="Обновление CLI завершено и Community Panel перезапустилась автоматически"
+T_EN[upcli_fail]="Failed to update the CLI";     T_RU[upcli_fail]="Ошибка при обновлении CLI"
+T_EN[un_confirm]="Are you sure you want to uninstall Community Panel? Its backend and database will also be removed!!!"; T_RU[un_confirm]="Вы уверены что хотите удалить Community Panel? Бэкенд и база данных будут безвозвратно удалены!!!"
+T_EN[un_done]="Uninstalled successfully";        T_RU[un_done]="Удаление успешно"
+T_EN[un_reinstall]="To install the panel again, use this command:"; T_RU[un_reinstall]="Чтобы установить панель заново, используйте команду:"
+T_EN[log_debug]="Debug log";                     T_RU[log_debug]="Дебаг лог"
+T_EN[log_clear]="Clear all logs";                T_RU[log_clear]="Очистить все логи"
+T_EN[vs_url]="Community Panel access link:";     T_RU[vs_url]="Ссылка доступа в Community Panel:"
+T_EN[vs_nossl]="⚠ WARNING: No SSL certificate configured!"; T_RU[vs_nossl]="⚠ ВНИМАНИЕ: SSL сертификат не настроен для доступа в панель!"
+T_EN[vs_selfsign]="You can issue a self-signed SSL certificate to securely access Community Panel via IP address"; T_RU[vs_selfsign]="Вы можете выпустить самоподписанный SSL сертификат для безопасного доступа в Community Panel по айпи адресу"
+
 #Add some basic function here
 function LOGD() {
     echo -e "${yellow}[DEG] $* ${plain}"
@@ -315,7 +331,7 @@ install() {
 }
 
 update() {
-    confirm "This function will update all x-ui components to the latest version, and the data will not be lost. Do you want to continue?" "y"
+    confirm "$(t up_confirm)"
     if [[ $? != 0 ]]; then
         LOGE "$(t s_cancelled)"
         if [[ $# == 0 ]]; then
@@ -325,14 +341,14 @@ update() {
     fi
     bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/update.sh)
     if [[ $? == 0 ]]; then
-        LOGI "Update is complete, Panel has automatically restarted "
+        LOGI "$(t up_done)"
         before_show_menu
     fi
 }
 
 update_menu() {
-    echo -e "${yellow}Updating Menu${plain}"
-    confirm "This function will update the menu to the latest changes." "y"
+    echo -e "${yellow}$(t upcli_title)${plain}"
+    confirm "$(t upcli_confirm)"
     if [[ $? != 0 ]]; then
         LOGE "$(t s_cancelled)"
         if [[ $# == 0 ]]; then
@@ -346,10 +362,10 @@ update_menu() {
     chmod +x /usr/bin/x-ui
 
     if [[ $? == 0 ]]; then
-        echo -e "${green}Update successful. The panel has automatically restarted.${plain}"
+        echo -e "${green}$(t upcli_done)${plain}"
         exit 0
     else
-        echo -e "${red}Failed to update the menu.${plain}"
+        echo -e "${red}$(t upcli_fail)${plain}"
         return 1
     fi
 }
@@ -391,7 +407,7 @@ xui_env_file_path() {
 }
 
 uninstall() {
-    confirm "Are you sure you want to uninstall the panel? xray will also uninstalled!" "n"
+    confirm "$(t un_confirm)"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
             return
@@ -416,8 +432,8 @@ uninstall() {
     rm -f "$(xui_env_file_path)"
 
     echo ""
-    echo -e "Uninstalled Successfully.\n"
-    echo "If you need to install this panel again, you can use below command:"
+    echo -e "$(t un_done)\n"
+    echo -e "$(t un_reinstall)"
     echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/ultrasuperheckedupthing/main/install.sh)${plain}"
     echo ""
     # Trap the SIGTERM signal
@@ -508,9 +524,9 @@ check_config() {
         dsn="$(grep -E '^XUI_DB_DSN=' "$db_env_file" | head -1 | cut -d= -f2-)"
         local dsn_safe
         dsn_safe="$(echo "$dsn" | sed -E 's|(://[^:/@]+:)[^@]+@|\1****@|')"
-        echo -e "${green}Database: PostgreSQL — ${dsn_safe}${plain}"
+        echo -e "${green}PostgreSQL — ${dsn_safe}${plain}"
     else
-        echo -e "${green}Database: SQLite (/etc/x-ui/x-ui.db)${plain}"
+        echo -e "${green}SQLite — (/etc/x-ui/x-ui.db)${plain}"
     fi
 
     local existing_webBasePath=$(echo "$info" | grep -Eo 'webBasePath: .+' | awk '{print $2}')
@@ -551,19 +567,19 @@ check_config() {
         local domain=$(basename "$(dirname "$existing_cert")")
 
         if [[ "$domain" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-            echo -e "${green}Access URL: https://${domain}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${green}$(t vs_url) https://${domain}:${existing_port}${existing_webBasePath}${plain}"
         else
-            echo -e "${green}Access URL: https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${green}$(t vs_url) https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
         fi
     else
-        echo -e "${red}⚠ WARNING: No SSL certificate configured!${plain}"
-        echo -e "${yellow}You can get a Let's Encrypt certificate for your IP address (valid ~6 days, auto-renews).${plain}"
+        echo -e "${red}$(t vs_nossl)${plain}"
+        echo -e "${yellow}$(t vs_selfsign)${plain}"
         read -rp "Generate SSL certificate for IP now? [y/N]: " gen_ssl
         if [[ "$gen_ssl" == "y" || "$gen_ssl" == "Y" ]]; then
             stop 0 > /dev/null 2>&1
             ssl_cert_issue_for_ip
             if [[ $? -eq 0 ]]; then
-                echo -e "${green}Access URL: https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+                echo -e "${green}$(t vs_url) https://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
                 # ssl_cert_issue_for_ip already restarts the panel, but ensure it's running
                 start 0 > /dev/null 2>&1
             else
@@ -572,7 +588,7 @@ check_config() {
                 start 0 > /dev/null 2>&1
             fi
         else
-            echo -e "${yellow}Access URL: http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
+            echo -e "${yellow}$(t vs_url) http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
             echo -e "${yellow}For security, put the panel behind a reverse proxy with TLS (option 20).${plain}"
         fi
     fi
@@ -793,54 +809,37 @@ disable() {
 }
 
 show_log() {
-    if [[ $release == "alpine" ]]; then
-        echo -e "${green}\t1.${plain} Debug Log"
-        echo -e "${green}\t0.${plain} Back to Main Menu"
-        read -rp "Choose an option: " choice
-
-        case "$choice" in
-            0)
-                return
-                ;;
-            1)
+  while true; do
+    clear
+    echo
+    echo -e "  ${bold}$(t m16)${plain}"
+    echo
+    echo -e "     ${orange} 1${plain}  $(t log_debug)"
+    [[ $release != "alpine" ]] && echo -e "     ${orange} 2${plain}  $(t log_clear)"
+    echo
+    echo -e "     ${orange} 0${plain}  $(t s_back)"
+    echo
+    local choice; read -rp " $(ask "$(t s_select)") " choice
+    case "$choice" in
+        0) return ;;
+        1)
+            if [[ $release == "alpine" ]]; then
                 grep -F 'x-ui[' /var/log/messages
-                if [[ $# == 0 ]]; then
-                    before_show_menu
-                fi
-                ;;
-            *)
-                echo -e "${red}Invalid option. Please select a valid number.${plain}\n"
-                show_log
-                ;;
-        esac
-    else
-        echo -e "${green}\t1.${plain} Debug Log"
-        echo -e "${green}\t2.${plain} Clear All logs"
-        echo -e "${green}\t0.${plain} Back to Main Menu"
-        read -rp "Choose an option: " choice
-
-        case "$choice" in
-            0)
-                return
-                ;;
-            1)
+            else
                 journalctl -u x-ui -e --no-pager -f -p debug
-                if [[ $# == 0 ]]; then
-                    before_show_menu
-                fi
-                ;;
-            2)
-                sudo journalctl --rotate
-                sudo journalctl --vacuum-time=1s
-                echo "All Logs cleared."
-                restart
-                ;;
-            *)
-                echo -e "${red}Invalid option. Please select a valid number.${plain}\n"
-                show_log
-                ;;
-        esac
-    fi
+            fi
+            before_show_menu
+            ;;
+        2)
+            [[ $release == "alpine" ]] && { msg_err "$(t s_invalid)"; sleep 1; continue; }
+            journalctl --rotate > /dev/null 2>&1
+            journalctl --vacuum-time=1s > /dev/null 2>&1
+            msg_ok "$(t log_clear)"
+            restart
+            ;;
+        *) msg_err "$(t s_invalid)"; sleep 1; continue ;;
+    esac
+  done
 }
 
 update_shell() {
