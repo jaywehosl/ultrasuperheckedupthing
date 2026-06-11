@@ -568,7 +568,7 @@ check_config() {
                 start 0 > /dev/null 2>&1
             else
                 LOGE "IP certificate setup failed."
-                echo -e "${yellow}You can try again via option 19 (SSL Certificate Management).${plain}"
+                echo -e "${yellow}You can re-run SSL setup during a panel reinstall, or put the panel behind a reverse proxy (option 20).${plain}"
                 start 0 > /dev/null 2>&1
             fi
         else
