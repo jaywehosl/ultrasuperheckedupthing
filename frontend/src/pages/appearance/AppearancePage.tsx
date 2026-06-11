@@ -1,0 +1,232 @@
+import { useCallback, useRef, useState } from 'react';
+import { Button, Card, Divider, Segmented, Select, Switch } from '@/components/ds';
+import { toast } from '@/components/ds';
+import { applyTheme, applyThemeMode, type PanelTheme, type ThemeMode } from '@/theme/themeApply';
+import { clearTheme, loadTheme, saveTheme } from '@/theme/themeStorage';
+import './AppearancePage.css';
+
+/* NOTE: this is the P1 Appearance page. Controls drive the override core
+ * (themeApply) live; persistence is the localStorage placeholder for now —
+ * slab 3 swaps it for the server `panelTheme` setting. Knobs marked "soon"
+ * are placeholders whose tokens are not yet expanded in the core (shadows /
+ * effects); they're here so we can see the full surface and wire it next. */
+
+const FONT_OPTIONS = [
+  { label: 'Plus Jakarta Sans', value: "'Plus Jakarta Sans', sans-serif" },
+  { label: 'Outfit', value: "'Outfit', sans-serif" },
+  { label: 'Inter', value: "'Inter', sans-serif" },
+  { label: 'System UI', value: 'system-ui, -apple-system, sans-serif' },
+];
+const MONO_OPTIONS = [
+  { label: 'Fira Code', value: "'Fira Code', monospace" },
+  { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
+  { label: 'System Mono', value: 'ui-monospace, Menlo, monospace' },
+];
+
+function hexToRgb(hex: string): string | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+}
+
+interface RowProps { label: string; hint?: string; soon?: boolean; children: React.ReactNode }
+function Row({ label, hint, soon, children }: RowProps) {
+  return (
+    <div className="ap-row">
+      <div className="ap-row-label">
+        <span>{label}{soon && <span className="ap-soon">soon</span>}</span>
+        {hint && <span className="ap-row-hint">{hint}</span>}
+      </div>
+      <div className="ap-row-control">{children}</div>
+    </div>
+  );
+}
+
+function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <Row label={label}>
+      <span className="ap-color">
+        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} />
+        <code>{value}</code>
+      </span>
+    </Row>
+  );
+}
+
+function RangeRow({ label, min, max, step, value, suffix, soon, onChange }:
+  { label: string; min: number; max: number; step: number; value: number; suffix?: string; soon?: boolean; onChange: (v: number) => void }) {
+  return (
+    <Row label={label} soon={soon}>
+      <span className="ap-range">
+        <input type="range" min={min} max={max} step={step} value={value}
+          onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />
+        <code>{value}{suffix}</code>
+      </span>
+    </Row>
+  );
+}
+
+const DEFAULTS = {
+  primary: '#3279f9', success: '#34a853', warning: '#f5a524', error: '#ea4335',
+  glassBlur: 30, glassSaturate: 170, radiusScale: 1, shadowIntensity: 1,
+  bgColor: '#eaeefb', bgDim: 0.35, bgBlur: 0,
+};
+
+export default function AppearancePage() {
+  const [theme, setTheme] = useState<PanelTheme>(() => loadTheme());
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // mutate + apply live
+  const patch = useCallback((updater: (t: PanelTheme) => PanelTheme) => {
+    setTheme((prev) => {
+      const next = updater(structuredClone(prev));
+      applyTheme(next);
+      if (next.mode) applyThemeMode(next.mode);
+      return next;
+    });
+  }, []);
+
+  const setToken = (k: string, v: string | number) =>
+    patch((t) => ({ ...t, tokens: { ...t.tokens, [k]: v } }));
+  const setPrimary = (hex: string) =>
+    patch((t) => ({ ...t, tokens: { ...t.tokens, '--color-primary': hex, '--color-primary-rgb': hexToRgb(hex) ?? '' } }));
+  const tok = (k: string, d: number | string) => (theme.tokens?.[k] ?? d);
+  const num = (k: string, d: number) => Number(theme.tokens?.[k] ?? d);
+
+  const onSave = () => { saveTheme(theme); toast.success('Theme saved (local — backend wiring next)'); };
+  const onReset = () => { clearTheme(); setTheme({}); applyTheme({}); applyThemeMode('light'); toast.success('Reset to defaults'); };
+  const onExport = () => {
+    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'panel-theme.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+  const onImport = (file: File) => {
+    file.text().then((txt) => {
+      try { const t = JSON.parse(txt) as PanelTheme; setTheme(t); applyTheme(t); if (t.mode) applyThemeMode(t.mode); toast.success('Theme imported'); }
+      catch { toast.error('Invalid theme file'); }
+    });
+  };
+
+  const bg = theme.background ?? {};
+
+  return (
+    <div className="appearance-page">
+      <div className="ap-head">
+        <div>
+          <h1>Appearance</h1>
+          <p>Customize the look of the panel. Changes preview live; Save to keep them.</p>
+        </div>
+        <div className="ap-actions">
+          <Button onClick={onExport}>Export</Button>
+          <Button onClick={() => fileRef.current?.click()}>Import</Button>
+          <Button onClick={onReset}>Reset</Button>
+          <Button variant="primary" onClick={onSave}>Save</Button>
+          <input ref={fileRef} type="file" accept="application/json" hidden
+            onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} />
+        </div>
+      </div>
+
+      <div className="ap-grid">
+        <Card title="Mode">
+          <Row label="Color scheme" hint="Light / dark base from the design tokens">
+            <Segmented
+              value={theme.mode ?? 'light'}
+              onChange={(v) => patch((t) => ({ ...t, mode: v as ThemeMode }))}
+              options={[
+                { label: 'Light', value: 'light' },
+                { label: 'Dark', value: 'dark' },
+                { label: 'Ultra dark', value: 'ultra-dark' },
+              ]}
+            />
+          </Row>
+        </Card>
+
+        <Card title="Palette">
+          <ColorRow label="Primary" value={String(tok('--color-primary', DEFAULTS.primary))} onChange={setPrimary} />
+          <ColorRow label="Success" value={String(tok('--color-success', DEFAULTS.success))} onChange={(v) => setToken('--color-success', v)} />
+          <ColorRow label="Warning" value={String(tok('--color-warning', DEFAULTS.warning))} onChange={(v) => setToken('--color-warning', v)} />
+          <ColorRow label="Error" value={String(tok('--color-error', DEFAULTS.error))} onChange={(v) => setToken('--color-error', v)} />
+        </Card>
+
+        <Card title="Background">
+          <Row label="Type">
+            <Segmented
+              value={bg.type ?? 'aura'}
+              onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, type: v as 'aura' | 'color' | 'image' } }))}
+              options={[
+                { label: 'Aura', value: 'aura' },
+                { label: 'Solid', value: 'color' },
+                { label: 'Image', value: 'image' },
+              ]}
+            />
+          </Row>
+          {bg.type === 'color' && (
+            <ColorRow label="Page color" value={bg.color ?? DEFAULTS.bgColor}
+              onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, color: v } }))} />
+          )}
+          {bg.type === 'image' && (
+            <Row label="Image" soon hint="Upload arrives in the next phase">
+              <Button disabled>Upload image…</Button>
+            </Row>
+          )}
+          <RangeRow label="Image dim" min={0} max={1} step={0.05} value={bg.dim ?? DEFAULTS.bgDim} soon
+            onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, dim: v } }))} />
+          <RangeRow label="Image blur" min={0} max={40} step={1} value={bg.blur ? parseInt(bg.blur, 10) : DEFAULTS.bgBlur} suffix="px" soon
+            onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, blur: `${v}px` } }))} />
+        </Card>
+
+        <Card title="Glass & blur">
+          <RangeRow label="Frost blur" min={0} max={60} step={2} suffix="px"
+            value={num('--glass-blur', DEFAULTS.glassBlur)}
+            onChange={(v) => setToken('--glass-blur', `${v}px`)} />
+          <RangeRow label="Saturation" min={100} max={220} step={5} suffix="%"
+            value={num('--glass-saturate', DEFAULTS.glassSaturate)}
+            onChange={(v) => setToken('--glass-saturate', `${v}%`)} />
+        </Card>
+
+        <Card title="Shape & depth">
+          <RangeRow label="Corner radius" min={0.5} max={2} step={0.1} suffix="×"
+            value={num('--radius-scale', DEFAULTS.radiusScale)}
+            onChange={(v) => setToken('--radius-scale', v)} />
+          <RangeRow label="Shadow intensity" min={0} max={2} step={0.1} suffix="×" soon
+            value={num('--shadow-intensity', DEFAULTS.shadowIntensity)}
+            onChange={(v) => setToken('--shadow-intensity', v)} />
+        </Card>
+
+        <Card title="Typography">
+          <Row label="Sans">
+            <Select value={theme.fonts?.sans ?? FONT_OPTIONS[0].value}
+              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, sans: String(v) } }))}
+              options={FONT_OPTIONS} />
+          </Row>
+          <Row label="Display">
+            <Select value={theme.fonts?.display ?? FONT_OPTIONS[1].value}
+              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, display: String(v) } }))}
+              options={FONT_OPTIONS} />
+          </Row>
+          <Row label="Mono">
+            <Select value={theme.fonts?.mono ?? MONO_OPTIONS[0].value}
+              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, mono: String(v) } }))}
+              options={MONO_OPTIONS} />
+          </Row>
+        </Card>
+
+        <Card title="Effects">
+          <Row label="Particle field" soon hint="Density / speed controls arrive later">
+            <Switch checked={theme.tokens?.['--fx-particles'] !== 'off'}
+              onChange={(c) => setToken('--fx-particles', c ? 'on' : 'off')} />
+          </Row>
+          <Row label="Hover glow" soon>
+            <Switch checked={theme.tokens?.['--fx-hover-glow'] !== 'off'}
+              onChange={(c) => setToken('--fx-hover-glow', c ? 'on' : 'off')} />
+          </Row>
+          <Divider />
+          <p className="ap-note">Knobs tagged <span className="ap-soon">soon</span> are placeholders — their tokens
+            aren&apos;t expanded in the override core yet. They&apos;re here to map the full surface before wiring.</p>
+        </Card>
+      </div>
+    </div>
+  );
+}

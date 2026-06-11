@@ -12,8 +12,10 @@ import { ThemeProvider } from '@/hooks/useTheme';
 import { QueryProvider } from '@/api/QueryProvider';
 import { ToastViewport } from '@/components/ds';
 import { router } from '@/routes';
+import { bootstrapTheme } from '@/theme/themeStorage';
 
 setupAxios();
+bootstrapTheme();
 
 readyI18n().then(() => {
   const root = document.getElementById('app');

@@ -7,6 +7,7 @@ const IndexPage = lazy(() => import('@/pages/index/IndexPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
+const AppearancePage = lazy(() => import('@/pages/appearance/AppearancePage'));
 
 function withSuspense(node: React.ReactNode) {
   return <Suspense fallback={null}>{node}</Suspense>;
@@ -19,6 +20,7 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: withSuspense(<IndexPage />) },
       { path: 'settings', element: withSuspense(<SettingsPage />) },
+      { path: 'appearance', element: withSuspense(<AppearancePage />) },
       { path: 'xray', element: withSuspense(<XrayPage />) },
       { path: 'api-docs', element: withSuspense(<ApiDocsPage />) },
       { path: 'inbounds', element: <Navigate to="/#inbounds" replace /> },
