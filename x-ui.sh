@@ -818,34 +818,28 @@ check_install() {
 }
 
 show_status() {
+    # one airy status line: ● panel <state>   ● xray <state>   autostart <state>
+    local pstate pcol
     check_status
     case $? in
-        0)
-            echo -e "Panel state: ${green}Running${plain}"
-            show_enable_status
-            ;;
-        1)
-            echo -e "Panel state: ${yellow}Not Running${plain}"
-            show_enable_status
-            ;;
-        2)
-            echo -e "Panel state: ${red}Not Installed${plain}"
-            ;;
+        0) pstate="running";       pcol="$green"  ;;
+        1) pstate="stopped";       pcol="$yellow" ;;
+        2) pstate="not installed"; pcol="$red"    ;;
     esac
-    show_xray_status
-}
 
-show_enable_status() {
+    local xstate xcol
+    if check_xray_status; then xstate="running"; xcol="$green"; else xstate="stopped"; xcol="$red"; fi
+
+    local astate
     if [[ "${running_in_docker}" == "true" ]]; then
-        echo -e "Start automatically: ${green}Managed by Docker${plain}"
-        return
-    fi
-    check_enabled
-    if [[ $? == 0 ]]; then
-        echo -e "Start automatically: ${green}Yes${plain}"
+        astate="docker"
+    elif check_enabled; then
+        astate="on"
     else
-        echo -e "Start automatically: ${red}No${plain}"
+        astate="off"
     fi
+
+    echo -e "  ${pcol}●${plain} ${gray}panel${plain} ${pcol}${pstate}${plain}    ${xcol}●${plain} ${gray}xray${plain} ${xcol}${xstate}${plain}    ${gray}autostart${plain} ${astate}"
 }
 
 check_xray_status() {
@@ -1477,8 +1471,9 @@ show_menu() {
     local ver
     ver=$(panel_version)
     echo
-    echo -e "  ${bold}${green}3X-UI Community${plain} ${gray}— panel management${plain}"
-    [[ -n "$ver" ]] && echo -e "  ${gray}version ${ver}${plain}"
+    echo -e "  ${bold}${green}3X-UI${plain} ${bold}Community${plain}  ${gray}·  reverse-proxy panel manager${plain}"
+    echo -e "  ${gray}version ${ver:-unknown}${plain}"
+    hr
     echo
 
     echo -e "  ${gray}Lifecycle${plain}"
@@ -1508,6 +1503,7 @@ show_menu() {
     echo
     hr
     show_status
+    hr
     echo && read -rp " $(ask 'Select [0-20]:') " num
 
     case "${num}" in
