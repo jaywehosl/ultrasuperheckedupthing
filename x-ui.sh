@@ -240,6 +240,7 @@ legacy_version() {
 
     echo "Downloading and installing panel version $tag_version..."
     eval $install_command
+    before_show_menu
 }
 
 # Function to handle the deletion of the script file
@@ -445,9 +446,10 @@ check_config() {
             fi
         else
             echo -e "${yellow}Access URL: http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
-            echo -e "${yellow}For security, please configure SSL certificate using option 19 (SSL Certificate Management)${plain}"
+            echo -e "${yellow}For security, put the panel behind a reverse proxy with TLS (option 20).${plain}"
         fi
     fi
+    [[ $# == 0 ]] && before_show_menu
 }
 
 set_port() {
