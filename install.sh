@@ -1702,11 +1702,25 @@ install_x-ui() {
     echo -e "    ${blue}x-ui${plain}                    admin management menu"
     echo -e "    ${blue}x-ui start|stop|restart${plain} service control"
     echo -e "    ${blue}x-ui status|settings${plain}    status / current settings"
-    echo -e "    ${blue}x-ui log|banlog${plain}         panel logs / Fail2ban bans"
+    echo -e "    ${blue}x-ui log${plain}                panel logs"
     echo -e "    ${blue}x-ui update|uninstall${plain}   update / remove"
     echo
 }
 
+# Enable TCP BBR + fq qdisc by default (both install modes). The x-ui menu no
+# longer exposes a BBR toggle — it's on out of the box. Idempotent: writes a
+# sysctl drop-in and applies it; harmless if the kernel already runs bbr/fq.
+enable_bbr_default() {
+    local f=/etc/sysctl.d/99-xui-bbr.conf
+    grep -q '^net.ipv4.tcp_congestion_control=bbr' "$f" 2>/dev/null && return 0
+    printf 'net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n' > "$f"
+    sysctl --system > /dev/null 2>&1 || true
+    if [[ "$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)" == "bbr" ]]; then
+        echo -e "  ${green}✔${plain} BBR congestion control enabled (fq qdisc)."
+    fi
+}
+
 echo -e "${green}Running...${plain}"
 install_base
+enable_bbr_default
 install_x-ui $1
