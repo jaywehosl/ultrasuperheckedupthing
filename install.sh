@@ -6,10 +6,58 @@ blue='\033[0;34m'
 yellow='\033[0;33m'
 cyan='\033[0;36m'
 gray='\033[0;90m'
+orange='\033[38;5;208m'
 bold='\033[1m'
 plain='\033[0m'
 
 cur_dir=$(pwd)
+
+# ── Localization (shared with the x-ui CLI via /etc/x-ui/lang; en|ru) ─────────
+# choose_language() (below) sets XUI_LANG and persists it before any localized
+# output. t <key> looks up the active language with an English fallback.
+XUI_LANG="en"
+[[ -f /etc/x-ui/lang ]] && XUI_LANG="$(tr -d '[:space:]' < /etc/x-ui/lang 2>/dev/null)"
+[[ "$XUI_LANG" == "ru" ]] || XUI_LANG="en"
+declare -A T_EN T_RU
+t() { local k="$1" v=""; [[ "$XUI_LANG" == "ru" ]] && v="${T_RU[$k]}"; printf '%s' "${v:-${T_EN[$k]}}"; }
+# orange-bold prompt label (eGames style)
+askp() { echo -e "${bold}${orange}$*${plain}"; }
+
+# ── Batch 3: turnkey install flow ────────────────────────────────────────────
+T_EN[i_deps]="Installing dependencies";                  T_RU[i_deps]="Установка пакетных зависимостей"
+T_EN[i_bbr]="BBR enabled";                               T_RU[i_bbr]="BBR включен"
+T_EN[i_base]="Community Panel configured on port %s; reverse-proxy will run after start"; T_RU[i_base]="Community Panel настроена с портом %s, реверс-прокси заработает после запуска"
+T_EN[i_acme]="Installing acme.sh";                       T_RU[i_acme]="Установка acme.sh"
+T_EN[i_cert]="Issuing certificate for %s";               T_RU[i_cert]="Выпуск сертификата для %s"
+T_EN[i_cert_fail]="Certificate issue failed for %s (check if the domain's DNS A-record is correct and port 80 on your server is not occupied), aborting installation"; T_RU[i_cert_fail]="Ошибка выпуска сертификата для %s (убедитесь что DNS A-запись домена указывает на этот сервер и проверьте что порт 80 не занят на сервере), отмена установки"
+T_EN[i_nginx]="Installing Nginx + JQ";                   T_RU[i_nginx]="Установка Nginx + JQ"
+T_EN[i_startnginx]="Starting Nginx";                     T_RU[i_startnginx]="Запуск Nginx"
+T_EN[i_nginxtest]="Nginx config test failed:";           T_RU[i_nginxtest]="Ошибка при проверке конфигурации Nginx:"
+T_EN[i_hy2]="Hysteria2 preconfigured inbound added";     T_RU[i_hy2]="Добавлен преднастроенный инбаунд Hysteria2"
+T_EN[i_preconfigured]="Community Panel successfully installed"; T_RU[i_preconfigured]="Community Panel успешно установлена"
+T_EN[p_method]="Select installation method:";            T_RU[p_method]="Выберите метод установки:"
+T_EN[p_method1]="By DOMAIN — turnkey reverse proxy, clean :443 URLs, decoy site"; T_RU[p_method1]="По ДОМЕНУ — turnkey реверс-прокси, чистые :443 ссылки, сайт-заглушка"
+T_EN[p_method2]="By IP — quick, self-signed TLS, no domains needed"; T_RU[p_method2]="По IP — быстро, самоподписанный TLS, домены не нужны"
+T_EN[p_dom_panel]="Community Panel domain:";             T_RU[p_dom_panel]="Домен для доступа в Community Panel:"
+T_EN[p_dom_sub]="Subscription page domain:";             T_RU[p_dom_sub]="Домен для страницы подписок:"
+T_EN[p_dom_self]="Selfsteal/Reality domain:";            T_RU[p_dom_self]="Домен для сайта-заглушки:"
+T_EN[p_resolve]="%s resolves to %s, not server %s.";     T_RU[p_resolve]="A-запись %s привязана к айпи %s, а не к айпи сервера %s."
+T_EN[p_continue]="Continue anyway? [y/N]:";              T_RU[p_continue]="Продолжить в любом случае? [y/N]:"
+T_EN[p_uniq]="Community Panel, Subscription page and Selfsteal/Reality domains must be unique. Aborting installation"; T_RU[p_uniq]="Домены для Community Panel, страницы подписок и сайта-заглушки не должны быть одинаковыми, установка будет прервана"
+T_EN[p_email]="Enter your email for Let's Encrypt ACME.sh:"; T_RU[p_email]="Введите email-адрес для Let's Encrypt ACME.sh:"
+T_EN[p_access]="Select Community Panel access method:";   T_RU[p_access]="Выберите способ доступа к Community Panel:"
+T_EN[p_access1]="Secret webBasePath (as in 3x-ui, not recommended)"; T_RU[p_access1]="Secret webBasePath (как в 3x-ui, не рекомендуется)"
+T_EN[p_access2]="Cookie-gate secret cookie-auth link (Recommended)"; T_RU[p_access2]="Cookie-gate авторизация через Cookie в браузере (рекомендуется)"
+T_EN[p_choose]="Choose method:";                         T_RU[p_choose]="Выберите метод:"
+T_EN[s_ready]="Community Panel is ready!";               T_RU[s_ready]="Community Panel готова!"
+T_EN[s_panel]="Panel access link:";                      T_RU[s_panel]="Панель доступна по:"
+T_EN[s_sub]="Subscription Page access link:";            T_RU[s_sub]="Страница подписок доступна по:"
+T_EN[s_decoy]="Selfsteal/Reality access link:";          T_RU[s_decoy]="Сайт-заглушка доступен по:"
+T_EN[s_login]="Your login/password:";                    T_RU[s_login]="Ваш логин/пароль:"
+T_EN[s_entry]="secret cookie-gate link — save it!";      T_RU[s_entry]="секретная Cookie-gate ссылка - сохраните её!"
+T_EN[s_failed]="Reverse-proxy setup is not completed, but the panel is installed; please fix the errors above and re-run the installation script"; T_RU[s_failed]="Ошибка установки реверс-прокси, но Community Panel установлена; пожалуйста, проверьте ошибки по сообщениям выше и перезапустите установку скриптом"
+T_EN[s_running]="Community Panel %s installed and running"; T_RU[s_running]="Community Panel %s установлена и работает"
+T_EN[s_cli]="CLI manager commands are:";                 T_RU[s_cli]="Команды для работы с CLI:"
 
 # ── quiet-step UI: hide noisy command output behind one spinner line + a log ──
 XUI_INSTALL_LOG="/var/log/x-ui-install.log"
@@ -144,7 +192,7 @@ install_base() {
             cmd='apt-get update && apt-get install -y -q cron curl tar tzdata socat ca-certificates openssl'
             ;;
     esac
-    DEBIAN_FRONTEND=noninteractive run_step "Installing dependencies" bash -c "$cmd"
+    DEBIAN_FRONTEND=noninteractive run_step "$(t i_deps)" bash -c "$cmd"
 }
 
 gen_random_string() {
@@ -918,7 +966,6 @@ setup_reverse_proxy() {
     local SUB_PORT=2096 SOCK=/dev/shm/xui.sock SSLDIR=/etc/x-ui/ssl
 
     echo
-    echo -e "  ${green}═══ Reverse-proxy (domain / turnkey) setup ═══${plain}"
     local server_ip
     server_ip=$(curl -s4 --max-time 5 https://api.ipify.org)
 
@@ -927,33 +974,33 @@ setup_reverse_proxy() {
     _ask_domain() {
         local prompt="$1" __var="$2" d ip
         while :; do
-            read -rp " $(echo -e "${green}[?]${plain} ${yellow}${prompt}${plain}") " d
+            read -rp " $(askp "$prompt") " d
             d="${d// /}"; d="${d#http://}"; d="${d#https://}"; d="${d%%/*}"
             if ! is_domain "$d"; then echo -e "  ${red}Invalid domain.${plain}"; continue; fi
             ip=$(rp_resolve_ip "$d")
             if [[ -n "$server_ip" && "$ip" != "$server_ip" ]]; then
-                echo -e "  ${yellow}! ${d} resolves to ${ip:-nothing}, not ${server_ip}.${plain}"
-                read -rp "    Continue anyway? [y/N]: " yn; [[ "$yn" =~ ^[Yy]$ ]] || continue
+                echo -e "  ${yellow}!${plain} $(printf "$(t p_resolve)" "$d" "${ip:-—}" "$server_ip")"
+                read -rp "    $(askp "$(t p_continue)") " yn; [[ "$yn" =~ ^[Yy]$ ]] || continue
             fi
             printf -v "$__var" '%s' "$d"; break
         done
     }
-    _ask_domain "Укажите домен, по которому будет доступна панель управления:" PANEL_DOMAIN
-    _ask_domain "Укажите домен, по которому будет доступна страница подписок:" SUB_DOMAIN
-    _ask_domain "Укажите домен, по которому будет доступен selfsteal-шаблон для Reality:" SELFSTEAL_DOMAIN
+    _ask_domain "$(t p_dom_panel)" PANEL_DOMAIN
+    _ask_domain "$(t p_dom_sub)" SUB_DOMAIN
+    _ask_domain "$(t p_dom_self)" SELFSTEAL_DOMAIN
     if [[ "$PANEL_DOMAIN" == "$SUB_DOMAIN" || "$PANEL_DOMAIN" == "$SELFSTEAL_DOMAIN" || "$SUB_DOMAIN" == "$SELFSTEAL_DOMAIN" ]]; then
-        echo -e "  ${red}The three domains must be unique. Aborting reverse-proxy setup.${plain}"; return 1
+        echo -e "  ${red}$(t p_uniq)${plain}"; return 1
     fi
     local ACME_EMAIL
-    read -rp " $(echo -e "${green}[?]${plain} ${yellow}Email for Let's Encrypt (renewal notices):${plain}") " ACME_EMAIL
+    read -rp " $(askp "$(t p_email)") " ACME_EMAIL
     ACME_EMAIL="${ACME_EMAIL:-admin@${PANEL_DOMAIN#*.}}"
 
     # --- access style: classic webBasePath vs clean-domain cookie-gate ---
     echo
-    echo -e "  ${gray}Как защитить доступ к панели?${plain}"
-    echo -e "   ${green}1${plain}. Секретный путь (webBasePath) — привычный способ"
-    echo -e "   ${green}2${plain}. Cookie-gate — чистый домен, вход по секретной ссылке"
-    local style; read -rp " $(echo -e "${green}[?]${plain} ${yellow}Выбор [1]:${plain}") " style; style="${style:-1}"
+    echo -e "  ${bold}$(t p_access)${plain}"
+    echo -e "     ${orange} 1${plain}  $(t p_access1)"
+    echo -e "     ${orange} 2${plain}  $(t p_access2)"
+    local style; read -rp " $(askp "$(t p_choose) [1]:") " style; style="${style:-1}"
     local COOKIE_KEY="" COOKIE_VAL="" PANEL_PATH="/${RP_BP}/"
     if [[ "$style" == "2" ]]; then
         COOKIE_KEY=$(gen_random_string 12); COOKIE_VAL=$(gen_random_string 24); PANEL_PATH="/"
@@ -961,7 +1008,7 @@ setup_reverse_proxy() {
 
     # --- certificates (acme.sh, HTTP-01 standalone, ECDSA) ---
     if [[ ! -f ~/.acme.sh/acme.sh ]]; then
-        run_step "Installing acme.sh" bash -c "curl -s https://get.acme.sh | sh -s email=${ACME_EMAIL}" || return 1
+        run_step "$(t i_acme)" bash -c "curl -s https://get.acme.sh | sh -s email=${ACME_EMAIL}" || return 1
     fi
     local ACME=~/.acme.sh/acme.sh
     "$ACME" --set-default-ca --server letsencrypt > /dev/null 2>&1
@@ -970,13 +1017,13 @@ setup_reverse_proxy() {
         # acme --issue exit codes: 0 = issued, 2 = already valid (skipped) —
         # both fine; only a real failure (DNS/:80) should abort. Then always
         # (re)install the cert to our paths.
-        run_step "Issuing certificate for ${d}" bash -c \
+        run_step "$(printf "$(t i_cert)" "$d")" bash -c \
             "$ACME --issue -d '$d' --standalone --httpport 80 --keylength ec-256; rc=\$?; \
              [ \$rc -eq 0 ] || [ \$rc -eq 2 ] || exit 1; \
              mkdir -p '$SSLDIR/$d'; \
              $ACME --install-cert -d '$d' --ecc --key-file '$SSLDIR/$d/privkey.pem' \
                    --fullchain-file '$SSLDIR/$d/fullchain.pem' --reloadcmd 'systemctl reload nginx 2>/dev/null || true'" \
-            || { echo -e "  ${red}Cert failed for ${d} (DNS/:80?). Aborting.${plain}"; return 1; }
+            || { echo -e "  ${red}$(printf "$(t i_cert_fail)" "$d")${plain}"; return 1; }
     done
     # acme.sh installs a renewal cron on setup; assert it explicitly so certs
     # keep auto-renewing unattended (nginx reload via each cert's reloadcmd,
@@ -985,7 +1032,7 @@ setup_reverse_proxy() {
     "$ACME" --install-cronjob > /dev/null 2>&1 || true
 
     # --- nginx + decoy + branded error pages ---
-    run_step "Installing nginx + jq" bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx jq" || return 1
+    run_step "$(t i_nginx)" bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx jq" || return 1
     mkdir -p /etc/x-ui/errorpages "/var/www/$SELFSTEAL_DOMAIN"
     cat > /etc/x-ui/errorpages/__xui_4xx.html <<'H'
 <!doctype html><meta charset=utf-8><title>Not found</title><style>body{font:16px system-ui;background:#0b0c10;color:#cfd3dc;display:grid;place-items:center;height:100vh;margin:0}</style><div style=opacity:.6>404</div>
@@ -996,8 +1043,8 @@ H
 H
     _render_nginx "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN" "$RP_PORT" "$SUB_PORT" "$SOCK" "$SSLDIR" "$PANEL_PATH" "$COOKIE_KEY" "$COOKIE_VAL"
     rm -f /etc/nginx/sites-enabled/default
-    if ! nginx -t > /tmp/nginxt.log 2>&1; then echo -e "  ${red}nginx config test failed:${plain}"; tail -3 /tmp/nginxt.log; return 1; fi
-    run_step "Starting nginx" systemctl restart nginx || return 1
+    if ! nginx -t > /tmp/nginxt.log 2>&1; then echo -e "  ${red}$(t i_nginxtest)${plain}"; tail -3 /tmp/nginxt.log; return 1; fi
+    run_step "$(t i_startnginx)" systemctl restart nginx || return 1
 
     # --- panel API preconfig (validated sequence) ---
     _rp_preconfig "$RP_USER" "$RP_PASS" "$RP_PORT" "$RP_BP" "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN" "$SUB_PORT" "$SOCK" "$PANEL_PATH" || return 1
@@ -1015,18 +1062,17 @@ MARK
 
     # --- summary ---
     echo
-    echo -e "${green}═══════════════════════════════════════════${plain}"
-    echo -e "${green}   Reverse proxy ready — single port 443   ${plain}"
-    echo -e "${green}═══════════════════════════════════════════${plain}"
+    echo -e "  ${bold}${green}$(t s_ready)${plain}"
+    echo
     if [[ "$style" == "2" ]]; then
-        echo -e "${green}Panel:   https://${PANEL_DOMAIN}/?${COOKIE_KEY}=${COOKIE_VAL}${plain}  ${yellow}(entry link — save it!)${plain}"
+        echo -e "  ${gray}$(t s_panel)${plain} ${green}https://${PANEL_DOMAIN}/?${COOKIE_KEY}=${COOKIE_VAL}${plain}  ${yellow}($(t s_entry))${plain}"
     else
-        echo -e "${green}Panel:   https://${PANEL_DOMAIN}/${RP_BP}/${plain}"
+        echo -e "  ${gray}$(t s_panel)${plain} ${green}https://${PANEL_DOMAIN}/${RP_BP}/${plain}"
     fi
-    echo -e "${green}Sub:     https://${SUB_DOMAIN}/<subId>${plain}"
-    echo -e "${green}Decoy:   https://${SELFSTEAL_DOMAIN}/${plain}"
-    echo -e "${green}Login:   ${RP_USER} / ${RP_PASS}${plain}"
-    echo -e "${green}═══════════════════════════════════════════${plain}"
+    echo -e "  ${gray}$(t s_sub)${plain} ${green}https://${SUB_DOMAIN}/<subId>${plain}"
+    echo -e "  ${gray}$(t s_decoy)${plain} ${green}https://${SELFSTEAL_DOMAIN}/${plain}"
+    echo -e "  ${gray}$(t s_login)${plain} ${green}${RP_USER} / ${RP_PASS}${plain}"
+    echo
 }
 
 # render /etc/nginx/conf.d/xui.conf
@@ -1185,7 +1231,7 @@ _rp_preconfig() {
         finalmask:{quicParams:{congestion:"force-brutal",brutalUp:"650000000",brutalDown:"850000000",initStreamReceiveWindow:8388608,maxStreamReceiveWindow:8388608,initConnectionReceiveWindow:20971520,maxConnectionReceiveWindow:20971520,keepAlivePeriod:5,maxIncomingStreams:1024}}},
       sniffing:{enabled:true,destOverride:["http","tls","quic"]}}')
     if [[ "$(api "$BASE/panel/api/inbounds/add" -d "$HY"|jq -r '.success')" == "true" ]]; then
-        echo -e "  ${green}✔${plain} Hysteria2 (UDP/27015) added"
+        echo -e "  ${green}✔${plain} $(t i_hy2)"
     else
         echo -e "  ${yellow}! Hysteria2 inbound add failed (Reality still works); add it manually if needed.${plain}"
     fi
@@ -1193,7 +1239,7 @@ _rp_preconfig() {
     api "$BASE/panel/api/server/restartXrayService" -X POST > /dev/null
     api "$BASE/panel/setting/restartPanel" -X POST > /dev/null
     rm -f "$JAR"
-    echo -e "  ${green}✔${plain} Panel preconfigured (domains + Reality + Hysteria2)"
+    echo -e "  ${green}✔${plain} $(t i_preconfigured)"
     return 0
 }
 
@@ -1201,12 +1247,12 @@ config_after_install() {
     # ── Install mode (asked up front; independent of the fragile settings
     #    parsing below) ──────────────────────────────────────────────────────
     echo ""
-    echo -e "${green}═══════════════════════════════════════════${plain}"
-    echo -e "${green}     Access mode                           ${plain}"
-    echo -e "${green}═══════════════════════════════════════════${plain}"
-    echo -e "  1) By DOMAIN  — turnkey reverse proxy, clean :443 URLs, decoy site"
-    echo -e "  2) By IP      — quick, self-signed TLS, no domains needed"
-    read -rp "Choose [2]: " RP_INSTALL_MODE
+    echo -e "  ${bold}$(t p_method)${plain}"
+    echo
+    echo -e "     ${orange} 1${plain}  $(t p_method1)"
+    echo -e "     ${orange} 2${plain}  $(t p_method2)"
+    echo
+    read -rp " $(askp "$(t p_choose) [2]:") " RP_INSTALL_MODE
     [[ "$RP_INSTALL_MODE" == "1" ]] && RP_INSTALL_MODE="A" || RP_INSTALL_MODE="B"
 
     if [[ "$RP_INSTALL_MODE" == "A" ]]; then
@@ -1222,7 +1268,7 @@ config_after_install() {
         RP_BP=$(gen_random_string 18); RP_PORT=2053
         ${xui_folder}/x-ui setting -username "${RP_U}" -password "${RP_P}" -port "${RP_PORT}" -webBasePath "${RP_BP}" > /dev/null 2>&1
         ${xui_folder}/x-ui migrate
-        echo -e "  ${green}✔${plain} Base panel configured (port ${RP_PORT}); reverse proxy runs after start."
+        echo -e "  ${green}✔${plain} $(printf "$(t i_base)" "${RP_PORT}")"
         return 0
     fi
 
@@ -1693,12 +1739,12 @@ install_x-ui() {
             sleep 0.5
         done
         setup_reverse_proxy "$RP_U" "$RP_P" "$RP_PORT" "$RP_BP" \
-            || echo -e "${red}Reverse-proxy setup did not complete. The panel is installed; fix the above and re-run, or use it on its IP.${plain}"
+            || echo -e "${red}$(t s_failed)${plain}"
     fi
 
-    echo -e "${green}✔ x-ui ${tag_version}${plain} installed and running."
+    echo -e "${green}✔ $(printf "$(t s_running)" "${tag_version}")${plain}"
     echo
-    echo -e "  ${gray}Manage it any time with the ${bold}x-ui${plain}${gray} command:${plain}"
+    echo -e "  ${gray}$(t s_cli)${plain}"
     echo -e "    ${blue}x-ui${plain}                    admin management menu"
     echo -e "    ${blue}x-ui start|stop|restart${plain} service control"
     echo -e "    ${blue}x-ui status|settings${plain}    status / current settings"
@@ -1716,7 +1762,7 @@ enable_bbr_default() {
     printf 'net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n' > "$f"
     sysctl --system > /dev/null 2>&1 || true
     if [[ "$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)" == "bbr" ]]; then
-        echo -e "  ${green}✔${plain} BBR congestion control enabled (fq qdisc)."
+        echo -e "  ${green}✔${plain} $(t i_bbr)"
     fi
 }
 
