@@ -1720,7 +1720,28 @@ enable_bbr_default() {
     fi
 }
 
+# Ask the interface language ONCE and persist it to /etc/x-ui/lang (en|ru). Both
+# this installer and the x-ui CLI read that flag, so the chosen language sticks.
+# Reuses an existing choice on reinstall; defaults to English when non-interactive.
+choose_language() {
+    local existing=""
+    [[ -f /etc/x-ui/lang ]] && existing="$(tr -d '[:space:]' < /etc/x-ui/lang 2>/dev/null)"
+    if [[ "$existing" == "en" || "$existing" == "ru" ]]; then
+        XUI_LANG="$existing"; return
+    fi
+    local c=""
+    echo
+    echo -e "  ${green}Select language / Выберите язык:${plain}"
+    echo -e "    ${green}1${plain}) English"
+    echo -e "    ${green}2${plain}) Русский"
+    [[ -t 0 ]] && read -rp "  [1-2] (default 1): " c
+    case "$c" in 2) XUI_LANG="ru" ;; *) XUI_LANG="en" ;; esac
+    mkdir -p /etc/x-ui
+    echo "$XUI_LANG" > /etc/x-ui/lang
+}
+
 echo -e "${green}Running...${plain}"
+choose_language
 install_base
 enable_bbr_default
 install_x-ui $1

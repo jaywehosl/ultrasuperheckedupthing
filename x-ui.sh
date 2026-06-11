@@ -10,6 +10,66 @@ orange='\033[38;5;208m'
 bold='\033[1m'
 plain='\033[0m'
 
+# ============================================================================
+#  Localization — language is chosen once at install time and written to
+#  /etc/x-ui/lang (en|ru); both install.sh and this CLI read it. t <key> looks
+#  up the active language and falls back to English. Strings filled batch by
+#  batch; any key not yet translated renders its English value.
+# ============================================================================
+XUI_LANG_FILE="/etc/x-ui/lang"
+XUI_LANG="en"
+if [[ -f "$XUI_LANG_FILE" ]]; then
+    XUI_LANG="$(tr -d '[:space:]' < "$XUI_LANG_FILE" 2>/dev/null)"
+fi
+[[ "$XUI_LANG" == "ru" ]] || XUI_LANG="en"
+
+declare -A T_EN T_RU
+
+t() {
+    local k="$1" v=""
+    [[ "$XUI_LANG" == "ru" ]] && v="${T_RU[$k]}"
+    printf '%s' "${v:-${T_EN[$k]}}"
+}
+
+# ── Batch 1: main menu (header, groups, items, status, prompts) ──────────────
+T_EN[s_select]="Select an option:";              T_RU[s_select]="Выберите пункт:"
+T_EN[s_version]="Version";                       T_RU[s_version]="Версия"
+T_EN[s_pause]="Press enter to continue…";        T_RU[s_pause]="Нажмите enter для продолжения…"
+T_EN[st_panel]="Frontend";                       T_RU[st_panel]="Фронтенд"
+T_EN[st_xray]="Backend";                         T_RU[st_xray]="Бэкенд"
+T_EN[st_autostart]="Autostart";                  T_RU[st_autostart]="Автозапуск"
+T_EN[st_running]="running";                      T_RU[st_running]="работает"
+T_EN[st_stopped]="stopped";                      T_RU[st_stopped]="не работает"
+T_EN[st_notinstalled]="not installed";           T_RU[st_notinstalled]="не установлено"
+T_EN[st_enabled]="enabled";                      T_RU[st_enabled]="включен"
+T_EN[st_disabled]="disabled";                    T_RU[st_disabled]="выключен"
+T_EN[g1]="Install/update/delete";                T_RU[g1]="Установка/обновление/удаление"
+T_EN[g2]="Frontend management";                  T_RU[g2]="Фронтенд менеджмент"
+T_EN[g3]="Backend management";                   T_RU[g3]="Бэкенд менеджмент"
+T_EN[g4]="Database management";                  T_RU[g4]="БД менеджмент"
+T_EN[g5]="Reverse-proxy Nginx management";       T_RU[g5]="Реверс-прокси/Nginx менеджмент"
+T_EN[m1]="Install panel";                        T_RU[m1]="Установка панели"
+T_EN[m2]="Update panel";                         T_RU[m2]="Обновление панели"
+T_EN[m3]="Update CLI";                           T_RU[m3]="Обновление CLI"
+T_EN[m4]="Legacy build install";                 T_RU[m4]="Установить предыдущие версии"
+T_EN[m5]="Uninstall panel";                      T_RU[m5]="Удалить панель"
+T_EN[m6]="Reset login/password";                 T_RU[m6]="Сброс логина/пароля"
+T_EN[m7]="Reset panel path";                     T_RU[m7]="Сбросить путь панели"
+T_EN[m8]="Reset panel settings";                 T_RU[m8]="Сбросить настройки панели"
+T_EN[m9]="Change panel port";                    T_RU[m9]="Изменить порт панели"
+T_EN[m10]="View current access settings";        T_RU[m10]="Показать текущие данные доступа"
+T_EN[m11]="Service start";                       T_RU[m11]="Запуск сервисов"
+T_EN[m12]="Service stop";                        T_RU[m12]="Остановка сервисов"
+T_EN[m13]="Service restart";                     T_RU[m13]="Перезапуск сервисов"
+T_EN[m14]="Restart backend";                     T_RU[m14]="Перезапуск бэкенда"
+T_EN[m15]="Service status";                      T_RU[m15]="Статус сервисов"
+T_EN[m16]="Service logs";                        T_RU[m16]="Логи сервисов"
+T_EN[m17]="Enable service autostart";            T_RU[m17]="Включить автозапуск сервисов"
+T_EN[m18]="Disable service autostart";           T_RU[m18]="Отключить автозапуск сервисов"
+T_EN[m19]="PostgreSQL Database";                 T_RU[m19]="PostgreSQL БД"
+T_EN[m20]="Reverse-proxy Nginx settings";        T_RU[m20]="Настройки реверс-прокси/Nginx"
+T_EN[m0]="Exit";                                 T_RU[m0]="Выход"
+
 #Add some basic function here
 function LOGD() {
     echo -e "${yellow}[DEG] $* ${plain}"
@@ -173,7 +233,7 @@ before_show_menu() {
     # Pause so the user can read an action's output, then return to the caller.
     # The menu is a redraw loop (show_menu), so returning is all that's needed —
     # NOT a recursive show_menu call (that stacked frames and ballooned output).
-    echo && echo -n -e "${gray}Press enter to return to the menu…${plain}" && read -r _
+    echo && echo -n -e "${gray}$(t s_pause)${plain}" && read -r _
 }
 
 install() {
@@ -827,24 +887,24 @@ show_status() {
     local pstate pcol
     check_status
     case $? in
-        0) pstate="running";       pcol="$green"  ;;
-        1) pstate="stopped";       pcol="$yellow" ;;
-        2) pstate="not installed"; pcol="$red"    ;;
+        0) pstate="$(t st_running)";      pcol="$green"  ;;
+        1) pstate="$(t st_stopped)";      pcol="$yellow" ;;
+        2) pstate="$(t st_notinstalled)"; pcol="$red"    ;;
     esac
 
     local xstate xcol
-    if check_xray_status; then xstate="running"; xcol="$green"; else xstate="stopped"; xcol="$red"; fi
+    if check_xray_status; then xstate="$(t st_running)"; xcol="$green"; else xstate="$(t st_stopped)"; xcol="$red"; fi
 
-    local astate
+    local astate acol
     if [[ "${running_in_docker}" == "true" ]]; then
-        astate="docker"
+        astate="docker"; acol="$gray"
     elif check_enabled; then
-        astate="on"
+        astate="$(t st_enabled)"; acol="$green"
     else
-        astate="off"
+        astate="$(t st_disabled)"; acol="$red"
     fi
 
-    echo -e "  ${pcol}●${plain} ${gray}panel${plain} ${pcol}${pstate}${plain}    ${xcol}●${plain} ${gray}xray${plain} ${xcol}${xstate}${plain}    ${gray}autostart${plain} ${astate}"
+    echo -e "  ${pcol}●${plain} ${gray}$(t st_panel)${plain} ${pcol}${pstate}${plain}    ${xcol}●${plain} ${gray}$(t st_xray)${plain} ${xcol}${xstate}${plain}    ${gray}$(t st_autostart)${plain} ${acol}${astate}${plain}"
 }
 
 check_xray_status() {
@@ -1459,39 +1519,50 @@ show_menu() {
     clear
     local ver; ver=$(panel_version)
     echo
-    echo -e "  ${bold}${orange}3X-UI${plain} ${bold}Community${plain}   ${gray}reverse-proxy panel manager${plain}"
-    echo -e "  ${gray}version ${ver:-unknown}${plain}"
+    echo -e "  ${bold}${orange}Community Panel${plain} ${gray}· CLI${plain}"
+    echo -e "  ${gray}$(t s_version) ${ver:-unknown}${plain}"
     echo
 
-    echo -e "  ${bold}Lifecycle${plain}"
-    echo -e "    ${orange} 1${plain}  Install         ${orange} 2${plain}  Update          ${orange} 3${plain}  Update menu"
-    echo -e "    ${orange} 4${plain}  Legacy version  ${orange} 5${plain}  Uninstall"
+    echo -e "  ${bold}$(t g1)${plain}"
+    echo -e "     ${orange} 1${plain}  $(t m1)"
+    echo -e "     ${orange} 2${plain}  $(t m2)"
+    echo -e "     ${orange} 3${plain}  $(t m3)"
+    echo -e "     ${orange} 4${plain}  $(t m4)"
+    echo -e "     ${orange} 5${plain}  $(t m5)"
     echo
 
-    echo -e "  ${bold}Identity & access${plain}"
-    echo -e "    ${orange} 6${plain}  Reset login     ${orange} 7${plain}  Reset base path  ${orange} 8${plain}  Reset settings"
-    echo -e "    ${orange} 9${plain}  Change port     ${orange}10${plain}  View settings"
+    echo -e "  ${bold}$(t g2)${plain}"
+    echo -e "     ${orange} 6${plain}  $(t m6)"
+    echo -e "     ${orange} 7${plain}  $(t m7)"
+    echo -e "     ${orange} 8${plain}  $(t m8)"
+    echo -e "     ${orange} 9${plain}  $(t m9)"
+    echo -e "     ${orange}10${plain}  $(t m10)"
     echo
 
-    echo -e "  ${bold}Service${plain}"
-    echo -e "    ${orange}11${plain}  Start           ${orange}12${plain}  Stop            ${orange}13${plain}  Restart"
-    echo -e "    ${orange}14${plain}  Restart Xray    ${orange}15${plain}  Status          ${orange}16${plain}  Logs"
-    echo -e "    ${orange}17${plain}  Enable on boot  ${orange}18${plain}  Disable on boot"
+    echo -e "  ${bold}$(t g3)${plain}"
+    echo -e "     ${orange}11${plain}  $(t m11)"
+    echo -e "     ${orange}12${plain}  $(t m12)"
+    echo -e "     ${orange}13${plain}  $(t m13)"
+    echo -e "     ${orange}14${plain}  $(t m14)"
+    echo -e "     ${orange}15${plain}  $(t m15)"
+    echo -e "     ${orange}16${plain}  $(t m16)"
+    echo -e "     ${orange}17${plain}  $(t m17)"
+    echo -e "     ${orange}18${plain}  $(t m18)"
     echo
 
-    echo -e "  ${bold}Database${plain}"
-    echo -e "    ${orange}19${plain}  PostgreSQL"
+    echo -e "  ${bold}$(t g4)${plain}"
+    echo -e "     ${orange}19${plain}  $(t m19)"
     echo
 
-    echo -e "  ${bold}Reverse proxy${plain}"
-    echo -e "    ${orange}20${plain}  Manage   ${gray}status / renew / remove${plain}"
+    echo -e "  ${bold}$(t g5)${plain}"
+    echo -e "     ${orange}20${plain}  $(t m20)"
     echo
 
-    echo -e "    ${orange} 0${plain}  Exit"
+    echo -e "     ${orange} 0${plain}  $(t m0)"
     echo
     show_status
     echo
-    read -rp " $(ask 'Select an option [0-20]:') " num
+    read -rp " $(ask "$(t s_select)") " num
 
     case "${num}" in
         0)
