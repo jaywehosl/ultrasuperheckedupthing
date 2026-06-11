@@ -3,22 +3,18 @@ import { Button, Dialog } from '@/components/ds';
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
+import { useBusyOverlay, BOOT_BUSY_KEY } from '@/layouts/busy-overlay-context';
 import './BackupModal.css';
-
-interface BusyEvent {
-  busy: boolean;
-  tip?: string;
-}
 
 interface BackupModalProps {
   open: boolean;
   basePath: string;
   onClose: () => void;
-  onBusy: (e: BusyEvent) => void;
 }
 
-export default function BackupModal({ open, basePath: _basePath, onClose, onBusy }: BackupModalProps) {
+export default function BackupModal({ open, basePath: _basePath, onClose }: BackupModalProps) {
   const { t } = useTranslation();
+  const busyOverlay = useBusyOverlay();
   const isPostgres = window.X_UI_DB_TYPE === 'postgres';
 
   function exportDb() {
@@ -41,23 +37,34 @@ export default function BackupModal({ open, basePath: _basePath, onClose, onBusy
       formData.append('db', dbFile);
 
       onClose();
-      onBusy({ busy: true, tip: `${t('pages.index.importDatabase')}…` });
+      // Same frosted full-screen takeover the settings restart uses — not the
+      // plain inline spinner — so restore feels consistent and deliberate.
+      busyOverlay.show({ title: `${t('pages.index.importDatabase')}…` });
 
       const upload = await HttpUtil.post('/panel/api/server/importDB', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       if (!upload?.success) {
-        onBusy({ busy: false });
+        busyOverlay.hide();
         return;
       }
 
-      onBusy({ busy: true, tip: `${t('pages.settings.restartPanel')}…` });
+      // Apply the imported DB via a real panel restart. Persist the overlay
+      // across the reload so the frost stays up while the app re-boots.
+      const overlay = {
+        title: t('pages.settings.restartingTitle'),
+        subtitle: t('pages.settings.restartingDesc'),
+      };
+      busyOverlay.show(overlay);
+      try { localStorage.setItem(BOOT_BUSY_KEY, JSON.stringify(overlay)); } catch { /* ignore */ }
+
       const restart = await HttpUtil.post('/panel/setting/restartPanel');
       if (restart?.success) {
         await PromiseUtil.sleep(5000);
         window.location.reload();
       } else {
-        onBusy({ busy: false });
+        try { localStorage.removeItem(BOOT_BUSY_KEY); } catch { /* ignore */ }
+        busyOverlay.hide();
       }
     });
     fileInput.click();

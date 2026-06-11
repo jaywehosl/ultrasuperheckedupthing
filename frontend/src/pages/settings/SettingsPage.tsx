@@ -69,7 +69,7 @@ export default function SettingsPage() {
 
   const categoryBody = useMemo(() => {
     switch (activeSlug) {
-      case 'security': return <SecurityTab allSetting={allSetting} updateSetting={updateSetting} />;
+      case 'security': return <SecurityTab allSetting={allSetting} />;
       case 'telegram': return <TelegramTab allSetting={allSetting} updateSetting={updateSetting} />;
       case 'subscription': return <SubscriptionGeneralTab allSetting={allSetting} updateSetting={updateSetting} />;
       case 'subscription-formats': return <SubscriptionFormatsTab allSetting={allSetting} updateSetting={updateSetting} />;

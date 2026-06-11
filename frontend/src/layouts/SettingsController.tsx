@@ -59,6 +59,7 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
     allSetting,
     originalSetting,
     updateSetting,
+    commitSetting,
     fetched,
     spinning,
     setSpinning,
@@ -207,6 +208,7 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
     allSetting,
     originalSetting,
     updateSetting,
+    commitSetting,
     fetched,
     spinning,
     setSpinning,
@@ -216,7 +218,7 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
     requestSave,
     requestRestart,
   }), [
-    allSetting, originalSetting, updateSetting, fetched, spinning, setSpinning,
+    allSetting, originalSetting, updateSetting, commitSetting, fetched, spinning, setSpinning,
     saveDisabled, restartNeeded, requestSave, requestRestart,
   ]);
 

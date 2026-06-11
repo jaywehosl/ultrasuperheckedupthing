@@ -191,7 +191,7 @@ export default function MetricsPanel() {
         <LogModal open={logsOpen} onClose={() => setLogsOpen(false)} />
       </LazyMount>
       <LazyMount when={backupOpen}>
-        <BackupModal open={backupOpen} basePath={basePath} onClose={() => setBackupOpen(false)} onBusy={setBusy} />
+        <BackupModal open={backupOpen} basePath={basePath} onClose={() => setBackupOpen(false)} />
       </LazyMount>
       <LazyMount when={sysHistoryOpen}>
         <SystemHistoryModal open={sysHistoryOpen} status={status} onClose={() => setSysHistoryOpen(false)} />

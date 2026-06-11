@@ -55,12 +55,26 @@ export function useAllSettings() {
   });
 
   const saveAll = useCallback(() => saveMut.mutateAsync(draft), [saveMut, draft]);
+
+  // Persist a patch IMMEDIATELY (merge into the draft, then POST that exact
+  // merged value — not the async-stale draft state). Used by discrete security
+  // actions like the 2FA toggle, which must take effect on confirm rather than
+  // wait for the page-level Save (otherwise the user enables 2FA, sees success,
+  // restarts, and nothing is persisted).
+  const commitSetting = useCallback(async (patch: Partial<AllSetting>): Promise<Msg<unknown>> => {
+    const next = new AllSetting(draft);
+    Object.assign(next, patch);
+    setDraft(next);
+    return saveMut.mutateAsync(next);
+  }, [draft, saveMut]);
+
   const saveDisabled = useMemo(() => server.equals(draft), [server, draft]);
 
   return {
     allSetting: draft,
     originalSetting: server,
     updateSetting,
+    commitSetting,
     fetched: query.data !== undefined,
     spinning: extraSpinning || saveMut.isPending,
     setSpinning: setExtraSpinning,

@@ -5,6 +5,8 @@ export interface SettingsControllerValue {
   allSetting: AllSetting;
   originalSetting: AllSetting;
   updateSetting: (patch: Partial<AllSetting>) => void;
+  /** persist a patch immediately (merge + POST), for discrete actions like 2FA */
+  commitSetting: (patch: Partial<AllSetting>) => Promise<{ success?: boolean; msg?: string } | undefined>;
   fetched: boolean;
   spinning: boolean;
   setSpinning: (v: boolean) => void;

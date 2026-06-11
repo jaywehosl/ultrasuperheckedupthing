@@ -7,6 +7,7 @@ import { getMessage } from '@/utils/messageBus';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem, Spin } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useSettingsController } from '@/layouts/settings-controller-context';
 import { catTabLabel } from './catTabLabel';
 import TwoFactorModal from './TwoFactorModal';
 import './SecurityTab.css';
@@ -26,7 +27,6 @@ interface ApiTokenRow {
 
 interface SecurityTabProps {
   allSetting: AllSetting;
-  updateSetting: (patch: Partial<AllSetting>) => void;
 }
 
 type TfaType = 'set' | 'confirm';
@@ -42,9 +42,10 @@ interface TfaState {
 
 const TFA_INITIAL: TfaState = { open: false, title: '', description: '', token: '', type: 'set', onConfirm: () => {} };
 
-export default function SecurityTab({ allSetting, updateSetting }: SecurityTabProps) {
+export default function SecurityTab({ allSetting }: SecurityTabProps) {
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
+  const { commitSetting } = useSettingsController();
   const message = getMessage();
 
   const [tfa, setTfa] = useState<TfaState>(TFA_INITIAL);
@@ -163,13 +164,14 @@ export default function SecurityTab({ allSetting, updateSetting }: SecurityTabPr
         description: '',
         token: newToken,
         type: 'set',
-        onConfirm: (ok: boolean) => {
-          if (ok) {
-            message.success(t('pages.settings.security.twoFactorModalSetSuccess'));
-            updateSetting({ twoFactorToken: newToken, twoFactorEnable: true });
-          } else {
-            updateSetting({ twoFactorEnable: false });
-          }
+        // Persist immediately: 2FA must take effect on confirm (login reads the
+        // flag from the DB on the next attempt — no panel restart needed). If we
+        // only staged it, the user would enable 2FA, see "success", restart, and
+        // find nothing changed because the page-level Save was never clicked.
+        onConfirm: async (ok: boolean) => {
+          if (!ok) return;
+          const res = await commitSetting({ twoFactorToken: newToken, twoFactorEnable: true });
+          if (res?.success) message.success(t('pages.settings.security.twoFactorModalSetSuccess'));
         },
       });
     } else {
@@ -178,10 +180,10 @@ export default function SecurityTab({ allSetting, updateSetting }: SecurityTabPr
         description: t('pages.settings.security.twoFactorModalRemoveStep'),
         token: allSetting.twoFactorToken,
         type: 'confirm',
-        onConfirm: (ok: boolean) => {
+        onConfirm: async (ok: boolean) => {
           if (!ok) return;
-          message.success(t('pages.settings.security.twoFactorModalDeleteSuccess'));
-          updateSetting({ twoFactorEnable: false, twoFactorToken: '' });
+          const res = await commitSetting({ twoFactorEnable: false, twoFactorToken: '' });
+          if (res?.success) message.success(t('pages.settings.security.twoFactorModalDeleteSuccess'));
         },
       });
     }
