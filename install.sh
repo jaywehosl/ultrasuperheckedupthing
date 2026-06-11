@@ -978,6 +978,11 @@ setup_reverse_proxy() {
                    --fullchain-file '$SSLDIR/$d/fullchain.pem' --reloadcmd 'systemctl reload nginx 2>/dev/null || true'" \
             || { echo -e "  ${red}Cert failed for ${d} (DNS/:80?). Aborting.${plain}"; return 1; }
     done
+    # acme.sh installs a renewal cron on setup; assert it explicitly so certs
+    # keep auto-renewing unattended (nginx reload via each cert's reloadcmd,
+    # hysteria re-reads its cert from disk — oneTimeLoading:false). x-ui's
+    # ensure_cert_cron re-verifies this policy on every interactive launch.
+    "$ACME" --install-cronjob > /dev/null 2>&1 || true
 
     # --- nginx + decoy + branded error pages ---
     run_step "Installing nginx + jq" bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y -q nginx jq" || return 1
@@ -996,6 +1001,17 @@ H
 
     # --- panel API preconfig (validated sequence) ---
     _rp_preconfig "$RP_USER" "$RP_PASS" "$RP_PORT" "$RP_BP" "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN" "$SUB_PORT" "$SOCK" "$PANEL_PATH" || return 1
+
+    # Marker for x-ui's cert-cron self-check (ensure_cert_cron). Records the
+    # turnkey domains + ssl dir so the CLI can detect an absent/altered renewal
+    # policy and repair it (reinstall the acme cron + re-assert the per-domain
+    # nginx reloadcmd). Plain KEY=VALUE, safe to `source`.
+    cat > /etc/x-ui/reverse-proxy.conf <<MARK
+PANEL_DOMAIN=$PANEL_DOMAIN
+SUB_DOMAIN=$SUB_DOMAIN
+SELFSTEAL_DOMAIN=$SELFSTEAL_DOMAIN
+SSLDIR=$SSLDIR
+MARK
 
     # --- summary ---
     echo

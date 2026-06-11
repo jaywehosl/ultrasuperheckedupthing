@@ -3140,6 +3140,58 @@ show_menu() {
     esac
 }
 
+# ── TLS cert renewal policy self-check (turnkey reverse-proxy boxes) ──────────
+# The turnkey install pins well-known values (port 2053, clean paths) and relies
+# on acme.sh's cron to auto-renew the LE certs unattended. If that cron rule (or
+# a domain's nginx reloadcmd) goes missing or is altered, certs silently expire.
+# On every INTERACTIVE launch we verify the policy and offer a one-key repair.
+# Skipped entirely on service calls (x-ui start/stop/…) and non-TTY sessions.
+RP_MARKER="/etc/x-ui/reverse-proxy.conf"
+ensure_cert_cron() {
+    [[ -f "$RP_MARKER" ]] || return 0        # not a turnkey reverse-proxy box
+    [[ -t 0 && -t 1 ]] || return 0           # only nag a real terminal
+    local acme="${HOME}/.acme.sh/acme.sh"
+    [[ -f "$acme" ]] || return 0             # no acme.sh → nothing to schedule
+
+    local PANEL_DOMAIN="" SUB_DOMAIN="" SELFSTEAL_DOMAIN="" SSLDIR="/etc/x-ui/ssl"
+    source "$RP_MARKER" 2> /dev/null
+
+    # 1) acme cron present?  2) every turnkey domain still has a reloadcmd?
+    local cron_ok=1 reload_ok=1 d conf
+    crontab -l 2> /dev/null | grep -q 'acme.sh --cron' || cron_ok=0
+    for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
+        [[ -n "$d" ]] || continue
+        conf="${HOME}/.acme.sh/${d}_ecc/${d}.conf"
+        [[ -f "$conf" ]] && grep -q "Le_ReloadCmd=" "$conf" || reload_ok=0
+    done
+    [[ "$cron_ok" == 1 && "$reload_ok" == 1 ]] && return 0   # policy intact
+
+    echo
+    if [[ "$cron_ok" == 0 ]]; then
+        msg_warn "Политика автообновления TLS-сертификатов не найдена (cron acme.sh отсутствует)."
+    else
+        msg_warn "Политика автообновления TLS-сертификатов изменена (потерян reloadcmd для домена)."
+    fi
+    echo -e "  ${gray}Без неё сертификаты перестанут продлеваться и истекут (~90 дней).${plain}"
+    local yn; read -rp " $(ask 'Исправить и восстановить правила обновления? [Y/n]:') " yn
+    [[ "$yn" =~ ^[Nn]$ ]] && { msg_warn "Пропущено — сертификаты не будут автопродлеваться."; return 0; }
+
+    "$acme" --install-cronjob > /dev/null 2>&1 || true
+    for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
+        [[ -n "$d" && -d "${SSLDIR}/${d}" ]] || continue
+        "$acme" --install-cert -d "$d" --ecc \
+            --key-file "${SSLDIR}/${d}/privkey.pem" \
+            --fullchain-file "${SSLDIR}/${d}/fullchain.pem" \
+            --reloadcmd "systemctl reload nginx 2>/dev/null || true" > /dev/null 2>&1 || true
+    done
+
+    if crontab -l 2> /dev/null | grep -q 'acme.sh --cron'; then
+        msg_ok "Автообновление сертификатов восстановлено (cron acme.sh + reloadcmd nginx)."
+    else
+        msg_err "Не удалось установить cron acme.sh — проверьте, запущен ли cron-демон (systemctl status cron)."
+    fi
+}
+
 if [[ $# > 0 ]]; then
     case $1 in
         "start")
@@ -3193,5 +3245,6 @@ if [[ $# > 0 ]]; then
         *) show_usage ;;
     esac
 else
+    ensure_cert_cron
     show_menu
 fi
