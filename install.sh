@@ -1000,7 +1000,7 @@ setup_reverse_proxy() {
     echo -e "  ${bold}$(t p_access)${plain}"
     echo -e "     ${orange} 1${plain}  $(t p_access1)"
     echo -e "     ${orange} 2${plain}  $(t p_access2)"
-    local style; read -rp " $(askp "$(t p_choose) [1]:") " style; style="${style:-1}"
+    local style; read -rp " $(askp "$(t p_choose)") " style; style="${style:-1}"
     local COOKIE_KEY="" COOKIE_VAL="" PANEL_PATH="/${RP_BP}/"
     if [[ "$style" == "2" ]]; then
         COOKIE_KEY=$(gen_random_string 12); COOKIE_VAL=$(gen_random_string 24); PANEL_PATH="/"
@@ -1252,7 +1252,7 @@ config_after_install() {
     echo -e "     ${orange} 1${plain}  $(t p_method1)"
     echo -e "     ${orange} 2${plain}  $(t p_method2)"
     echo
-    read -rp " $(askp "$(t p_choose) [2]:") " RP_INSTALL_MODE
+    read -rp " $(askp "$(t p_choose)") " RP_INSTALL_MODE
     [[ "$RP_INSTALL_MODE" == "1" ]] && RP_INSTALL_MODE="A" || RP_INSTALL_MODE="B"
 
     if [[ "$RP_INSTALL_MODE" == "A" ]]; then
