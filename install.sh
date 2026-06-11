@@ -1731,9 +1731,9 @@ choose_language() {
     fi
     local c=""
     echo
-    echo -e "  ${green}Select language / Выберите язык:${plain}"
-    echo -e "    ${green}1${plain}) English"
-    echo -e "    ${green}2${plain}) Русский"
+    echo -e "  ${green}Select CLI locale / Выберите язык CLI:${plain}"
+    echo -e "    ${green}1${plain}. English"
+    echo -e "    ${green}2${plain}. Русский"
     [[ -t 0 ]] && read -rp "  [1-2] (default 1): " c
     case "$c" in 2) XUI_LANG="ru" ;; *) XUI_LANG="en" ;; esac
     mkdir -p /etc/x-ui

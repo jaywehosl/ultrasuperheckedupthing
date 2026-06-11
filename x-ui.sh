@@ -70,6 +70,41 @@ T_EN[m19]="PostgreSQL Database";                 T_RU[m19]="PostgreSQL БД"
 T_EN[m20]="Reverse-proxy Nginx settings";        T_RU[m20]="Настройки реверс-прокси/Nginx"
 T_EN[m0]="Exit";                                 T_RU[m0]="Выход"
 
+# ── Batch 2: PostgreSQL + Reverse-proxy submenus ─────────────────────────────
+T_EN[s_back]="Back to menu";                     T_RU[s_back]="Вернуться в меню"
+T_EN[s_invalid]="Invalid option";                T_RU[s_invalid]="Неверный выбор"
+T_EN[pg_title]="PostgreSQL";                     T_RU[pg_title]="PostgreSQL БД"
+T_EN[pg1]="Install (system wise)";               T_RU[pg1]="Установка PostgreSQL в систему"
+T_EN[pg2]="SQLite to PostgreSQL migration";      T_RU[pg2]="Перенос данных SQLite в PostgreSQL"
+T_EN[pg3]="PostgreSQL status";                   T_RU[pg3]="Статус PostgreSQL"
+T_EN[pg9]="Convert .db <-> .dump";               T_RU[pg9]="Конвертация формата дампа .db <-> .dump"
+T_EN[pg4]="Start PostgreSQL";                    T_RU[pg4]="Запуск PostgreSQL"
+T_EN[pg5]="Stop PostgreSQL";                     T_RU[pg5]="Остановка PostgreSQL"
+T_EN[pg6]="Restart PostgreSQL";                  T_RU[pg6]="Перезапуск PostgreSQL"
+T_EN[pg7]="Enable PostgreSQL autostart";         T_RU[pg7]="Включить автозапуск PostgreSQL"
+T_EN[pg8]="PostgreSQL log";                      T_RU[pg8]="Лог PostgreSQL"
+T_EN[rp_title]="Reverse-proxy Nginx";            T_RU[rp_title]="Реверс-прокси/Nginx"
+T_EN[rp1]="Reverse-proxy status";                T_RU[rp1]="Статус реверс-прокси"
+T_EN[rp2]="Force certificate renewal";           T_RU[rp2]="Принудительный выпуск сертификатов"
+T_EN[rp3]="Remove reverse-proxy";                T_RU[rp3]="Удалить реверс-прокси"
+T_EN[rp_notturnkey]="This is not a turnkey reverse-proxy install (marker %s not found)"; T_RU[rp_notturnkey]="Это не turnkey-установка реверс-прокси (маркер %s не найден)"
+T_EN[rps_title]="Reverse-proxy status";          T_RU[rps_title]="Статус реверс-прокси"
+T_EN[rps_panel]="Community panel domain:";       T_RU[rps_panel]="Домен для доступа в Community Panel:"
+T_EN[rps_sub]="Subscription page domain:";       T_RU[rps_sub]="Домен для страницы подписок:"
+T_EN[rps_selfsteal]="Selfsteal/Reality domain:"; T_RU[rps_selfsteal]="Домен для сайта-заглушки:"
+T_EN[rps_cert_ok]="Certificate %s: valid until %s";  T_RU[rps_cert_ok]="Сертификат %s выпущен до %s"
+T_EN[rps_cert_missing]="Certificate %s: .pem/.key files are missing"; T_RU[rps_cert_missing]="Сертификат %s: .pem/.key файлы сертификатов не найдены"
+T_EN[rps_nginx_up]="Nginx: running";             T_RU[rps_nginx_up]="Nginx: запущен и работает"
+T_EN[rps_nginx_down]="Nginx: not running";       T_RU[rps_nginx_down]="Nginx: не работает"
+T_EN[rps_cron_ok]="Certificate renewal cron policy: present";   T_RU[rps_cron_ok]="Политика автоматического обновления сертификатов в cron: активна"
+T_EN[rps_cron_missing]="Certificate renewal cron policy: missing"; T_RU[rps_cron_missing]="Политика автоматического обновления сертификатов в cron: отсутствует"
+T_EN[rpn_renew]="Renewing certificate for %s";   T_RU[rpn_renew]="Обновление сертификата для %s"
+T_EN[rpn_reload]="Restarting Nginx services";    T_RU[rpn_reload]="Перезапуск сервисов Nginx"
+T_EN[rpn_done]="Certificates renewed";           T_RU[rpn_done]="Сертификаты обновлены"
+T_EN[rpr_confirm]="Remove reverse-proxy? The panel will be accessible by direct ip address:port link"; T_RU[rpr_confirm]="Удалить реверс-прокси? Панель станет доступна по айпи адресу:порту"
+T_EN[rpr_pins]="Domain pins removed";            T_RU[rpr_pins]="Привязка к доменам удалена"
+T_EN[rpr_done]="Reverse-proxy removed, to get the correct ip:port link run 'x-ui settings' in your terminal session"; T_RU[rpr_done]="Реверс-прокси удален, чтобы получить актуальную ссылку доступа, выполните 'x-ui settings' в терминале"
+
 #Add some basic function here
 function LOGD() {
     echo -e "${yellow}[DEG] $* ${plain}"
@@ -1276,16 +1311,22 @@ postgresql_menu() {
   while true; do
     clear
     echo
-    echo -e "  ${bold}PostgreSQL${plain}"
+    echo -e "  ${bold}$(t pg_title)${plain}"
     echo
-    echo -e "    ${orange} 1${plain}  Install ${gray}(server + client + db)${plain}    ${orange} 2${plain}  Migrate SQLite ${gray}->${plain} PG"
-    echo -e "    ${orange} 3${plain}  Status                          ${orange} 9${plain}  Convert ${gray}.db <-> .dump${plain}"
+    echo -e "     ${orange} 1${plain}  $(t pg1)"
+    echo -e "     ${orange} 2${plain}  $(t pg2)"
+    echo -e "     ${orange} 3${plain}  $(t pg3)"
+    echo -e "     ${orange} 9${plain}  $(t pg9)"
     echo
-    echo -e "    ${orange} 4${plain}  Start     ${orange} 5${plain}  Stop     ${orange} 6${plain}  Restart     ${orange} 7${plain}  Enable on boot     ${orange} 8${plain}  Log"
+    echo -e "     ${orange} 4${plain}  $(t pg4)"
+    echo -e "     ${orange} 5${plain}  $(t pg5)"
+    echo -e "     ${orange} 6${plain}  $(t pg6)"
+    echo -e "     ${orange} 7${plain}  $(t pg7)"
+    echo -e "     ${orange} 8${plain}  $(t pg8)"
     echo
-    echo -e "    ${orange} 0${plain}  Back"
+    echo -e "     ${orange} 0${plain}  $(t s_back)"
     echo
-    read -rp " $(ask 'Select an option [0-9]:') " choice
+    read -rp " $(ask "$(t s_select)") " choice
     case "$choice" in
         0) return ;;
         1) pg_install_server_action ;;
@@ -1297,7 +1338,7 @@ postgresql_menu() {
         7) postgresql_enable ;;
         8) postgresql_log ;;
         9) migrate_db_prompt ;;
-        *) msg_err "Invalid option."; sleep 1; continue ;;
+        *) msg_err "$(t s_invalid)"; sleep 1; continue ;;
     esac
     before_show_menu
   done
@@ -1404,10 +1445,10 @@ rp_status() {
     local PANEL_DOMAIN="" SUB_DOMAIN="" SELFSTEAL_DOMAIN="" SSLDIR="/etc/x-ui/ssl"
     source "$RP_MARKER" 2> /dev/null
     echo
-    echo -e "  ${gray}Reverse-proxy status${plain}"
-    msg_info "Panel domain:    ${PANEL_DOMAIN:-?}"
-    msg_info "Sub domain:      ${SUB_DOMAIN:-?}"
-    msg_info "Selfsteal/decoy: ${SELFSTEAL_DOMAIN:-?}"
+    echo -e "  ${bold}$(t rps_title)${plain}"
+    msg_info "$(t rps_panel) ${PANEL_DOMAIN:-?}"
+    msg_info "$(t rps_sub) ${SUB_DOMAIN:-?}"
+    msg_info "$(t rps_selfsteal) ${SELFSTEAL_DOMAIN:-?}"
     echo
     local d cert exp
     for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
@@ -1415,17 +1456,17 @@ rp_status() {
         cert="${SSLDIR}/${d}/fullchain.pem"
         if [[ -f "$cert" ]]; then
             exp=$(openssl x509 -enddate -noout -in "$cert" 2> /dev/null | cut -d= -f2)
-            msg_ok "cert ${d}: valid until ${exp}"
+            msg_ok "$(printf "$(t rps_cert_ok)" "$d" "$exp")"
         else
-            msg_warn "cert ${d}: file missing (${cert})"
+            msg_warn "$(printf "$(t rps_cert_missing)" "$d")"
         fi
     done
     echo
-    systemctl is-active --quiet nginx && msg_ok "nginx: running" || msg_err "nginx: not running"
+    systemctl is-active --quiet nginx && msg_ok "$(t rps_nginx_up)" || msg_err "$(t rps_nginx_down)"
     if crontab -l 2> /dev/null | grep -q 'acme.sh --cron'; then
-        msg_ok "renewal cron: present"
+        msg_ok "$(t rps_cron_ok)"
     else
-        msg_warn "renewal cron: MISSING (run the menu again to repair, or option 2)"
+        msg_warn "$(t rps_cron_missing)"
     fi
 }
 
@@ -1438,14 +1479,14 @@ rp_renew_certs() {
     local d
     for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
         [[ -n "$d" ]] || continue
-        run_step "Renewing ${d}" bash -c "$acme --renew -d '$d' --ecc --force"
+        run_step "$(printf "$(t rpn_renew)" "$d")" bash -c "$acme --renew -d '$d' --ecc --force"
     done
-    run_step "Reloading nginx" systemctl reload nginx || true
-    msg_ok "Сертификаты перевыпущены."
+    run_step "$(t rpn_reload)" systemctl reload nginx || true
+    msg_ok "$(t rpn_done)"
 }
 
 rp_remove() {
-    confirm "Снять reverse-proxy? nginx-обвязка удалится, панель вернётся на прямой доступ по IP:порт" "n" || return
+    confirm "$(t rpr_confirm)" "n" || return
     rm -f /etc/nginx/conf.d/xui.conf
     systemctl reload nginx 2> /dev/null || systemctl restart nginx 2> /dev/null || true
     # Un-pin the panel so direct IP access works again. `x-ui setting` has no
@@ -1457,40 +1498,42 @@ rp_remove() {
         command -v sqlite3 > /dev/null 2>&1 || run_step "Installing sqlite3" bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y -q sqlite3"
         systemctl stop x-ui
         if sqlite3 "$db" "UPDATE settings SET value='' WHERE key IN ('webListen','webDomain','subListen','subDomain');" 2> /dev/null; then
-            msg_ok "Доменные пины сняты (webDomain/webListen/subDomain/subListen)."
+            msg_ok "$(t rpr_pins)"
         else
-            msg_warn "Не удалось очистить домены в БД — снимите их вручную в панели (Settings)."
+            msg_warn "Could not clear domain pins in the DB — remove them manually in the panel."
         fi
         systemctl start x-ui
     fi
     rm -f "$RP_MARKER"
-    msg_ok "Reverse proxy снят. Панель доступна напрямую — проверьте 'x-ui settings' (IP:порт/basePath)."
-    msg_info "Сертификаты и acme-cron оставлены как есть; при желании удалите вручную."
+    msg_ok "$(t rpr_done)"
+    msg_info "Certificates and the acme cron were left untouched."
 }
 
 reverse_proxy_menu() {
     if [[ ! -f "$RP_MARKER" ]]; then
         clear; echo
-        msg_warn "This is not a turnkey reverse-proxy install (marker ${RP_MARKER} not found)."
+        msg_warn "$(printf "$(t rp_notturnkey)" "$RP_MARKER")"
         before_show_menu
         return
     fi
     while true; do
         clear
         echo
-        echo -e "  ${bold}Reverse proxy${plain}"
+        echo -e "  ${bold}$(t rp_title)${plain}"
         echo
-        echo -e "    ${orange} 1${plain}  Status      ${orange} 2${plain}  Renew certs      ${orange} 3${plain}  Remove"
+        echo -e "     ${orange} 1${plain}  $(t rp1)"
+        echo -e "     ${orange} 2${plain}  $(t rp2)"
+        echo -e "     ${orange} 3${plain}  $(t rp3)"
         echo
-        echo -e "    ${orange} 0${plain}  Back"
+        echo -e "     ${orange} 0${plain}  $(t s_back)"
         echo
-        local c; read -rp " $(ask 'Select an option [0-3]:') " c
+        local c; read -rp " $(ask "$(t s_select)") " c
         case "$c" in
             0) return ;;
             1) rp_status ;;
             2) rp_renew_certs ;;
             3) rp_remove; before_show_menu; return ;;
-            *) msg_err "Invalid option."; sleep 1; continue ;;
+            *) msg_err "$(t s_invalid)"; sleep 1; continue ;;
         esac
         before_show_menu
     done
