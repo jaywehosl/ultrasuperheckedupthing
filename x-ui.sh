@@ -139,6 +139,9 @@ fi
 xui_service="${XUI_SERVICE:=/etc/systemd/system}"
 log_folder="${XUI_LOG_FOLDER:=/var/log/x-ui}"
 mkdir -p "${log_folder}"
+# Marker written by install.sh's turnkey setup_reverse_proxy (domains + ssl dir).
+# Its presence means this box runs the turnkey reverse-proxy layer.
+RP_MARKER="/etc/x-ui/reverse-proxy.conf"
 
 confirm() {
     if [[ $# > 1 ]]; then
@@ -1359,6 +1362,99 @@ migrate_db_prompt() {
     migrate_db "$input" "$output"
 }
 
+# ── Turnkey reverse-proxy management ─────────────────────────────────────────
+# Light, self-contained ops over an already-deployed turnkey layer (the heavy
+# "change domains" flow lives in install.sh and is intentionally not duplicated
+# here). All three read the marker install.sh wrote (domains + ssl dir).
+rp_status() {
+    local PANEL_DOMAIN="" SUB_DOMAIN="" SELFSTEAL_DOMAIN="" SSLDIR="/etc/x-ui/ssl"
+    source "$RP_MARKER" 2> /dev/null
+    echo
+    echo -e "  ${gray}Reverse-proxy status${plain}"
+    msg_info "Panel domain:    ${PANEL_DOMAIN:-?}"
+    msg_info "Sub domain:      ${SUB_DOMAIN:-?}"
+    msg_info "Selfsteal/decoy: ${SELFSTEAL_DOMAIN:-?}"
+    echo
+    local d cert exp
+    for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
+        [[ -n "$d" ]] || continue
+        cert="${SSLDIR}/${d}/fullchain.pem"
+        if [[ -f "$cert" ]]; then
+            exp=$(openssl x509 -enddate -noout -in "$cert" 2> /dev/null | cut -d= -f2)
+            msg_ok "cert ${d}: valid until ${exp}"
+        else
+            msg_warn "cert ${d}: file missing (${cert})"
+        fi
+    done
+    echo
+    systemctl is-active --quiet nginx && msg_ok "nginx: running" || msg_err "nginx: not running"
+    if crontab -l 2> /dev/null | grep -q 'acme.sh --cron'; then
+        msg_ok "renewal cron: present"
+    else
+        msg_warn "renewal cron: MISSING (run the menu again to repair, or option 2)"
+    fi
+}
+
+rp_renew_certs() {
+    local PANEL_DOMAIN="" SUB_DOMAIN="" SELFSTEAL_DOMAIN="" SSLDIR="/etc/x-ui/ssl"
+    source "$RP_MARKER" 2> /dev/null
+    local acme="${HOME}/.acme.sh/acme.sh"
+    [[ -f "$acme" ]] || { msg_err "acme.sh not found (${acme})."; return; }
+    # nginx listens on the unix socket, so :80 is free for acme standalone.
+    local d
+    for d in "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN"; do
+        [[ -n "$d" ]] || continue
+        run_step "Renewing ${d}" bash -c "$acme --renew -d '$d' --ecc --force"
+    done
+    run_step "Reloading nginx" systemctl reload nginx || true
+    msg_ok "Сертификаты перевыпущены."
+}
+
+rp_remove() {
+    confirm "Снять reverse-proxy? nginx-обвязка удалится, панель вернётся на прямой доступ по IP:порт" "n" || return
+    rm -f /etc/nginx/conf.d/xui.conf
+    systemctl reload nginx 2> /dev/null || systemctl restart nginx 2> /dev/null || true
+    # Un-pin the panel so direct IP access works again. `x-ui setting` has no
+    # webDomain flag and we hold no panel creds here, so clear the four network
+    # keys straight in the DB (turnkey is always SQLite). webPort (2053) and the
+    # basePath are left intact.
+    local db=/etc/x-ui/x-ui.db
+    if [[ -f "$db" ]]; then
+        command -v sqlite3 > /dev/null 2>&1 || run_step "Installing sqlite3" bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y -q sqlite3"
+        systemctl stop x-ui
+        if sqlite3 "$db" "UPDATE settings SET value='' WHERE key IN ('webListen','webDomain','subListen','subDomain');" 2> /dev/null; then
+            msg_ok "Доменные пины сняты (webDomain/webListen/subDomain/subListen)."
+        else
+            msg_warn "Не удалось очистить домены в БД — снимите их вручную в панели (Settings)."
+        fi
+        systemctl start x-ui
+    fi
+    rm -f "$RP_MARKER"
+    msg_ok "Reverse proxy снят. Панель доступна напрямую — проверьте 'x-ui settings' (IP:порт/basePath)."
+    msg_info "Сертификаты и acme-cron оставлены как есть; при желании удалите вручную."
+}
+
+reverse_proxy_menu() {
+    if [[ ! -f "$RP_MARKER" ]]; then
+        echo
+        msg_warn "Это не turnkey reverse-proxy установка (маркер ${RP_MARKER} отсутствует)."
+        return
+    fi
+    while true; do
+        echo
+        echo -e "  ${gray}Reverse proxy${plain}"
+        echo -e "   ${green}1${plain}. Status    ${green}2${plain}. Renew certs    ${green}3${plain}. Remove    ${green}0${plain}. Back"
+        local c; read -rp " $(ask 'Select [0-3]:') " c
+        case "$c" in
+            1) rp_status ;;
+            2) rp_renew_certs ;;
+            3) rp_remove; break ;;
+            0) break ;;
+            *) msg_err "Введите число [0-3]" ;;
+        esac
+    done
+}
+
 show_usage() {
     echo
     echo -e "  ${bold}x-ui${plain} ${gray}— management CLI. Run with no arguments for the menu.${plain}"
@@ -1404,11 +1500,15 @@ show_menu() {
     echo -e "  ${gray}Database${plain}"
     echo -e "   ${green}19${plain}. PostgreSQL"
     echo
+
+    echo -e "  ${gray}Reverse proxy${plain}"
+    echo -e "   ${green}20${plain}. Manage (status / renew / remove)"
+    echo
     echo -e "   ${green} 0${plain}. Exit"
     echo
     hr
     show_status
-    echo && read -rp " $(ask 'Select [0-19]:') " num
+    echo && read -rp " $(ask 'Select [0-20]:') " num
 
     case "${num}" in
         0)
@@ -1471,8 +1571,11 @@ show_menu() {
         19)
             postgresql_menu
             ;;
+        20)
+            check_install && reverse_proxy_menu
+            ;;
         *)
-            LOGE "Please enter the correct number [0-19]"
+            LOGE "Please enter the correct number [0-20]"
             ;;
     esac
 }
@@ -1483,7 +1586,6 @@ show_menu() {
 # a domain's nginx reloadcmd) goes missing or is altered, certs silently expire.
 # On every INTERACTIVE launch we verify the policy and offer a one-key repair.
 # Skipped entirely on service calls (x-ui start/stop/…) and non-TTY sessions.
-RP_MARKER="/etc/x-ui/reverse-proxy.conf"
 ensure_cert_cron() {
     [[ -f "$RP_MARKER" ]] || return 0        # not a turnkey reverse-proxy box
     [[ -t 0 && -t 1 ]] || return 0           # only nag a real terminal
