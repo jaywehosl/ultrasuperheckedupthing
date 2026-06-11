@@ -1007,7 +1007,7 @@ H
     else
         echo -e "${green}Panel:   https://${PANEL_DOMAIN}/${RP_BP}/${plain}"
     fi
-    echo -e "${green}Sub:     https://${SUB_DOMAIN}/sub/<subId>${plain}"
+    echo -e "${green}Sub:     https://${SUB_DOMAIN}/<subId>${plain}"
     echo -e "${green}Decoy:   https://${SELFSTEAL_DOMAIN}/${plain}"
     echo -e "${green}Login:   ${RP_USER} / ${RP_PASS}${plain}"
     echo -e "${green}═══════════════════════════════════════════${plain}"
@@ -1115,11 +1115,15 @@ _rp_preconfig() {
     local WBP="$BP"; [[ "$PANELPATH" == "/" ]] && WBP=""
     local ALL NEW
     ALL=$(api "$BASE/panel/setting/all" -X POST)
-    NEW=$(echo "$ALL"|jq -c --arg pd "$PD" --arg sd "$SD" --arg su "https://$SD/sub/" --argjson sp "$SP" --arg wbp "$WBP" \
+    # subPath="/" → the sub is served at the clean domain root
+    # (https://SUB_DOMAIN/<subId>), no /sub/ segment. Each client still has a
+    # unique subId, so a bare-domain request (no subId) returns 404 — still
+    # probe-safe. Keeps clean-domain URLs symmetric with the panel/decoy.
+    NEW=$(echo "$ALL"|jq -c --arg pd "$PD" --arg sd "$SD" --arg su "https://$SD/" --argjson sp "$SP" --arg wbp "$WBP" \
         '.obj | .webDomain=$pd | .webListen="127.0.0.1" | .webCertFile="" | .webKeyFile=""
               | (if $wbp=="" then .webBasePath="/" else . end)
               | .subEnable=true | .subDomain=$sd | .subListen="127.0.0.1" | .subPort=$sp
-              | .subURI=$su | .subCertFile="" | .subKeyFile=""')
+              | .subPath="/" | .subURI=$su | .subCertFile="" | .subKeyFile=""')
     [[ "$(api "$BASE/panel/setting/update" -d "$NEW"|jq -r '.success')" == "true" ]] || { echo -e "  ${red}setting/update failed.${plain}"; rm -f "$JAR"; return 1; }
 
     local IB
@@ -1180,10 +1184,15 @@ config_after_install() {
 
     if [[ "$RP_INSTALL_MODE" == "A" ]]; then
         # Self-contained, deterministic base config for the turnkey path:
-        # fresh creds + random port + random basePath. setup_reverse_proxy
+        # fresh creds + FIXED internal port + random basePath. setup_reverse_proxy
         # (after service start) does certs/nginx/decoy/domain-preconfig.
+        # Port is FIXED (not random): in mode A the panel binds 127.0.0.1 behind
+        # nginx (unix socket) and is never exposed, so randomising it buys no
+        # security — but a fixed port makes the nginx upstream deterministic, so
+        # a DB backup restored onto a clean reinstall stays reachable without
+        # touching the nginx config (clean-domain restore = the whole point).
         RP_U=$(gen_random_string 10); RP_P=$(gen_random_string 10)
-        RP_BP=$(gen_random_string 18); RP_PORT=$(shuf -i 1024-62000 -n 1)
+        RP_BP=$(gen_random_string 18); RP_PORT=2053
         ${xui_folder}/x-ui setting -username "${RP_U}" -password "${RP_P}" -port "${RP_PORT}" -webBasePath "${RP_BP}" > /dev/null 2>&1
         ${xui_folder}/x-ui migrate
         echo -e "  ${green}✔${plain} Base panel configured (port ${RP_PORT}); reverse proxy runs after start."
