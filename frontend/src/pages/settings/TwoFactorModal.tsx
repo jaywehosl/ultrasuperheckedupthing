@@ -42,8 +42,8 @@ export default function TwoFactorModal({
     setQrValue('');
     if (token) {
       const totp = new OTPAuth.TOTP({
-        issuer: '3x-ui',
-        label: 'Administrator',
+        issuer: 'Community Panel Access Code',
+        label: 'Community Panel',
         algorithm: 'SHA1',
         digits: 6,
         period: 30,

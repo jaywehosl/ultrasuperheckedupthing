@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -684,43 +685,49 @@ const (
 )
 
 func (s *ServerService) GetXrayVersions() ([]string, error) {
-	const (
-		XrayURL    = "https://api.github.com/repos/XTLS/Xray-core/releases"
-		bufferSize = 8192
-	)
+	// Use the releases Atom feed (github.com) instead of the REST API
+	// (api.github.com). The REST API is rate-limited to 60 requests/hour per
+	// egress IP for unauthenticated callers and is routinely exhausted on shared
+	// datacenter NAT — which is why a fresh server can hit "API rate limit
+	// exceeded for <some shared IP>". The feed is unauthenticated, not subject to
+	// that quota, and returns the most recent releases, which is all the version
+	// picker needs.
+	const XrayAtomURL = "https://github.com/XTLS/Xray-core/releases.atom"
 
-	resp, err := s.settingService.NewProxiedHTTPClient(10 * time.Second).Get(XrayURL)
+	resp, err := s.settingService.NewProxiedHTTPClient(10 * time.Second).Get(XrayAtomURL)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	// Check HTTP status code - GitHub API returns object instead of array on error
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		var errorResponse struct {
-			Message string `json:"message"`
-		}
-		if json.Unmarshal(bodyBytes, &errorResponse) == nil && errorResponse.Message != "" {
-			return nil, fmt.Errorf("GitHub API error: %s", errorResponse.Message)
-		}
-		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("GitHub releases feed returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	buffer := bytes.NewBuffer(make([]byte, bufferSize))
-	buffer.Reset()
-	if _, err := buffer.ReadFrom(resp.Body); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
 
-	var releases []Release
-	if err := json.Unmarshal(buffer.Bytes(), &releases); err != nil {
+	// Each <entry> id looks like "tag:github.com,2008:Repository/<id>/v26.6.1";
+	// the release tag is the final path segment.
+	var feed struct {
+		Entries []struct {
+			ID string `xml:"id"`
+		} `xml:"entry"`
+	}
+	if err := xml.Unmarshal(body, &feed); err != nil {
 		return nil, err
 	}
 
 	var versions []string
-	for _, release := range releases {
-		tagVersion := strings.TrimPrefix(release.TagName, "v")
+	for _, e := range feed.Entries {
+		idx := strings.LastIndex(e.ID, "/")
+		if idx < 0 {
+			continue
+		}
+		tagName := e.ID[idx+1:]
+		tagVersion := strings.TrimPrefix(tagName, "v")
 		tagParts := strings.Split(tagVersion, ".")
 		if len(tagParts) != 3 {
 			continue
@@ -734,7 +741,7 @@ func (s *ServerService) GetXrayVersions() ([]string, error) {
 		}
 
 		if major > 26 || (major == 26 && minor > 4) || (major == 26 && minor == 4 && patch >= 25) {
-			versions = append(versions, release.TagName)
+			versions = append(versions, tagName)
 		}
 	}
 	return versions, nil

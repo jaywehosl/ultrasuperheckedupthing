@@ -39,7 +39,10 @@ export default function BackupModal({ open, basePath: _basePath, onClose }: Back
       onClose();
       // Same frosted full-screen takeover the settings restart uses — not the
       // plain inline spinner — so restore feels consistent and deliberate.
-      busyOverlay.show({ title: `${t('pages.index.importDatabase')}…` });
+      busyOverlay.show({
+        title: t('pages.index.restoringBackup'),
+        subtitle: t('pages.settings.restartingDesc'),
+      });
 
       const upload = await HttpUtil.post('/panel/api/server/importDB', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
