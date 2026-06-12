@@ -22,11 +22,24 @@ type ThemeFonts struct {
 	Mono    string `json:"mono,omitempty"`
 }
 
+type ThemeParticles struct {
+	On      *bool    `json:"on,omitempty"`
+	Density *float64 `json:"density,omitempty"`
+	Speed   *float64 `json:"speed,omitempty"` // maps to intensity in WebGL
+	Color   string   `json:"color,omitempty"`
+}
+
+type ThemeEffects struct {
+	Particles *ThemeParticles `json:"particles,omitempty"`
+	HoverGlow *bool           `json:"hoverGlow,omitempty"`
+}
+
 type PanelTheme struct {
 	Mode       string            `json:"mode,omitempty"`
 	Tokens     map[string]any    `json:"tokens,omitempty"`
 	Background *ThemeBackground `json:"background,omitempty"`
 	Fonts      *ThemeFonts       `json:"fonts,omitempty"`
+	Effects    *ThemeEffects     `json:"effects,omitempty"`
 }
 
 var radiusRamp = map[string]float64{
@@ -74,6 +87,12 @@ func ThemeToCSS(theme *PanelTheme, basePath string) string {
 			}
 			key := normalizeKey(k)
 			if key == "--radius-scale" {
+				continue
+			}
+			if key == "--fx-particles" && theme.Effects != nil && theme.Effects.Particles != nil && theme.Effects.Particles.On != nil {
+				continue
+			}
+			if key == "--fx-hover-glow" && theme.Effects != nil && theme.Effects.HoverGlow != nil {
 				continue
 			}
 			decls = append(decls, fmt.Sprintf("%s: %v;", key, v))
@@ -135,6 +154,35 @@ func ThemeToCSS(theme *PanelTheme, basePath string) string {
 		}
 		if bg.Blur != "" {
 			decls = append(decls, fmt.Sprintf("--bg-image-blur: %s;", bg.Blur))
+		}
+	}
+
+	if theme.Effects != nil {
+		fx := theme.Effects
+		if fx.Particles != nil {
+			p := fx.Particles
+			onVal := "on"
+			if p.On != nil && !*p.On {
+				onVal = "off"
+			}
+			decls = append(decls, fmt.Sprintf("--fx-particles: %s;", onVal))
+			if p.Density != nil {
+				decls = append(decls, fmt.Sprintf("--fx-particles-density: %g;", *p.Density))
+			}
+			if p.Speed != nil {
+				decls = append(decls, fmt.Sprintf("--fx-particles-intensity: %g;", *p.Speed))
+			}
+			if p.Color != "" {
+				decls = append(decls, fmt.Sprintf("--fx-particles-color: %s;", p.Color))
+			}
+		}
+		if fx.HoverGlow != nil {
+			if !*fx.HoverGlow {
+				decls = append(decls, "--hover-glow: none;")
+				decls = append(decls, "--fx-hover-glow: off;")
+			} else {
+				decls = append(decls, "--fx-hover-glow: on;")
+			}
 		}
 	}
 

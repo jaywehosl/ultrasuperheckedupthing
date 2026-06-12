@@ -30,6 +30,162 @@ function hexToRgb(hex: string): string | null {
   return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
 }
 
+function getLuminance(hex: string): number {
+  const cleanHex = hex.replace('#', '').trim();
+  const r = parseInt(cleanHex.slice(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.slice(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.slice(4, 6), 16) / 255;
+  
+  const a = [r, g, b].map((v) => {
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+}
+
+function getContrastRatio(hex1: string, hex2: string): number {
+  const l1 = getLuminance(hex1);
+  const l2 = getLuminance(hex2);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+const PRESETS = [
+  {
+    name: 'Antigravity Default',
+    theme: {
+      mode: 'light' as ThemeMode,
+      tokens: {
+        '--color-primary': '#3279f9',
+        '--color-primary-rgb': '50, 121, 249',
+        '--color-success': '#34a853',
+        '--color-warning': '#f5a524',
+        '--color-error': '#ea4335',
+        '--glass-blur': '30px',
+        '--glass-saturate': '170%',
+        '--radius-scale': 1.0,
+        '--shadow-intensity': 1.0,
+      },
+      background: { type: 'aura' },
+      fonts: {
+        sans: "'Plus Jakarta Sans', sans-serif",
+        display: "'Outfit', sans-serif",
+        mono: "'Fira Code', monospace",
+      },
+      effects: {
+        particles: { on: true, density: 1.0, speed: 1.0, color: 'palette' },
+        hoverGlow: true,
+      },
+    },
+  },
+  {
+    name: 'Deep Space',
+    theme: {
+      mode: 'ultra-dark' as ThemeMode,
+      tokens: {
+        '--color-primary': '#a855f7',
+        '--color-primary-rgb': '168, 85, 247',
+        '--color-success': '#10b981',
+        '--color-warning': '#fbbf24',
+        '--color-error': '#ef4444',
+        '--glass-blur': '40px',
+        '--glass-saturate': '200%',
+        '--radius-scale': 1.2,
+        '--shadow-intensity': 1.5,
+      },
+      background: { type: 'aura' },
+      fonts: {
+        sans: "'Plus Jakarta Sans', sans-serif",
+        display: "'Outfit', sans-serif",
+        mono: "'Fira Code', monospace",
+      },
+      effects: {
+        particles: { on: true, density: 1.5, speed: 1.2, color: 'primary' },
+        hoverGlow: true,
+      },
+    },
+  },
+  {
+    name: 'Nordic Frosted',
+    theme: {
+      mode: 'light' as ThemeMode,
+      tokens: {
+        '--color-primary': '#14b8a6',
+        '--color-primary-rgb': '20, 184, 166',
+        '--color-success': '#10b981',
+        '--color-warning': '#f59e0b',
+        '--color-error': '#ef4444',
+        '--glass-blur': '20px',
+        '--glass-saturate': '130%',
+        '--radius-scale': 0.8,
+        '--shadow-intensity': 0.5,
+      },
+      background: { type: 'color', color: '#f0f4f8' },
+      fonts: {
+        sans: "'Inter', sans-serif",
+        display: "'Outfit', sans-serif",
+        mono: "ui-monospace, Menlo, monospace",
+      },
+      effects: {
+        particles: { on: false },
+        hoverGlow: false,
+      },
+    },
+  },
+  {
+    name: 'Cyberpunk Neon',
+    theme: {
+      mode: 'dark' as ThemeMode,
+      tokens: {
+        '--color-primary': '#ff007f',
+        '--color-primary-rgb': '255, 0, 127',
+        '--color-success': '#00ffcc',
+        '--color-warning': '#ffff00',
+        '--color-error': '#ff3333',
+        '--glass-blur': '15px',
+        '--glass-saturate': '180%',
+        '--radius-scale': 1.1,
+        '--shadow-intensity': 1.2,
+      },
+      background: { type: 'aura' },
+      fonts: {
+        sans: "'Outfit', sans-serif",
+        display: "'Outfit', sans-serif",
+        mono: "'Fira Code', monospace",
+      },
+      effects: {
+        particles: { on: true, density: 1.8, speed: 1.5, color: 'palette' },
+        hoverGlow: true,
+      },
+    },
+  },
+  {
+    name: 'Emerald Glass',
+    theme: {
+      mode: 'dark' as ThemeMode,
+      tokens: {
+        '--color-primary': '#10b981',
+        '--color-primary-rgb': '16, 185, 129',
+        '--color-success': '#34d399',
+        '--color-warning': '#fbbf24',
+        '--color-error': '#f87171',
+        '--glass-blur': '45px',
+        '--glass-saturate': '190%',
+        '--radius-scale': 1.3,
+        '--shadow-intensity': 1.1,
+      },
+      background: { type: 'aura' },
+      fonts: {
+        sans: "'Plus Jakarta Sans', sans-serif",
+        display: "'Outfit', sans-serif",
+        mono: "'JetBrains Mono', monospace",
+      },
+      effects: {
+        particles: { on: true, density: 0.9, speed: 0.8, color: 'monochrome' },
+        hoverGlow: true,
+      },
+    },
+  },
+];
+
 interface RowProps { label: string; hint?: string; soon?: boolean; children: React.ReactNode }
 function Row({ label, hint, soon, children }: RowProps) {
   return (
@@ -166,6 +322,23 @@ export default function AppearancePage() {
   const bg = theme.background ?? {};
   const customFont = theme.fonts?.sans?.startsWith('asset:') ?? false;
 
+  const getPageBgColor = () => {
+    if (theme.background?.type === 'color' && theme.background.color) {
+      return theme.background.color;
+    }
+    return theme.mode === 'light' ? '#eaeefb' : '#0a0b0f';
+  };
+
+  const primaryHex = String(tok('--color-primary', DEFAULTS.primary));
+  const bgHex = getPageBgColor();
+  const contrastRatio = getContrastRatio(primaryHex, bgHex);
+  const isContrastLow = contrastRatio < 3.0;
+
+  const blurVal = num('--glass-blur', DEFAULTS.glassBlur);
+  const densityVal = theme.effects?.particles?.density ?? 1.0;
+  const isParticlesOn = theme.effects?.particles?.on !== false;
+  const isPerfCapActive = isParticlesOn && blurVal > 30 && densityVal > 1.2;
+
   return (
     <div className="appearance-page">
       <div className="ap-head">
@@ -184,6 +357,25 @@ export default function AppearancePage() {
       </div>
 
       <div className="ap-grid">
+        <Card title="Presets" className="ap-presets-card">
+          <div className="ap-presets-list">
+            {PRESETS.map((p) => (
+              <Button
+                key={p.name}
+                size="sm"
+                onClick={() => {
+                  setTheme(p.theme as PanelTheme);
+                  applyTheme(p.theme as PanelTheme);
+                  if (p.theme.mode) applyThemeMode(p.theme.mode);
+                  toast.success(`Preset "${p.name}" applied`);
+                }}
+              >
+                {p.name}
+              </Button>
+            ))}
+          </div>
+        </Card>
+
         <Card title="Mode">
           <Row label="Color scheme" hint="Light / dark base from the design tokens">
             <Segmented
@@ -199,7 +391,15 @@ export default function AppearancePage() {
         </Card>
 
         <Card title="Palette">
-          <ColorRow label="Primary" value={String(tok('--color-primary', DEFAULTS.primary))} onChange={setPrimary} />
+          <ColorRow label="Primary" value={primaryHex} onChange={setPrimary} />
+          <div className="ap-contrast-indicator">
+            <span>Contrast Ratio: <strong>{contrastRatio.toFixed(1)}:1</strong></span>
+            {isContrastLow && (
+              <span className="ap-warning-pill">
+                ⚠️ Low Contrast
+              </span>
+            )}
+          </div>
           <ColorRow label="Success" value={String(tok('--color-success', DEFAULTS.success))} onChange={(v) => setToken('--color-success', v)} />
           <ColorRow label="Warning" value={String(tok('--color-warning', DEFAULTS.warning))} onChange={(v) => setToken('--color-warning', v)} />
           <ColorRow label="Error" value={String(tok('--color-error', DEFAULTS.error))} onChange={(v) => setToken('--color-error', v)} />
@@ -297,17 +497,98 @@ export default function AppearancePage() {
         </Card>
 
         <Card title="Effects">
-          <Row label="Particle field" soon hint="Density / speed controls arrive later">
-            <Switch checked={theme.tokens?.['--fx-particles'] !== 'off'}
-              onChange={(c) => setToken('--fx-particles', c ? 'on' : 'off')} />
+          <Row label="Particle field" hint="Interactive background particle field">
+            <Switch
+              checked={isParticlesOn}
+              onChange={(c) => patch((t) => ({
+                ...t,
+                effects: {
+                  ...t.effects,
+                  particles: {
+                    ...t.effects?.particles,
+                    on: c,
+                  },
+                },
+              }))}
+            />
           </Row>
-          <Row label="Hover glow" soon>
-            <Switch checked={theme.tokens?.['--fx-hover-glow'] !== 'off'}
-              onChange={(c) => setToken('--fx-hover-glow', c ? 'on' : 'off')} />
+          {isParticlesOn && (
+            <>
+              <RangeRow
+                label="Particle density"
+                min={0.1}
+                max={2.0}
+                step={0.1}
+                value={densityVal}
+                suffix="×"
+                onChange={(v) => patch((t) => ({
+                  ...t,
+                  effects: {
+                    ...t.effects,
+                    particles: {
+                      ...t.effects?.particles,
+                      density: v,
+                    },
+                  },
+                }))}
+              />
+              <RangeRow
+                label="Particle speed"
+                min={0.1}
+                max={2.0}
+                step={0.1}
+                value={theme.effects?.particles?.speed ?? 1.0}
+                suffix="×"
+                onChange={(v) => patch((t) => ({
+                  ...t,
+                  effects: {
+                    ...t.effects,
+                    particles: {
+                      ...t.effects?.particles,
+                      speed: v,
+                    },
+                  },
+                }))}
+              />
+              <Row label="Particle color" hint="Theme accent or multicolor mix">
+                <Select
+                  value={theme.effects?.particles?.color ?? 'palette'}
+                  onChange={(v) => patch((t) => ({
+                    ...t,
+                    effects: {
+                      ...t.effects,
+                      particles: {
+                        ...t.effects?.particles,
+                        color: v as 'primary' | 'monochrome' | 'palette',
+                      },
+                    },
+                  }))}
+                  options={[
+                    { label: 'Multicolor Accent Mix', value: 'palette' },
+                    { label: 'Primary Accent Only', value: 'primary' },
+                    { label: 'Monochrome Palette', value: 'monochrome' },
+                  ]}
+                />
+              </Row>
+            </>
+          )}
+          <Row label="Hover glow" hint="Glow highlight on buttons and cards hover">
+            <Switch
+              checked={theme.effects?.hoverGlow !== false}
+              onChange={(c) => patch((t) => ({
+                ...t,
+                effects: {
+                  ...t.effects,
+                  hoverGlow: c,
+                },
+              }))}
+            />
           </Row>
-          <Divider />
-          <p className="ap-note">Knobs tagged <span className="ap-soon">soon</span> are placeholders — their tokens
-            aren&apos;t expanded in the override core yet. They&apos;re here to map the full surface before wiring.</p>
+          {isPerfCapActive && (
+            <div className="ap-warning-banner">
+              ⚠️ Performance Cap Active: Heavy blur values dampen actual particle count to preserve frame rates.
+            </div>
+          )}
         </Card>
       </div>
     </div>

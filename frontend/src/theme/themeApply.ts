@@ -28,6 +28,18 @@ export interface ThemeFonts {
   mono?: string;
 }
 
+export interface ThemeParticles {
+  on?: boolean;
+  density?: number;
+  speed?: number; // maps to intensity in WebGL
+  color?: 'primary' | 'monochrome' | 'palette';
+}
+
+export interface ThemeEffects {
+  particles?: ThemeParticles;
+  hoverGlow?: boolean;
+}
+
 export interface PanelTheme {
   mode?: ThemeMode;
   /** Raw token overrides, e.g. { "--color-primary": "#3279f9" }. Written
@@ -37,6 +49,7 @@ export interface PanelTheme {
   tokens?: Record<string, string | number>;
   background?: ThemeBackground;
   fonts?: ThemeFonts;
+  effects?: ThemeEffects;
 }
 
 export const THEME_STYLE_ID = 'uup-theme-overrides';
@@ -78,6 +91,8 @@ export function themeToCss(theme: PanelTheme): string {
     for (const [rawKey, value] of Object.entries(theme.tokens)) {
       const key = normalizeKey(rawKey);
       if (SYNTHETIC_KEYS.has(key)) continue;
+      if (key === '--fx-particles' && theme.effects?.particles?.on !== undefined) continue;
+      if (key === '--fx-hover-glow' && theme.effects?.hoverGlow !== undefined) continue;
       if (value === null || value === undefined || value === '') continue;
       push(key, value);
     }
@@ -108,6 +123,22 @@ export function themeToCss(theme: PanelTheme): string {
     }
     if (typeof bg.dim === 'number') push('--bg-image-dim', String(bg.dim));
     if (bg.blur) push('--bg-image-blur', bg.blur);
+  }
+
+  const fx = theme.effects;
+  if (fx) {
+    if (fx.particles) {
+      push('--fx-particles', fx.particles.on !== false ? 'on' : 'off');
+      if (typeof fx.particles.density === 'number') push('--fx-particles-density', fx.particles.density);
+      if (typeof fx.particles.speed === 'number') push('--fx-particles-intensity', fx.particles.speed);
+      if (fx.particles.color) push('--fx-particles-color', fx.particles.color);
+    }
+    if (fx.hoverGlow === false) {
+      push('--hover-glow', 'none');
+      push('--fx-hover-glow', 'off');
+    } else if (fx.hoverGlow === true) {
+      push('--fx-hover-glow', 'on');
+    }
   }
 
   const root = decls.length ? `:root{${decls.join('')}}` : '';
@@ -150,6 +181,10 @@ export function applyTheme(theme: PanelTheme): void {
   // Make the wrapper gradient transparent so a custom background image shows.
   const hasBgImage = theme.background?.type === 'image' && Boolean(theme.background.assetId);
   document.body?.classList.toggle('has-theme-bg', hasBgImage);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('uup-theme-changed', { detail: theme }));
+  }
 }
 
 export const EMPTY_THEME: PanelTheme = {};

@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+func ptrBool(v bool) *bool {
+	return &v
+}
+
+func ptrFloat(v float64) *float64 {
+	return &v
+}
+
 func TestThemeToCSS_Basic(t *testing.T) {
 	theme := &PanelTheme{
 		Tokens: map[string]any{
@@ -20,6 +28,15 @@ func TestThemeToCSS_Basic(t *testing.T) {
 		Fonts: &ThemeFonts{
 			Sans:    "asset:font_abc",
 			Display: "Outfit",
+		},
+		Effects: &ThemeEffects{
+			Particles: &ThemeParticles{
+				On:      ptrBool(true),
+				Density: ptrFloat(1.5),
+				Speed:   ptrFloat(1.2),
+				Color:   "primary",
+			},
+			HoverGlow: ptrBool(false),
 		},
 	}
 
@@ -61,5 +78,27 @@ func TestThemeToCSS_Basic(t *testing.T) {
 	// Verify radius ramp scale expansion: md base is 16px * 1.5 = 24px
 	if !strings.Contains(css, "--radius-md: 24px;") {
 		t.Errorf("Expected scaled md radius of 24px. Got: %s", css)
+	}
+
+	// Verify effects particles
+	if !strings.Contains(css, "--fx-particles: on;") {
+		t.Errorf("Expected --fx-particles: on. Got: %s", css)
+	}
+	if !strings.Contains(css, "--fx-particles-density: 1.5;") {
+		t.Errorf("Expected --fx-particles-density: 1.5. Got: %s", css)
+	}
+	if !strings.Contains(css, "--fx-particles-intensity: 1.2;") {
+		t.Errorf("Expected --fx-particles-intensity: 1.2. Got: %s", css)
+	}
+	if !strings.Contains(css, "--fx-particles-color: primary;") {
+		t.Errorf("Expected --fx-particles-color: primary. Got: %s", css)
+	}
+
+	// Verify hover glow disabled
+	if !strings.Contains(css, "--hover-glow: none;") {
+		t.Errorf("Expected --hover-glow: none. Got: %s", css)
+	}
+	if !strings.Contains(css, "--fx-hover-glow: off;") {
+		t.Errorf("Expected --fx-hover-glow: off. Got: %s", css)
 	}
 }

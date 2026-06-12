@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * ParticleField — a GPU-rendered, CPU-simulated cloud of free-gliding pucks.
@@ -97,11 +97,68 @@ export default function ParticleField({
 }: ParticleFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const live = useRef({ palette, monochrome, additive, intensity, interactive });
-  live.current = { palette, monochrome, additive, intensity, interactive };
+  const [themeTick, setThemeTick] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleThemeChange = () => {
+      setThemeTick((t) => t + 1);
+    };
+    window.addEventListener('uup-theme-changed', handleThemeChange);
+    return () => {
+      window.removeEventListener('uup-theme-changed', handleThemeChange);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const rootStyle = typeof window !== 'undefined' ? window.getComputedStyle(document.documentElement) : null;
+    const fxParticles = rootStyle?.getPropertyValue('--fx-particles')?.trim();
+    const isOff = fxParticles === 'off';
+    if (isOff) {
+      const gl = canvas.getContext('webgl2');
+      if (gl) {
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      }
+      return;
+    }
+
+    const fxDensity = rootStyle?.getPropertyValue('--fx-particles-density')?.trim();
+    const fxIntensity = rootStyle?.getPropertyValue('--fx-particles-intensity')?.trim();
+    const fxInteractive = rootStyle?.getPropertyValue('--fx-particles-interactive')?.trim();
+    const fxColor = rootStyle?.getPropertyValue('--fx-particles-color')?.trim();
+    const glassBlur = rootStyle?.getPropertyValue('--glass-blur')?.trim();
+
+    let activeDensity = fxDensity ? parseFloat(fxDensity) : density;
+    let activeIntensity = fxIntensity ? parseFloat(fxIntensity) : intensity;
+    const activeInteractive = fxInteractive ? (fxInteractive !== 'off') : interactive;
+    const activeMonochrome = fxColor === 'monochrome' ? true : monochrome;
+
+    const blurPx = glassBlur ? parseFloat(glassBlur) : 0;
+    if (blurPx > 30 && activeDensity > 1.2) {
+      activeDensity = 1.2;
+    }
+
+    let activePalette = palette;
+    if (fxColor === 'primary') {
+      const primaryHex = rootStyle?.getPropertyValue('--color-primary')?.trim() || '#3279F9';
+      activePalette = [primaryHex, primaryHex, primaryHex];
+    } else if (fxColor === 'palette') {
+      const primaryHex = rootStyle?.getPropertyValue('--color-primary')?.trim() || '#3279F9';
+      activePalette = [primaryHex, '#A855F7', '#14B8A6'];
+    }
+
+    live.current = {
+      palette: activePalette,
+      monochrome: activeMonochrome,
+      additive,
+      intensity: activeIntensity,
+      interactive: activeInteractive,
+    };
+
     const gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: false });
     if (!gl) return;
 
@@ -165,7 +222,7 @@ export default function ParticleField({
     function buildParticles() {
       W = canvas!.clientWidth || window.innerWidth;
       H = canvas!.clientHeight || window.innerHeight;
-      count = Math.max(2200, Math.min(5500, Math.floor(((W * H) / 320) * density)));
+      count = Math.max(2200, Math.min(5500, Math.floor(((W * H) / 320) * activeDensity)));
       px = new Float32Array(count);
       py = new Float32Array(count);
       vx = new Float32Array(count);
@@ -435,7 +492,7 @@ export default function ParticleField({
       if (ext) ext.loseContext();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [density]);
+  }, [density, themeTick, monochrome, additive, intensity, interactive, palette]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
