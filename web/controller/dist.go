@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	htmlpkg "html"
 	"net/http"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/config"
 	"github.com/mhsanaei/3x-ui/v3/logger"
+	"github.com/mhsanaei/3x-ui/v3/web/service"
 	"github.com/mhsanaei/3x-ui/v3/web/session"
 )
 
@@ -82,6 +84,17 @@ func serveDistPage(c *gin.Context, name string) {
 		escapedVer := jsEscape.Replace(config.GetVersion())
 		script += `;window.X_UI_CUR_VER="` + escapedVer + `"`
 		script += `;window.X_UI_DB_TYPE="` + config.GetDBKind() + `"`
+	}
+	// No-flash theme bootstrap: ship the saved Appearance theme inline so the
+	// panel AND the login screen are dressed before the JS even runs. Marshalling
+	// the JSON string yields a safe JS string literal (Go escapes </>& to \uXXXX
+	// by default), so it can't break out of the <script>; JSON.parse re-reads it.
+	theme := "{}"
+	if t, terr := (&service.SettingService{}).GetPanelTheme(); terr == nil && strings.TrimSpace(t) != "" {
+		theme = t
+	}
+	if themeLit, merr := json.Marshal(theme); merr == nil {
+		script += `;window.X_UI_THEME=JSON.parse(` + string(themeLit) + `)`
 	}
 	script += `;</script>`
 	inject := []byte(script)

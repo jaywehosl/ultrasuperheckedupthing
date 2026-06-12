@@ -9,9 +9,11 @@ import { readyI18n } from '@/i18n/react';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { QueryProvider } from '@/api/QueryProvider';
 import { ToastViewport } from '@/components/ds';
+import { bootstrapTheme } from '@/theme/themeStorage';
 import LoginPage from '@/pages/login/LoginPage';
 
 setupAxios();
+bootstrapTheme();
 applyDocumentTitle();
 
 readyI18n().then(() => {

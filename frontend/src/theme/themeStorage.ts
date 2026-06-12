@@ -62,12 +62,21 @@ export async function saveTheme(theme: PanelTheme): Promise<boolean> {
   }
 }
 
-/** Apply the cached theme synchronously at boot (no flash), then prefer the
- *  server copy once it loads. */
+/** Apply the theme at boot with no flash. Prefers window.X_UI_THEME — the
+ *  server copy the Go handler inlines into the HTML before any JS runs — then
+ *  the local cache, then (only if neither) a server fetch. */
 export function bootstrapTheme(): void {
-  const local = loadTheme();
-  applyTheme(local);
-  if (local.mode) applyThemeMode(local.mode);
+  const injected = typeof window !== 'undefined' ? window.X_UI_THEME : undefined;
+  const hasInjected = injected && Object.keys(injected).length > 0;
+  const initial = hasInjected ? injected : loadTheme();
+
+  applyTheme(initial);
+  if (initial.mode) applyThemeMode(initial.mode);
+
+  if (hasInjected) {
+    cacheLocal(injected);
+    return; // the inlined theme IS the server copy — no fetch needed
+  }
 
   void fetchServerTheme().then((srv) => {
     if (srv && Object.keys(srv).length) {
