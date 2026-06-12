@@ -7,6 +7,7 @@ import { readyI18n } from '@/i18n/react';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { QueryProvider } from '@/api/QueryProvider';
 import { ToastViewport } from '@/components/ds';
+import { bootstrapTheme } from '@/theme/themeStorage';
 
 // Dev-only preview seed. In production the Go backend injects
 // window.__SUB_PAGE_DATA__ before this script runs; under `vite dev` it's absent,
@@ -46,6 +47,7 @@ function seedDevSubData() {
 
 readyI18n().then(async () => {
   seedDevSubData();
+  bootstrapTheme();
   // Imported dynamically so the dev seed above is in place before SubPage reads
   // window.__SUB_PAGE_DATA__ at module-evaluation time.
   const { default: SubPage } = await import('@/pages/sub/SubPage');

@@ -101,6 +101,7 @@ func NewSUBController(
 // initRouter registers HTTP routes for subscription links and JSON endpoints
 // on the provided router group.
 func (a *SUBController) initRouter(g *gin.RouterGroup) {
+	g.GET("/theme/asset/:id", a.themeAsset)
 	gLink := g.Group(a.subPath)
 	gLink.GET(":subid", a.subs)
 	gLink.HEAD(":subid", a.subs)
@@ -114,6 +115,23 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 		gClash.GET(":subid", a.subClashs)
 		gClash.HEAD(":subid", a.subClashs)
 	}
+}
+
+// themeAsset serves an uploaded Appearance asset (custom background / font),
+// unauthenticated, so the subscription page can reference it.
+func (a *SUBController) themeAsset(c *gin.Context) {
+	path, contentType, err := (&service.ThemeService{}).ResolveThemeAsset(c.Param("id"))
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.Data(http.StatusOK, contentType, data)
 }
 
 // subs handles HTTP requests for subscription links, returning either HTML page or base64-encoded subscription data.
@@ -239,8 +257,59 @@ func (a *SUBController) serveSubPage(c *gin.Context, basePath string, page PageD
 	)
 	escapedBase := jsEscape.Replace(basePath)
 
-	inject := []byte(`<script>window.X_UI_BASE_PATH="` + escapedBase + `";` +
-		`window.__SUB_PAGE_DATA__=` + string(subDataJSON) + `;</script></head>`)
+	themeVal := "{}"
+	if t, terr := a.settingService.GetPanelTheme(); terr == nil && strings.TrimSpace(t) != "" {
+		themeVal = t
+	}
+	var themeLit []byte
+	if lit, merr := json.Marshal(themeVal); merr == nil {
+		themeLit = lit
+	} else {
+		themeLit = []byte(`"{}"`)
+	}
+
+	// Unmarshal themeVal to get the mode & background for class injection
+	var panelTheme struct {
+		Mode       string `json:"mode"`
+		Background struct {
+			Type    string `json:"type"`
+			AssetID string `json:"assetId"`
+		} `json:"background"`
+	}
+	_ = json.Unmarshal([]byte(themeVal), &panelTheme)
+
+	isDark := panelTheme.Mode == "dark" || panelTheme.Mode == "ultra-dark"
+	isUltra := panelTheme.Mode == "ultra-dark"
+	hasBgImage := panelTheme.Background.Type == "image" && panelTheme.Background.AssetID != ""
+
+	// Build the no-flash CSS override tag if ThemeCSS is not empty
+	var themeCSSBlock string
+	if page.ThemeCSS != "" {
+		themeCSSBlock = `<style id="uup-theme-overrides">` + page.ThemeCSS + `</style>`
+	}
+
+	// Build the no-flash DOM state-applier script
+	var noFlashScript strings.Builder
+	noFlashScript.WriteString(`<script>`)
+	noFlashScript.WriteString(fmt.Sprintf(`window.X_UI_BASE_PATH="%s";`, escapedBase))
+	noFlashScript.WriteString(fmt.Sprintf(`window.X_UI_THEME=JSON.parse(%s);`, string(themeLit)))
+	noFlashScript.WriteString(fmt.Sprintf(`window.__SUB_PAGE_DATA__=%s;`, string(subDataJSON)))
+
+	if isDark {
+		noFlashScript.WriteString(`document.documentElement.classList.add("is-dark");`)
+		noFlashScript.WriteString(`document.body.classList.add("dark");`)
+	} else {
+		noFlashScript.WriteString(`document.body.classList.add("light");`)
+	}
+	if isUltra {
+		noFlashScript.WriteString(`document.documentElement.classList.add("is-ultra");`)
+	}
+	if hasBgImage {
+		noFlashScript.WriteString(`document.body.classList.add("has-theme-bg");`)
+	}
+	noFlashScript.WriteString(`</script>`)
+
+	inject := []byte(themeCSSBlock + noFlashScript.String() + "</head>")
 	out := bytes.Replace(body, []byte("</head>"), inject, 1)
 
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")

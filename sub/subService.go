@@ -1988,6 +1988,7 @@ type PageData struct {
 	SubSupportUrl string
 	Result        []string
 	Emails        []string
+	ThemeCSS      string
 }
 
 // ResolveRequest extracts scheme and host info from request/headers consistently.
@@ -2091,6 +2092,14 @@ func (s *SubService) BuildPageData(subId string, hostHeader string, traffic xray
 		datepicker = "gregorian"
 	}
 
+	var themeCSS string
+	if t, terr := s.settingService.GetPanelTheme(); terr == nil && strings.TrimSpace(t) != "" {
+		var theme PanelTheme
+		if err := json.Unmarshal([]byte(t), &theme); err == nil {
+			themeCSS = ThemeToCSS(&theme, basePath)
+		}
+	}
+
 	return PageData{
 		Host:          hostHeader,
 		BasePath:      basePath,
@@ -2114,6 +2123,7 @@ func (s *SubService) BuildPageData(subId string, hostHeader string, traffic xray
 		SubSupportUrl: subSupportUrl,
 		Result:        subs,
 		Emails:        emails,
+		ThemeCSS:      themeCSS,
 	}
 }
 
