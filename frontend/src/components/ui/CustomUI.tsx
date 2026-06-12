@@ -196,18 +196,6 @@ export function Alert({ type = 'info', title, description, showIcon, className =
   );
 }
 
-// Statistic replacement
-export function Statistic({ title, value, prefix, className = '', ...props }: any) {
-  return (
-    <div className={`custom-statistic ${className}`} {...props}>
-      {title && <div className="custom-statistic-title">{title}</div>}
-      <div className="custom-statistic-content">
-        {prefix && <span className="custom-statistic-prefix">{prefix}</span>}
-        <span className="custom-statistic-value">{value}</span>
-      </div>
-    </div>
-  );
-}
 
 // Custom Modal Dialog
 export function Modal({

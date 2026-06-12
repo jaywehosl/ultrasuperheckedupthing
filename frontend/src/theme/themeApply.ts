@@ -72,6 +72,26 @@ function normalizeKey(k: string): string {
   return k.startsWith('--') ? k : `--${k}`;
 }
 
+export function hexToRgb(hex: string): string | null {
+  const clean = hex.trim().replace(/^#/, '');
+  if (clean.length === 3) {
+    const r = parseInt(clean[0] + clean[0], 16);
+    const g = parseInt(clean[1] + clean[1], 16);
+    const b = parseInt(clean[2] + clean[2], 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      return `${r}, ${g}, ${b}`;
+    }
+  } else if (clean.length === 6) {
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      return `${r}, ${g}, ${b}`;
+    }
+  }
+  return null;
+}
+
 /** A font value is either a CSS font-family list ("'Inter', sans-serif") or
  *  "asset:<id>" pointing at an uploaded font. The latter emits an @font-face. */
 function resolveFont(raw: string | undefined, fallback: string, faces: string[]): string | undefined {
@@ -90,6 +110,7 @@ export function themeToCss(theme: PanelTheme): string {
   const push = (k: string, v: string | number) => decls.push(`${k}: ${v};`);
 
   if (theme.tokens) {
+    const computedRgb: Record<string, string> = {};
     for (const [rawKey, value] of Object.entries(theme.tokens)) {
       const key = normalizeKey(rawKey);
       if (SYNTHETIC_KEYS.has(key)) continue;
@@ -97,6 +118,22 @@ export function themeToCss(theme: PanelTheme): string {
       if (key === '--fx-hover-glow' && theme.effects?.hoverGlow !== undefined) continue;
       if (value === null || value === undefined || value === '') continue;
       push(key, value);
+
+      // Automatically generate -rgb counterpart for hex colors
+      if (key.startsWith('--color-') && !key.endsWith('-rgb') && typeof value === 'string') {
+        const rgb = hexToRgb(value);
+        if (rgb) {
+          computedRgb[`${key}-rgb`] = rgb;
+        }
+      }
+    }
+
+    // Append generated -rgb tokens if not explicitly overridden
+    for (const [rgbKey, rgbValue] of Object.entries(computedRgb)) {
+      const explicitKey = Object.keys(theme.tokens).find(k => normalizeKey(k) === rgbKey);
+      if (!explicitKey) {
+        push(rgbKey, rgbValue);
+      }
     }
 
     const scale = Number(theme.tokens['--radius-scale']);

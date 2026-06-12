@@ -322,32 +322,6 @@ body.dark .custom-btn {
   opacity: 0.85;
 }
 
-/* Custom Statistics */
-.custom-statistic {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.custom-statistic-title {
-  font-size: 13px;
-  opacity: 0.65;
-}
-
-.custom-statistic-content {
-  font-family: 'Outfit', sans-serif;
-  font-size: 20px;
-  font-weight: 550;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.custom-statistic-prefix {
-  color: var(--color-primary);
-  display: inline-flex;
-  align-items: center;
-}
 
 /* Custom Modals */
 .custom-modal-overlay {

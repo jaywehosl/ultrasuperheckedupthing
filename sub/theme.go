@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -73,6 +74,29 @@ func resolveFont(raw string, fallback string, basePath string, fontFaces *[]stri
 	return fmt.Sprintf("\"%s\", %s", family, fallback)
 }
 
+func hexToRGB(hex string) string {
+	hex = strings.TrimSpace(hex)
+	if strings.HasPrefix(hex, "#") {
+		hex = hex[1:]
+	}
+	if len(hex) == 3 {
+		r, errR := strconv.ParseUint(hex[0:1]+hex[0:1], 16, 8)
+		g, errG := strconv.ParseUint(hex[1:2]+hex[1:2], 16, 8)
+		b, errB := strconv.ParseUint(hex[2:3]+hex[2:3], 16, 8)
+		if errR == nil && errG == nil && errB == nil {
+			return fmt.Sprintf("%d, %d, %d", r, g, b)
+		}
+	} else if len(hex) == 6 {
+		r, errR := strconv.ParseUint(hex[0:2], 16, 8)
+		g, errG := strconv.ParseUint(hex[2:4], 16, 8)
+		b, errB := strconv.ParseUint(hex[4:6], 16, 8)
+		if errR == nil && errG == nil && errB == nil {
+			return fmt.Sprintf("%d, %d, %d", r, g, b)
+		}
+	}
+	return ""
+}
+
 func ThemeToCSS(theme *PanelTheme, basePath string) string {
 	if theme == nil {
 		return ""
@@ -81,6 +105,7 @@ func ThemeToCSS(theme *PanelTheme, basePath string) string {
 	var fontFaces []string
 
 	if theme.Tokens != nil {
+		computedRgb := make(map[string]string)
 		for k, v := range theme.Tokens {
 			if v == nil || v == "" {
 				continue
@@ -96,6 +121,30 @@ func ThemeToCSS(theme *PanelTheme, basePath string) string {
 				continue
 			}
 			decls = append(decls, fmt.Sprintf("%s: %v;", key, v))
+
+			// Automatically generate -rgb counterpart for hex colors
+			if strings.HasPrefix(key, "--color-") && !strings.HasSuffix(key, "-rgb") {
+				if strVal, ok := v.(string); ok {
+					rgbStr := hexToRGB(strVal)
+					if rgbStr != "" {
+						computedRgb[key+"-rgb"] = rgbStr
+					}
+				}
+			}
+		}
+
+		// Append generated -rgb tokens if not explicitly overridden
+		for rgbKey, rgbVal := range computedRgb {
+			hasExplicit := false
+			for rawK := range theme.Tokens {
+				if normalizeKey(rawK) == rgbKey {
+					hasExplicit = true
+					break
+				}
+			}
+			if !hasExplicit {
+				decls = append(decls, fmt.Sprintf("%s: %s;", rgbKey, rgbVal))
+			}
 		}
 
 		if rawScale, ok := theme.Tokens["--radius-scale"]; ok {

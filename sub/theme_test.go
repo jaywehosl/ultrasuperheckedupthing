@@ -47,6 +47,12 @@ func TestThemeToCSS_Basic(t *testing.T) {
 		t.Errorf("Expected primary color to be set. Got: %s", css)
 	}
 
+	// Verify automated primary RGB calculation
+	if !strings.Contains(css, "--color-primary-rgb: 50, 121, 249;") {
+		t.Errorf("Expected automatically generated primary RGB to be set. Got: %s", css)
+	}
+
+
 	// Verify glass blur
 	if !strings.Contains(css, "--glass-blur: 30px;") {
 		t.Errorf("Expected glass blur to be set. Got: %s", css)

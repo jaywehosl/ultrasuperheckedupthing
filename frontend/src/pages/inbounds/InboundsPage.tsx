@@ -2,16 +2,15 @@ import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
-  Card,
   Col,
   ConfigProvider,
   Modal,
   Result,
   Row,
   Spin,
-  Statistic,
   message,
 } from '@/components/ui';
+import { Card, Stat } from '@/components/ds';
 
 import { setMessageInstance } from '@/utils/messageBus';
 import {
@@ -568,24 +567,24 @@ export default function InboundsPage() {
               ) : (
                 <Row gutter={[isMobile ? 8 : 16, 12]}>
                   <Col span={24}>
-                    <Card size="small" hoverable className="summary-card">
+                    <Card className="summary-card">
                       <Row gutter={[16, 12]}>
                         <Col xs={12} sm={12} md={8}>
-                          <Statistic
+                          <Stat
                             title={t('pages.inbounds.totalDownUp')}
                             value={`${SizeFormatter.sizeFormat(totals.up)} / ${SizeFormatter.sizeFormat(totals.down)}`}
                             prefix={<SwapOutlined />}
                           />
                         </Col>
                         <Col xs={12} sm={12} md={8}>
-                          <Statistic
+                          <Stat
                             title={t('pages.inbounds.totalUsage')}
                             value={SizeFormatter.sizeFormat(totals.up + totals.down)}
                             prefix={<PieChartOutlined />}
                           />
                         </Col>
                         <Col xs={24} sm={24} md={8}>
-                          <Statistic
+                          <Stat
                             title={t('pages.inbounds.inboundCount')}
                             value={String(dbInbounds.length)}
                             prefix={<BarsOutlined />}
