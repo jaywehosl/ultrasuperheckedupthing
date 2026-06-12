@@ -10,6 +10,8 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { Pagination, type PaginationProps } from './Pagination';
+import { EmptyState } from './EmptyState';
+
 
 export type { ColumnDef } from '@tanstack/react-table';
 
@@ -145,7 +147,7 @@ export function DataTable<T>({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={totalCols}>
-                <div className="ds-table__empty">{empty ?? 'No data'}</div>
+                <div className="ds-table__empty">{empty ?? <EmptyState />}</div>
               </td>
             </tr>
           ) : (
