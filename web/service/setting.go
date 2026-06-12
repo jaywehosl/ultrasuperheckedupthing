@@ -55,6 +55,7 @@ var defaultValueMap = map[string]string{
 	"tgLang":                      "en-US",
 	"twoFactorEnable":             "false",
 	"twoFactorToken":              "",
+	"panelTheme":                  "",
 	"subEnable":                   "true",
 	"subJsonEnable":               "false",
 	"subTitle":                    "",
@@ -451,6 +452,23 @@ func (s *SettingService) GetTwoFactorToken() (string, error) {
 
 func (s *SettingService) SetTwoFactorToken(value string) error {
 	return s.setString("twoFactorToken", value)
+}
+
+// GetPanelTheme returns the saved Appearance theme as a JSON string ("{}" when
+// unset). Served publicly via /theme.json so login + sub bootstrap with it.
+func (s *SettingService) GetPanelTheme() (string, error) {
+	v, err := s.getString("panelTheme")
+	if err != nil {
+		return "{}", err
+	}
+	if strings.TrimSpace(v) == "" {
+		return "{}", nil
+	}
+	return v, nil
+}
+
+func (s *SettingService) SetPanelTheme(value string) error {
+	return s.setString("panelTheme", value)
 }
 
 func (s *SettingService) GetPort() (int, error) {

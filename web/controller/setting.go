@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"strconv"
 	"time"
@@ -46,6 +47,7 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/update", a.updateSetting)
 	g.POST("/updateUser", a.updateUser)
 	g.POST("/restartPanel", a.restartPanel)
+	g.POST("/theme", a.updatePanelTheme)
 	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
 	g.GET("/apiTokens", a.listApiTokens)
 	g.POST("/apiTokens/create", a.createApiToken)
@@ -121,6 +123,22 @@ func (a *SettingController) updateUser(c *gin.Context) {
 func (a *SettingController) restartPanel(c *gin.Context) {
 	err := a.panelService.RestartPanel(time.Second * 3)
 	jsonMsg(c, I18nWeb(c, "pages.settings.restartPanelSuccess"), err)
+}
+
+// updatePanelTheme persists the Appearance theme. The body is the raw theme
+// JSON object; it's validated and stored as-is (served back via /theme.json).
+func (a *SettingController) updatePanelTheme(c *gin.Context) {
+	body, err := c.GetRawData()
+	if err != nil {
+		jsonMsg(c, "update theme", err)
+		return
+	}
+	if len(body) == 0 || !json.Valid(body) {
+		jsonMsg(c, "update theme", errors.New("invalid theme JSON"))
+		return
+	}
+	err = a.settingService.SetPanelTheme(string(body))
+	jsonMsg(c, "update theme", err)
 }
 
 // getDefaultXrayConfig retrieves the default Xray configuration.

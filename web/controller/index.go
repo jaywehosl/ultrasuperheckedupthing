@@ -40,6 +40,7 @@ func NewIndexController(g *gin.RouterGroup) *IndexController {
 func (a *IndexController) initRouter(g *gin.RouterGroup) {
 	g.GET("/", a.index)
 	g.GET("/csrf-token", a.csrfToken)
+	g.GET("/theme.json", a.themeJSON)
 
 	g.POST("/login", middleware.CSRFMiddleware(), a.login)
 	g.POST("/logout", middleware.CSRFMiddleware(), a.logout)
@@ -54,6 +55,17 @@ func (a *IndexController) index(c *gin.Context) {
 		return
 	}
 	serveDistPage(c, "login.html")
+}
+
+// themeJSON serves the saved Appearance theme as raw JSON, unauthenticated, so
+// the login screen and subscription page can bootstrap the look before auth.
+func (a *IndexController) themeJSON(c *gin.Context) {
+	theme, err := a.settingService.GetPanelTheme()
+	if err != nil || theme == "" {
+		theme = "{}"
+	}
+	c.Header("Cache-Control", "no-cache")
+	c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(theme))
 }
 
 // login handles user authentication and session creation.
