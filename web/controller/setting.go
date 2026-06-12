@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"strconv"
 	"time"
 
@@ -48,6 +49,7 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/updateUser", a.updateUser)
 	g.POST("/restartPanel", a.restartPanel)
 	g.POST("/theme", a.updatePanelTheme)
+	g.POST("/theme/asset", a.uploadThemeAsset)
 	g.GET("/getDefaultJsonConfig", a.getDefaultXrayConfig)
 	g.GET("/apiTokens", a.listApiTokens)
 	g.POST("/apiTokens/create", a.createApiToken)
@@ -139,6 +141,30 @@ func (a *SettingController) updatePanelTheme(c *gin.Context) {
 	}
 	err = a.settingService.SetPanelTheme(string(body))
 	jsonMsg(c, "update theme", err)
+}
+
+// uploadThemeAsset stores a custom background image or font for the theme and
+// returns its asset id (referenced from panelTheme, served via /theme/asset/:id).
+func (a *SettingController) uploadThemeAsset(c *gin.Context) {
+	kind := c.PostForm("kind")
+	header, err := c.FormFile("file")
+	if err != nil {
+		jsonMsg(c, "upload theme asset", err)
+		return
+	}
+	f, err := header.Open()
+	if err != nil {
+		jsonMsg(c, "upload theme asset", err)
+		return
+	}
+	defer f.Close()
+	data, err := io.ReadAll(f)
+	if err != nil {
+		jsonMsg(c, "upload theme asset", err)
+		return
+	}
+	id, err := (&service.ThemeService{}).SaveThemeAsset(kind, header.Filename, data)
+	jsonObj(c, gin.H{"assetId": id}, err)
 }
 
 // getDefaultXrayConfig retrieves the default Xray configuration.

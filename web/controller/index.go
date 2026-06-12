@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"os"
 	"text/template"
 	"time"
 
@@ -41,6 +42,7 @@ func (a *IndexController) initRouter(g *gin.RouterGroup) {
 	g.GET("/", a.index)
 	g.GET("/csrf-token", a.csrfToken)
 	g.GET("/theme.json", a.themeJSON)
+	g.GET("/theme/asset/:id", a.themeAsset)
 
 	g.POST("/login", middleware.CSRFMiddleware(), a.login)
 	g.POST("/logout", middleware.CSRFMiddleware(), a.logout)
@@ -66,6 +68,23 @@ func (a *IndexController) themeJSON(c *gin.Context) {
 	}
 	c.Header("Cache-Control", "no-cache")
 	c.Data(http.StatusOK, "application/json; charset=utf-8", []byte(theme))
+}
+
+// themeAsset serves an uploaded Appearance asset (custom background / font),
+// unauthenticated, so the panel, login and sub pages can all reference it.
+func (a *IndexController) themeAsset(c *gin.Context) {
+	path, contentType, err := (&service.ThemeService{}).ResolveThemeAsset(c.Param("id"))
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.Data(http.StatusOK, contentType, data)
 }
 
 // login handles user authentication and session creation.
