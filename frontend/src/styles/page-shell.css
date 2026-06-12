@@ -553,11 +553,38 @@ body.dark .page-header h1 {
   .inbounds-page .summary-card,
   .nodes-page .summary-card,
   .groups-page .summary-card {
-    padding: 8px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Prevent stats values wrapping or squishing too much on mobile */
+  .ds-stat__value {
+    font-size: 20px !important;
+  }
+  .ds-stat__title {
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  
+  /* Increase spacing for mobile action triggers to prevent accidental touches */
+  .ant-table-cell .ant-space, 
+  .ds-table tbody td .ant-space {
+    gap: 12px !important;
+    display: flex;
+    flex-wrap: wrap;
   }
 }
 
 /* Custom Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(18, 19, 23, 0.12) transparent;
+}
+.is-dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
