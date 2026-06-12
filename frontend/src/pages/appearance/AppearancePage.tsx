@@ -274,8 +274,11 @@ export default function AppearancePage() {
 
   const onSave = async () => {
     const ok = await saveTheme(theme);
-    if (ok) toast.success('Theme saved');
-    else toast.success('Saved locally (backend not reachable)');
+    // A failed server save MUST read as an error — otherwise the theme only
+    // lives in this browser's localStorage and never reaches the sub page,
+    // login bootstrap, or other admins (it stays "{}" on the server).
+    if (ok) toast.success('Theme saved to the server');
+    else toast.error('Could not save to the server — applied to this browser only');
   };
   const onReset = () => {
     clearTheme(); setTheme({}); applyTheme({}); applyThemeMode('light');

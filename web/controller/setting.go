@@ -14,6 +14,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/web/session"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 // updateUserForm represents the form for updating user credentials.
@@ -129,18 +130,23 @@ func (a *SettingController) restartPanel(c *gin.Context) {
 
 // updatePanelTheme persists the Appearance theme. The body is the raw theme
 // JSON object; it's validated and stored as-is (served back via /theme.json).
+// Read via ShouldBindBodyWith (gin caches the body) rather than GetRawData, so
+// it's robust even if another reader touched the body first.
 func (a *SettingController) updatePanelTheme(c *gin.Context) {
-	body, err := c.GetRawData()
-	if err != nil {
+	var raw json.RawMessage
+	if err := c.ShouldBindBodyWith(&raw, binding.JSON); err != nil {
 		jsonMsg(c, "update theme", err)
 		return
 	}
-	if len(body) == 0 || !json.Valid(body) {
+	if len(raw) == 0 || !json.Valid(raw) {
 		jsonMsg(c, "update theme", errors.New("invalid theme JSON"))
 		return
 	}
-	err = a.settingService.SetPanelTheme(string(body))
-	jsonMsg(c, "update theme", err)
+	if err := a.settingService.SetPanelTheme(string(raw)); err != nil {
+		jsonMsg(c, "update theme", err)
+		return
+	}
+	jsonMsg(c, "theme saved", nil)
 }
 
 // uploadThemeAsset stores a custom background image or font for the theme and

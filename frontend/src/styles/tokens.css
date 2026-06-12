@@ -182,6 +182,21 @@ html[data-theme="ultra-dark"] {
   --hairline-soft:  rgba(255, 255, 255, 0.035);
 }
 
+/* ============================ Theme-switch freeze =========================
+ * pauseAnimationsUntilLeave() sets data-theme-animations="off" on <html> while
+ * a light/dark switch is in progress. WITHOUT this rule the attribute did
+ * nothing, so background-color / backdrop-filter transitions cross-faded — on
+ * the login screen that read as a full-page WHITE flash. Freeze all transitions
+ * & animations during the switch so the theme flips instantly, no flash. */
+html[data-theme-animations="off"],
+html[data-theme-animations="off"] *,
+html[data-theme-animations="off"] *::before,
+html[data-theme-animations="off"] *::after {
+  transition: none !important;
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+}
+
 /* ============================ A11y: reduced motion ======================== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
