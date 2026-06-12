@@ -156,13 +156,13 @@ body.dark .submenu-item {
 }
 
 .submenu-item:hover {
-  background: rgba(50, 121, 249, 0.06);
-  color: #3279F9;
+  background: rgba(var(--color-primary-rgb), 0.06);
+  color: var(--color-primary);
 }
 
 .submenu-item.is-active {
-  background: rgba(50, 121, 249, 0.12);
-  color: #3279F9;
+  background: rgba(var(--color-primary-rgb), 0.12);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -196,8 +196,8 @@ body.dark .sidebar-theme-cycle {
 
 .sidebar-donate:hover,
 .sidebar-theme-cycle:hover {
-  background-color: rgba(50, 121, 249, 0.08);
-  color: #3279F9;
+  background-color: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
   transform: scale(1.05);
 }
 
@@ -226,8 +226,8 @@ body.dark .sider-version {
 }
 
 .sider-version:hover {
-  background: rgba(50, 121, 249, 0.08);
-  color: #3279F9;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
 }
 
 .logout-pill-btn {
@@ -249,7 +249,7 @@ body.dark .logout-pill-btn {
 }
 
 .logout-pill-btn:hover {
-  background: #3279F9;
+  background: var(--color-primary);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -272,8 +272,8 @@ body.dark .hamburger-menu-btn {
 }
 
 .hamburger-menu-btn:hover {
-  background: rgba(50, 121, 249, 0.08);
-  color: #3279F9;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
 }
 
 /* Drawer styles */
@@ -421,8 +421,8 @@ body.dark .drawer-utility-list {
   right: 0;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.16);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 30px)) saturate(var(--glass-saturate, 170%)) !important;
+  backdrop-filter: blur(var(--glass-blur, 30px)) saturate(var(--glass-saturate, 170%)) !important;
   border-bottom: 1px solid rgba(18, 19, 23, 0.05);
   /* nothing in the topbar is selectable (matches the header) */
   user-select: none;
@@ -463,11 +463,11 @@ html[data-theme="ultra-dark"] body.dark .topbar-shell {
 }
 .sidebar-theme-cycle:hover {
   background: rgba(255, 255, 255, 0.5) !important;
-  color: #3279F9 !important;
-  border-color: rgba(50, 121, 249, 0.5) !important;
+  color: var(--color-primary) !important;
+  border-color: rgba(var(--color-primary-rgb), 0.5) !important;
   box-shadow:
-    inset 0 1px 4px rgba(50, 121, 249, 0.22),
-    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 7px 16px rgba(var(--color-primary-rgb), 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
   transform: none !important;
 }
@@ -529,10 +529,10 @@ html[data-theme="ultra-dark"] body.dark .topbar-shell {
    (the trigger's hover state must not disappear when you move onto items). */
 .sidebar-theme-cycle[data-state='open'] {
   background: rgba(255, 255, 255, 0.5) !important;
-  color: #3279F9 !important;
-  border-color: rgba(50, 121, 249, 0.5) !important;
+  color: var(--color-primary) !important;
+  border-color: rgba(var(--color-primary-rgb), 0.5) !important;
   box-shadow:
-    inset 0 1px 4px rgba(50, 121, 249, 0.22),
-    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 7px 16px rgba(var(--color-primary-rgb), 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }

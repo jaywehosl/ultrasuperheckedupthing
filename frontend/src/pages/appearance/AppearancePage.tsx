@@ -109,7 +109,12 @@ export default function AppearancePage() {
   const setPrimary = (hex: string) =>
     patch((t) => ({ ...t, tokens: { ...t.tokens, '--color-primary': hex, '--color-primary-rgb': hexToRgb(hex) ?? '' } }));
   const tok = (k: string, d: number | string) => (theme.tokens?.[k] ?? d);
-  const num = (k: string, d: number) => Number(theme.tokens?.[k] ?? d);
+  const num = (k: string, d: number) => {
+    const raw = theme.tokens?.[k];
+    if (raw === undefined || raw === null || raw === '') return d;
+    const parsed = parseFloat(String(raw));
+    return Number.isNaN(parsed) ? d : parsed;
+  };
 
   const onSave = async () => {
     const ok = await saveTheme(theme);

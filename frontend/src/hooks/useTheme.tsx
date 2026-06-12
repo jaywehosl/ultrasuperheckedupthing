@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { loadTheme, saveTheme } from '@/theme/themeStorage';
+import { applyThemeMode, type ThemeMode } from '@/theme/themeApply';
 
 const STORAGE_DARK = 'dark-mode';
 const STORAGE_ULTRA = 'isUltraDarkThemeEnabled';
@@ -30,13 +32,19 @@ if (localStorage.getItem(CACHE_RESET_KEY) !== 'true') {
   localStorage.setItem(CACHE_RESET_KEY, 'true');
 }
 
-// module load so the document is in the right theme before React mounts.
-// Dark theme temporarily removed system-wide — single light theme only.
-// (The toggle button stays; dark will be rebuilt from scratch off the light one.)
-const initialDark = false;
-// AMOLED / "ultra dark" theme removed — there is now a single systemic dark theme.
-const initialUltra = false;
-applyDom(initialDark, initialUltra);
+const getInitialMode = () => {
+  if (typeof window === 'undefined') return { dark: false, ultra: false };
+  const injected = (window as any).X_UI_THEME;
+  const initial = (injected && Object.keys(injected).length > 0) ? injected : loadTheme();
+  const mode = initial.mode ?? 'light';
+  return {
+    dark: mode === 'dark' || mode === 'ultra-dark',
+    ultra: mode === 'ultra-dark',
+  };
+};
+
+const initialMode = getInitialMode();
+applyDom(initialMode.dark, initialMode.ultra);
 
 export function pauseAnimationsUntilLeave(elementId: string): void {
   document.documentElement.setAttribute('data-theme-animations', 'off');
@@ -61,8 +69,8 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [isDark, setIsDark] = useState<boolean>(initialDark);
-  const [isUltra, setIsUltra] = useState<boolean>(initialUltra);
+  const [isDark, setIsDark] = useState<boolean>(initialMode.dark);
+  const [isUltra, setIsUltra] = useState<boolean>(initialMode.ultra);
 
   useEffect(() => {
     applyDom(isDark, isUltra);
@@ -70,12 +78,47 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_ULTRA, String(isUltra));
   }, [isDark, isUltra]);
 
-  // no-op for now: dark theme removed system-wide, keep the button as a placeholder
-  const toggleTheme = useCallback(() => {}, []);
-  void setIsDark;
-  // no-op: the AMOLED/ultra theme was removed, keep the API for compatibility
-  const toggleUltra = useCallback(() => {}, []);
-  void setIsUltra;
+  useEffect(() => {
+    const handleModeChange = (e: Event) => {
+      const mode = (e as CustomEvent<ThemeMode>).detail;
+      setIsDark(mode === 'dark' || mode === 'ultra-dark');
+      setIsUltra(mode === 'ultra-dark');
+    };
+    window.addEventListener('uup-theme-mode-changed', handleModeChange);
+    return () => window.removeEventListener('uup-theme-mode-changed', handleModeChange);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setIsDark((prevDark) => {
+      const nextDark = !prevDark;
+      setIsUltra(false);
+      
+      const theme = loadTheme();
+      const nextMode: ThemeMode = nextDark ? 'dark' : 'light';
+      theme.mode = nextMode;
+      
+      applyThemeMode(nextMode);
+      void saveTheme(theme);
+      
+      return nextDark;
+    });
+  }, []);
+
+  const toggleUltra = useCallback(() => {
+    setIsUltra((prevUltra) => {
+      const nextUltra = !prevUltra;
+      setIsDark(true);
+      
+      const theme = loadTheme();
+      const nextMode: ThemeMode = nextUltra ? 'ultra-dark' : 'dark';
+      theme.mode = nextMode;
+      
+      applyThemeMode(nextMode);
+      void saveTheme(theme);
+      
+      return nextUltra;
+    });
+  }, []);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ isDark, isUltra, toggleTheme, toggleUltra }),

@@ -119,8 +119,19 @@ export function themeToCss(theme: PanelTheme): string {
 export function applyThemeMode(mode: ThemeMode | undefined): void {
   if (typeof document === 'undefined' || !mode) return;
   const html = document.documentElement;
-  html.classList.toggle('is-dark', mode === 'dark' || mode === 'ultra-dark');
-  html.classList.toggle('is-ultra', mode === 'ultra-dark');
+  const isDark = mode === 'dark' || mode === 'ultra-dark';
+  const isUltra = mode === 'ultra-dark';
+  html.classList.toggle('is-dark', isDark);
+  html.classList.toggle('is-ultra', isUltra);
+
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('light', !isDark);
+  const msg = document.getElementById('message');
+  if (msg) msg.className = isDark ? 'dark' : 'light';
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('uup-theme-mode-changed', { detail: mode }));
+  }
 }
 
 /** Apply token/font/background overrides into the single managed <style>. The
