@@ -688,7 +688,16 @@ export default function ParticleField({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [density, themeTick, monochrome, additive, intensity, interactive, palette]);
+  }, [density, themeTick, monochrome, interactive, palette]);
+
+  // additive / intensity are per-frame uniforms read from live.current — update
+  // them in place instead of re-running the heavy effect. The login screen flips
+  // these on every theme switch (additive={isDark}, intensity={isDark?…}); if
+  // they were effect deps the WebGL context tore down + rebuilt mid-switch,
+  // blanking the full-screen canvas for a frame = the login "white flash".
+  useEffect(() => {
+    live.current = { ...live.current, additive, intensity };
+  }, [additive, intensity]);
 
   // Lose WebGL context only when the canvas element actually unmounts
   useEffect(() => {
