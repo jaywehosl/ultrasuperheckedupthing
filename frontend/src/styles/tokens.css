@@ -16,9 +16,12 @@
   --ag-blue-700: #1d4cab;
 
   --color-primary:        var(--ag-blue-500);
-  --color-primary-strong: var(--ag-blue-600);
-  --color-primary-soft:   rgba(50, 121, 249, 0.10);
   --color-primary-rgb:    50, 121, 249;
+  /* Derived from --color-primary so a custom Primary (Appearance) drives them
+     too — previously these were hardcoded blue, so e.g. a toggle's fill tracked
+     Primary but its BORDER (--color-primary-strong) and soft tints stayed blue. */
+  --color-primary-strong: color-mix(in srgb, var(--color-primary) 82%, #000);
+  --color-primary-soft:   rgba(var(--color-primary-rgb), 0.10);
 
   --color-success: #34a853;
   --color-warning: #f5a524;

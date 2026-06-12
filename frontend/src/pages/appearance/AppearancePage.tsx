@@ -378,7 +378,7 @@ export default function AppearancePage() {
           </div>
         </Card>
 
-        <Card title="Mode">
+        <Card title="Theme">
           <Row label="Color scheme" hint="Light / dark base from the design tokens">
             <Segmented
               value={theme.mode ?? 'light'}
@@ -392,22 +392,25 @@ export default function AppearancePage() {
           </Row>
         </Card>
 
-        <Card title="Palette">
-          <ColorRow label="Primary" value={primaryHex} onChange={setPrimary} />
-          <div className="ap-contrast-indicator">
-            <span>Contrast Ratio: <strong>{contrastRatio.toFixed(1)}:1</strong></span>
-            {isContrastLow && (
-              <span className="ap-warning-pill">
-                ⚠️ Low Contrast
-              </span>
-            )}
-          </div>
-          <ColorRow label="Success" value={String(tok('--color-success', DEFAULTS.success))} onChange={(v) => setToken('--color-success', v)} />
-          <ColorRow label="Warning" value={String(tok('--color-warning', DEFAULTS.warning))} onChange={(v) => setToken('--color-warning', v)} />
-          <ColorRow label="Error" value={String(tok('--color-error', DEFAULTS.error))} onChange={(v) => setToken('--color-error', v)} />
+        <Card title="Glass & blur">
+          <RangeRow label="Frost blur" min={0} max={60} step={2} suffix="px"
+            value={num('--glass-blur', DEFAULTS.glassBlur)}
+            onChange={(v) => setToken('--glass-blur', `${v}px`)} />
+          <RangeRow label="Saturation" min={100} max={220} step={5} suffix="%"
+            value={num('--glass-saturate', DEFAULTS.glassSaturate)}
+            onChange={(v) => setToken('--glass-saturate', `${v}%`)} />
         </Card>
 
-        <Card title="Background">
+        <Card title="Shape & depth">
+          <RangeRow label="Corner radius" min={0.5} max={2} step={0.1} suffix="×"
+            value={num('--radius-scale', DEFAULTS.radiusScale)}
+            onChange={(v) => setToken('--radius-scale', v)} />
+          <RangeRow label="Shadow intensity" min={0} max={2} step={0.1} suffix="×"
+            value={num('--shadow-intensity', DEFAULTS.shadowIntensity)}
+            onChange={(v) => setToken('--shadow-intensity', v)} />
+        </Card>
+
+        <Card title="Background Wallpaper">
           <Row label="Type">
             <Segmented
               value={bg.type ?? 'aura'}
@@ -446,56 +449,19 @@ export default function AppearancePage() {
             onChange={(v) => patch((t) => ({ ...t, background: { ...t.background, blur: `${v}px` } }))} />
         </Card>
 
-        <Card title="Glass & blur">
-          <RangeRow label="Frost blur" min={0} max={60} step={2} suffix="px"
-            value={num('--glass-blur', DEFAULTS.glassBlur)}
-            onChange={(v) => setToken('--glass-blur', `${v}px`)} />
-          <RangeRow label="Saturation" min={100} max={220} step={5} suffix="%"
-            value={num('--glass-saturate', DEFAULTS.glassSaturate)}
-            onChange={(v) => setToken('--glass-saturate', `${v}%`)} />
-        </Card>
-
-        <Card title="Shape & depth">
-          <RangeRow label="Corner radius" min={0.5} max={2} step={0.1} suffix="×"
-            value={num('--radius-scale', DEFAULTS.radiusScale)}
-            onChange={(v) => setToken('--radius-scale', v)} />
-          <RangeRow label="Shadow intensity" min={0} max={2} step={0.1} suffix="×"
-            value={num('--shadow-intensity', DEFAULTS.shadowIntensity)}
-            onChange={(v) => setToken('--shadow-intensity', v)} />
-        </Card>
-
-        <Card title="Typography">
-          <Row label="Sans">
-            <Select value={theme.fonts?.sans ?? FONT_OPTIONS[0].value}
-              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, sans: String(v) } }))}
-              options={FONT_OPTIONS} />
-          </Row>
-          <Row label="Display">
-            <Select value={theme.fonts?.display ?? FONT_OPTIONS[1].value}
-              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, display: String(v) } }))}
-              options={FONT_OPTIONS} />
-          </Row>
-          <Row label="Mono">
-            <Select value={theme.fonts?.mono ?? MONO_OPTIONS[0].value}
-              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, mono: String(v) } }))}
-              options={MONO_OPTIONS} />
-          </Row>
-          <Divider />
-          <Row label="Custom font" hint={customFont ? 'Uploaded ✓ — applied to Sans' : 'woff2 / woff / ttf / otf, up to 3 MB'}>
-            <span className="ap-bg-upload">
-              {customFont && (
-                <Button size="sm" variant="text" danger
-                  onClick={() => patch((t) => ({ ...t, fonts: { ...t.fonts, sans: undefined } }))}>
-                  Remove
-                </Button>
-              )}
-              <Button size="sm" loading={uploadingFont} onClick={() => fontFileRef.current?.click()}>
-                Upload font…
-              </Button>
-              <input ref={fontFileRef} type="file" accept=".woff2,.woff,.ttf,.otf" hidden
-                onChange={(e) => e.target.files?.[0] && onFontUpload(e.target.files[0])} />
-            </span>
-          </Row>
+        <Card title="Palette">
+          <ColorRow label="Primary" value={primaryHex} onChange={setPrimary} />
+          <div className="ap-contrast-indicator">
+            <span>Contrast Ratio: <strong>{contrastRatio.toFixed(1)}:1</strong></span>
+            {isContrastLow && (
+              <span className="ap-warning-pill">
+                ⚠️ Low Contrast
+              </span>
+            )}
+          </div>
+          <ColorRow label="Success" value={String(tok('--color-success', DEFAULTS.success))} onChange={(v) => setToken('--color-success', v)} />
+          <ColorRow label="Warning" value={String(tok('--color-warning', DEFAULTS.warning))} onChange={(v) => setToken('--color-warning', v)} />
+          <ColorRow label="Error" value={String(tok('--color-error', DEFAULTS.error))} onChange={(v) => setToken('--color-error', v)} />
         </Card>
 
         <Card title="Effects">
@@ -572,26 +538,9 @@ export default function AppearancePage() {
                   ]}
                 />
               </Row>
-              <Row label="Particle style" hint="Visual movement and preset type">
-                <Select
-                  value={theme.effects?.particles?.preset ?? 'pucks'}
-                  onChange={(v) => patch((t) => ({
-                    ...t,
-                    effects: {
-                      ...t.effects,
-                      particles: {
-                        ...t.effects?.particles,
-                        preset: v as 'pucks' | 'neural' | 'nebula',
-                      },
-                    },
-                  }))}
-                  options={[
-                    { label: 'Air Hockey Pucks', value: 'pucks' },
-                    { label: 'Neural Constellation', value: 'neural' },
-                    { label: 'Nebula Gravity Vortex', value: 'nebula' },
-                  ]}
-                />
-              </Row>
+              {/* "Particle style" preset selector temporarily removed — the
+                  presets were near-identical variations, not distinct effects.
+                  Re-add once real, visually-distinct presets exist. */}
             </>
           )}
           <Row label="Hover glow" hint="Glow highlight on buttons and cards hover">
@@ -607,6 +556,40 @@ export default function AppearancePage() {
             />
           </Row>
 
+        </Card>
+
+        <Card title="System Fonts">
+          <Row label="Sans">
+            <Select value={theme.fonts?.sans ?? FONT_OPTIONS[0].value}
+              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, sans: String(v) } }))}
+              options={FONT_OPTIONS} />
+          </Row>
+          <Row label="Display">
+            <Select value={theme.fonts?.display ?? FONT_OPTIONS[1].value}
+              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, display: String(v) } }))}
+              options={FONT_OPTIONS} />
+          </Row>
+          <Row label="Mono">
+            <Select value={theme.fonts?.mono ?? MONO_OPTIONS[0].value}
+              onChange={(v) => patch((t) => ({ ...t, fonts: { ...t.fonts, mono: String(v) } }))}
+              options={MONO_OPTIONS} />
+          </Row>
+          <Divider />
+          <Row label="Custom font" hint={customFont ? 'Uploaded ✓ — applied to Sans' : 'woff2 / woff / ttf / otf, up to 3 MB'}>
+            <span className="ap-bg-upload">
+              {customFont && (
+                <Button size="sm" variant="text" danger
+                  onClick={() => patch((t) => ({ ...t, fonts: { ...t.fonts, sans: undefined } }))}>
+                  Remove
+                </Button>
+              )}
+              <Button size="sm" loading={uploadingFont} onClick={() => fontFileRef.current?.click()}>
+                Upload font…
+              </Button>
+              <input ref={fontFileRef} type="file" accept=".woff2,.woff,.ttf,.otf" hidden
+                onChange={(e) => e.target.files?.[0] && onFontUpload(e.target.files[0])} />
+            </span>
+          </Row>
         </Card>
       </div>
     </div>

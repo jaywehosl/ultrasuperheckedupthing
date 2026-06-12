@@ -126,17 +126,46 @@ export default function ParticleField({
     if (typeof window === 'undefined') return;
     const handleThemeChange = () => {
       const rs = window.getComputedStyle(document.documentElement);
-      const sig = [
-        '--fx-particles',
-        '--fx-particles-density',
-        '--fx-particles-speed',
-        '--fx-particles-interactive',
-        '--fx-particles-color',
-        '--fx-particles-preset',
-        '--color-primary',
-      ].map((k) => rs.getPropertyValue(k).trim()).join('|');
-      if (sig !== lastParticleSig.current) {
-        lastParticleSig.current = sig;
+      const g = (k: string) => rs.getPropertyValue(k).trim();
+
+      // STRUCTURAL params force a full particle rebuild (re-randomize positions
+      // & buffers). Keep this list MINIMAL — only things that change the particle
+      // SET, not their appearance. Colour/primary/speed are NOT here: they used
+      // to be, so every Primary slider tick teleported every particle ("freak
+      // out"). They're now applied live below without a rebuild.
+      const isOff = g('--fx-particles') === 'off';
+      const structSig = [
+        isOff,
+        g('--fx-particles-density') || String(density),
+        g('--fx-particles-preset') || preset || 'pucks',
+      ].join('|');
+
+      // COSMETIC params are read every frame from live.current — update in place
+      // so Primary recolours the cloud smoothly instead of resetting it. Default
+      // colour mode is 'palette' so --color-primary drives particles even on the
+      // empty/default theme (previously they used a hardcoded blue and ignored
+      // Primary until the colour mode was toggled).
+      const fxColor = g('--fx-particles-color');
+      const fxSpeed = g('--fx-particles-speed');
+      const fxInteractive = g('--fx-particles-interactive');
+      const primaryHex = g('--color-primary') || '#3279F9';
+      const effColor = fxColor || 'palette';
+      let activePalette: [string, string, string] = palette;
+      if (effColor === 'primary' || effColor === 'monochrome') {
+        activePalette = [primaryHex, primaryHex, primaryHex];
+      } else if (effColor === 'palette') {
+        activePalette = [primaryHex, '#A855F7', '#14B8A6'];
+      }
+      live.current = {
+        ...live.current,
+        palette: activePalette,
+        monochrome: fxColor === 'monochrome' ? true : monochrome,
+        interactive: fxInteractive ? fxInteractive !== 'off' : interactive,
+        speed: fxSpeed ? parseFloat(fxSpeed) : 1.0,
+      };
+
+      if (structSig !== lastParticleSig.current) {
+        lastParticleSig.current = structSig;
         setThemeTick((t) => t + 1);
       }
     };
@@ -146,7 +175,7 @@ export default function ParticleField({
       window.removeEventListener('uup-theme-changed', handleThemeChange);
       window.removeEventListener('uup-theme-mode-changed', handleThemeChange);
     };
-  }, []);
+  }, [density, interactive, monochrome, palette, preset]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -176,12 +205,14 @@ export default function ParticleField({
     const activeMonochrome = fxColor === 'monochrome' ? true : monochrome;
     const activePreset = fxPreset || preset || 'pucks';
 
+    // Default colour mode is 'palette' so --color-primary drives the particles
+    // even on the empty/default theme (kept in sync with handleThemeChange).
+    const primaryHex = rootStyle?.getPropertyValue('--color-primary')?.trim() || '#3279F9';
+    const effColor = fxColor || 'palette';
     let activePalette = palette;
-    if (fxColor === 'primary') {
-      const primaryHex = rootStyle?.getPropertyValue('--color-primary')?.trim() || '#3279F9';
+    if (effColor === 'primary' || effColor === 'monochrome') {
       activePalette = [primaryHex, primaryHex, primaryHex];
-    } else if (fxColor === 'palette') {
-      const primaryHex = rootStyle?.getPropertyValue('--color-primary')?.trim() || '#3279F9';
+    } else if (effColor === 'palette') {
       activePalette = [primaryHex, '#A855F7', '#14B8A6'];
     }
 
