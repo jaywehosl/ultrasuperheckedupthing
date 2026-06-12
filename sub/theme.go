@@ -170,7 +170,7 @@ func ThemeToCSS(theme *PanelTheme, basePath string) string {
 				decls = append(decls, fmt.Sprintf("--fx-particles-density: %g;", *p.Density))
 			}
 			if p.Speed != nil {
-				decls = append(decls, fmt.Sprintf("--fx-particles-intensity: %g;", *p.Speed))
+				decls = append(decls, fmt.Sprintf("--fx-particles-speed: %g;", *p.Speed))
 			}
 			if p.Color != "" {
 				decls = append(decls, fmt.Sprintf("--fx-particles-color: %s;", p.Color))

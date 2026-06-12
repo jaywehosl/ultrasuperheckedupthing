@@ -15,7 +15,7 @@ import { ClipboardManager, LanguageManager } from '@/utils';
 import { isPostQuantumLink } from '@/lib/xray/inbound-link';
 import { LinkTags, parseLinkParts } from '@/lib/xray/link-label';
 import { getMessage } from '@/utils/messageBus';
-import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/useTheme';
 import ParticleField from '@/components/ui/ParticleField';
 import SubUsageSummary from './SubUsageSummary';
 import './SubPage.css';
@@ -67,7 +67,7 @@ function QrButton({ value, label, tone }: { value: string; label: React.ReactNod
 
 export default function SubPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
+  const { isDark, isUltra, cycleTheme } = useTheme();
 
   const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
   void lang;
@@ -77,18 +77,9 @@ export default function SubPage() {
     LanguageManager.setLanguage(next);
   }, []);
 
-  const cycleTheme = useCallback(() => {
-    pauseAnimationsUntilLeave('sub-theme-cycle');
-    if (!isDark) {
-      toggleTheme();
-      if (isUltra) toggleUltra();
-    } else if (!isUltra) {
-      toggleUltra();
-    } else {
-      toggleUltra();
-      toggleTheme();
-    }
-  }, [isDark, isUltra, toggleTheme, toggleUltra]);
+  const onCycleTheme = useCallback(() => {
+    cycleTheme('sub-theme-cycle');
+  }, [cycleTheme]);
 
   const copy = useCallback(async (value: string) => {
     if (!value) return;
@@ -145,13 +136,13 @@ export default function SubPage() {
           <div className="sub-topbar__inner">
             <div className="brand-block">
               <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
-                <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+                <path d="M12 2L2 22h20L12 2z" fill="var(--color-primary)" />
                 <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
               </svg>
               <span className="brand-text">Community</span>
             </div>
             <div className="sub-topbar__actions">
-              <button type="button" className="sub-topbar__btn" aria-label={t('menu.theme')} title={t('menu.theme')} onClick={cycleTheme}>
+              <button type="button" className="sub-topbar__btn" aria-label={t('menu.theme')} title={t('menu.theme')} onClick={onCycleTheme}>
                 {themeIcon}
               </button>
               <DropdownMenu

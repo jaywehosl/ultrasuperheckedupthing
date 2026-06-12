@@ -65,8 +65,8 @@
 .logo-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(50, 121, 249, 0.15);
-  border-top-color: #3279F9;
+  border: 2px solid rgba(var(--color-primary-rgb), 0.15);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spinner-rotate 0.8s linear infinite;
 }
@@ -104,7 +104,7 @@
 .boot-progress-fill {
   width: 0%;
   height: 100%;
-  background: #3279F9;
+  background: var(--color-primary);
   border-radius: 9999px;
   animation: progress-fill 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

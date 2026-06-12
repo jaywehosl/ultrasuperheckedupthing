@@ -96,7 +96,7 @@ export default function ParticleField({
   interactive = true,
 }: ParticleFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const live = useRef({ palette, monochrome, additive, intensity, interactive });
+  const live = useRef({ palette, monochrome, additive, intensity, interactive, speed: 1.0 });
   const [themeTick, setThemeTick] = useState(0);
 
   useEffect(() => {
@@ -105,8 +105,10 @@ export default function ParticleField({
       setThemeTick((t) => t + 1);
     };
     window.addEventListener('uup-theme-changed', handleThemeChange);
+    window.addEventListener('uup-theme-mode-changed', handleThemeChange);
     return () => {
       window.removeEventListener('uup-theme-changed', handleThemeChange);
+      window.removeEventListener('uup-theme-mode-changed', handleThemeChange);
     };
   }, []);
 
@@ -127,20 +129,14 @@ export default function ParticleField({
     }
 
     const fxDensity = rootStyle?.getPropertyValue('--fx-particles-density')?.trim();
-    const fxIntensity = rootStyle?.getPropertyValue('--fx-particles-intensity')?.trim();
+    const fxSpeed = rootStyle?.getPropertyValue('--fx-particles-speed')?.trim();
     const fxInteractive = rootStyle?.getPropertyValue('--fx-particles-interactive')?.trim();
     const fxColor = rootStyle?.getPropertyValue('--fx-particles-color')?.trim();
-    const glassBlur = rootStyle?.getPropertyValue('--glass-blur')?.trim();
 
     let activeDensity = fxDensity ? parseFloat(fxDensity) : density;
-    let activeIntensity = fxIntensity ? parseFloat(fxIntensity) : intensity;
+    let activeSpeed = fxSpeed ? parseFloat(fxSpeed) : 1.0;
     const activeInteractive = fxInteractive ? (fxInteractive !== 'off') : interactive;
     const activeMonochrome = fxColor === 'monochrome' ? true : monochrome;
-
-    const blurPx = glassBlur ? parseFloat(glassBlur) : 0;
-    if (blurPx > 30 && activeDensity > 1.2) {
-      activeDensity = 1.2;
-    }
 
     let activePalette = palette;
     if (fxColor === 'primary') {
@@ -155,8 +151,9 @@ export default function ParticleField({
       palette: activePalette,
       monochrome: activeMonochrome,
       additive,
-      intensity: activeIntensity,
+      intensity,
       interactive: activeInteractive,
+      speed: activeSpeed,
     };
 
     const gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: false });
@@ -243,8 +240,8 @@ export default function ParticleField({
         invM[i] = 1 / (d * d); // mass ∝ area
         px[i] = Math.random() * W;
         py[i] = Math.random() * H;
-        vx[i] = (Math.random() - 0.5) * 1.2;
-        vy[i] = (Math.random() - 0.5) * 1.2;
+        vx[i] = (Math.random() - 0.5) * 1.2 * activeSpeed;
+        vy[i] = (Math.random() - 0.5) * 1.2 * activeSpeed;
         resp[i] = 0.6 + Math.random() * 1.0;
         hue[i] = Math.random();
       }
@@ -352,8 +349,8 @@ export default function ParticleField({
 
       // 1) air jitter + paddle (moving cursor only)
       for (let i = 0; i < count; i++) {
-        vx[i] += (Math.random() - 0.5) * JITTER * dt;
-        vy[i] += (Math.random() - 0.5) * JITTER * dt;
+        vx[i] += (Math.random() - 0.5) * JITTER * p.speed * dt;
+        vy[i] += (Math.random() - 0.5) * JITTER * p.speed * dt;
         if (gate > 0.001) {
           const dx = px[i] - m.x;
           const dy = py[i] - m.y;
@@ -435,9 +432,9 @@ export default function ParticleField({
         vx[i] *= FRICTION;
         vy[i] *= FRICTION;
         let s = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]);
-        if (s > MAXV) { const k = MAXV / s; vx[i] *= k; vy[i] *= k; s = MAXV; }
-        let nxp = px[i] + vx[i] * dt;
-        let nyp = py[i] + vy[i] * dt;
+        if (s > MAXV * p.speed) { const k = (MAXV * p.speed) / s; vx[i] *= k; vy[i] *= k; s = MAXV * p.speed; }
+        let nxp = px[i] + vx[i] * p.speed * dt;
+        let nyp = py[i] + vy[i] * p.speed * dt;
         const ri = rad[i];
         if (nxp < ri) { nxp = ri; vx[i] = -vx[i] * WALL; }
         else if (nxp > W - ri) { nxp = W - ri; vx[i] = -vx[i] * WALL; }
@@ -488,11 +485,33 @@ export default function ParticleField({
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', onVisibility);
-      const ext = gl.getExtension('WEBGL_lose_context');
-      if (ext) ext.loseContext();
+      if (gl) {
+        if (prog) gl.deleteProgram(prog);
+        if (vs) gl.deleteShader(vs);
+        if (fs) gl.deleteShader(fs);
+        if (posBuf) gl.deleteBuffer(posBuf);
+        if (spdBuf) gl.deleteBuffer(spdBuf);
+        if (sizeBuf) gl.deleteBuffer(sizeBuf);
+        if (hueBuf) gl.deleteBuffer(hueBuf);
+        if (vao) gl.deleteVertexArray(vao);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [density, themeTick, monochrome, additive, intensity, interactive, palette]);
+
+  // Lose WebGL context only when the canvas element actually unmounts
+  useEffect(() => {
+    return () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const glCtx = canvas.getContext('webgl2');
+        if (glCtx) {
+          const ext = glCtx.getExtension('WEBGL_lose_context');
+          if (ext) ext.loseContext();
+        }
+      }
+    };
+  }, []);
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }

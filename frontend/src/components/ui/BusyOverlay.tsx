@@ -61,7 +61,7 @@ export default function BusyOverlay({ open, title, subtitle }: BusyOverlayProps)
         <div className="busy-overlay__mark">
           <span className="busy-overlay__ring" aria-hidden="true" />
           <svg className="busy-overlay__logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+            <path d="M12 2L2 22h20L12 2z" fill="var(--color-primary)" />
             <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
           </svg>
         </div>

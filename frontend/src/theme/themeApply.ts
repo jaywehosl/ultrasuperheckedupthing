@@ -130,7 +130,7 @@ export function themeToCss(theme: PanelTheme): string {
     if (fx.particles) {
       push('--fx-particles', fx.particles.on !== false ? 'on' : 'off');
       if (typeof fx.particles.density === 'number') push('--fx-particles-density', fx.particles.density);
-      if (typeof fx.particles.speed === 'number') push('--fx-particles-intensity', fx.particles.speed);
+      if (typeof fx.particles.speed === 'number') push('--fx-particles-speed', fx.particles.speed);
       if (fx.particles.color) push('--fx-particles-color', fx.particles.color);
     }
     if (fx.hoverGlow === false) {
@@ -154,6 +154,12 @@ export function applyThemeMode(mode: ThemeMode | undefined): void {
   const isUltra = mode === 'ultra-dark';
   html.classList.toggle('is-dark', isDark);
   html.classList.toggle('is-ultra', isUltra);
+
+  if (isDark && isUltra) {
+    html.setAttribute('data-theme', 'ultra-dark');
+  } else {
+    html.removeAttribute('data-theme');
+  }
 
   document.body.classList.toggle('dark', isDark);
   document.body.classList.toggle('light', !isDark);

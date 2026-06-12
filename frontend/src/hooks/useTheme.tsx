@@ -35,8 +35,8 @@ if (localStorage.getItem(CACHE_RESET_KEY) !== 'true') {
 const getInitialMode = () => {
   if (typeof window === 'undefined') return { dark: false, ultra: false };
   const injected = (window as any).X_UI_THEME;
-  const initial = (injected && Object.keys(injected).length > 0) ? injected : loadTheme();
-  const mode = initial.mode ?? 'light';
+  const local = loadTheme();
+  const mode = local.mode ?? injected?.mode ?? 'light';
   return {
     dark: mode === 'dark' || mode === 'ultra-dark',
     ultra: mode === 'ultra-dark',
@@ -64,6 +64,7 @@ interface ThemeContextValue {
   isUltra: boolean;
   toggleTheme: () => void;
   toggleUltra: () => void;
+  cycleTheme: (elementId?: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -120,9 +121,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const cycleTheme = useCallback((elementId?: string) => {
+    if (elementId) {
+      pauseAnimationsUntilLeave(elementId);
+    }
+
+    let nextMode: ThemeMode;
+    if (!isDark) {
+      nextMode = 'dark';
+    } else if (!isUltra) {
+      nextMode = 'ultra-dark';
+    } else {
+      nextMode = 'light';
+    }
+
+    setIsDark(nextMode === 'dark' || nextMode === 'ultra-dark');
+    setIsUltra(nextMode === 'ultra-dark');
+
+    const theme = loadTheme();
+    theme.mode = nextMode;
+    applyThemeMode(nextMode);
+    void saveTheme(theme);
+  }, [isDark, isUltra]);
+
   const value = useMemo<ThemeContextValue>(
-    () => ({ isDark, isUltra, toggleTheme, toggleUltra }),
-    [isDark, isUltra, toggleTheme, toggleUltra],
+    () => ({ isDark, isUltra, toggleTheme, toggleUltra, cycleTheme }),
+    [isDark, isUltra, toggleTheme, toggleUltra, cycleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

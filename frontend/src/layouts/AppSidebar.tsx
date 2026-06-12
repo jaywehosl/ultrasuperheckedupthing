@@ -18,7 +18,7 @@ import { useMetricsPanel } from '@/layouts/MetricsPanelContext';
 import { useNotifications } from '@/pages/index/useNotifications';
 import { useHeaderActions } from '@/layouts/header-actions-context';
 import { HttpUtil, LanguageManager } from '@/utils';
-import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/useTheme';
 import {
   DashboardIcon,
   InboundsIcon,
@@ -107,7 +107,7 @@ function LanguageSelector() {
 
 export default function AppSidebar() {
   const { t } = useTranslation();
-  const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
+  const { isDark, isUltra, cycleTheme } = useTheme();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
   const { open: metricsOpen, toggle: toggleMetrics, notifyOpen, toggleNotify } = useMetricsPanel();
@@ -197,18 +197,7 @@ export default function AppSidebar() {
     navigate(key);
   }, [navigate, pathname]);
 
-  const cycleTheme = useCallback((id: string) => {
-    pauseAnimationsUntilLeave(id);
-    if (!isDark) {
-      toggleTheme();
-      if (isUltra) toggleUltra();
-    } else if (!isUltra) {
-      toggleUltra();
-    } else {
-      toggleUltra();
-      toggleTheme();
-    }
-  }, [isDark, isUltra, toggleTheme, toggleUltra]);
+
 
   return (
     <header className={`antigravity-header ${metricsOpen ? 'metrics-open' : ''}`}>
@@ -216,7 +205,7 @@ export default function AppSidebar() {
         <div className="header-left">
           <div className="brand-block" onClick={onLogoClick} style={{ cursor: 'pointer' }} title={t('menu.dashboard')}>
             <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
-              <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+              <path d="M12 2L2 22h20L12 2z" fill="var(--color-primary)" />
               <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
             </svg>
             <span className="brand-text">Community</span>

@@ -13,7 +13,7 @@ import { Button, DropdownMenu, Field, Input } from '@/components/ds';
 import type { MenuEntry } from '@/components/ds';
 import { Spin } from '@/components/ui';
 import { HttpUtil, LanguageManager } from '@/utils';
-import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/useTheme';
 import { LoginFormSchema, TwoFactorCodeSchema } from '@/schemas/login';
 import './LoginPage.css';
 import ParticleField from '@/components/ui/ParticleField';
@@ -28,7 +28,7 @@ interface LoginErrors {
 
 export default function LoginPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, toggleTheme } = useTheme();
+  const { isDark, isUltra, cycleTheme } = useTheme();
 
   const [fetched, setFetched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -83,10 +83,7 @@ export default function LoginPage() {
     LanguageManager.setLanguage(nextLang);
   }, []);
 
-  const cycleTheme = useCallback(() => {
-    pauseAnimationsUntilLeave('login-theme-cycle');
-    toggleTheme();
-  }, [toggleTheme]);
+
 
   const pageClass = useMemo(() => {
     const classes = ['login-app'];
@@ -123,7 +120,7 @@ export default function LoginPage() {
         <div className="login-header">
           <div className="brand-block">
             <svg className="antigravity-logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24, marginRight: 8 }}>
-              <path d="M12 2L2 22h20L12 2z" fill="#3279F9" />
+              <path d="M12 2L2 22h20L12 2z" fill="var(--color-primary)" />
               <path d="M12 6l7 13H5l7-13z" fill="#FFFFFF" opacity="0.3" />
             </svg>
             <span className="brand-text">Community</span>
@@ -135,7 +132,7 @@ export default function LoginPage() {
               aria-label={t('menu.theme')}
               title={t('menu.theme')}
               icon={themeIcon}
-              onClick={cycleTheme}
+              onClick={() => cycleTheme('login-theme-cycle')}
             />
             <DropdownMenu
               align="end"

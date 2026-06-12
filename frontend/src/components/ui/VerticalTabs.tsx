@@ -56,7 +56,7 @@ export default function VerticalTabs({ items, activeKey, onChange }: VerticalTab
         gap: 6,
         padding: 4,
         background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(18, 19, 23, 0.03)',
-        borderRadius: 20,
+        borderRadius: 'var(--radius-lg)',
         border: isDark ? '1px solid rgba(255, 255, 255, 0.04)' : '1px solid rgba(18, 19, 23, 0.04)',
       }}
     >
@@ -67,9 +67,9 @@ export default function VerticalTabs({ items, activeKey, onChange }: VerticalTab
           position: 'absolute',
           left: 4,
           top: 0,
-          background: isDark ? 'rgba(50, 121, 249, 0.15)' : 'rgba(26, 115, 232, 0.08)',
-          borderLeft: '3px solid #3279F9',
-          borderRadius: '12px',
+          background: isDark ? 'rgba(var(--color-primary-rgb), 0.15)' : 'rgba(var(--color-primary-rgb), 0.08)',
+          borderLeft: '3px solid var(--color-primary)',
+          borderRadius: 'var(--radius-sm)',
           pointerEvents: 'none',
           transition: 'transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), height 0.3s ease, width 0.3s ease, opacity 0.2s ease',
           ...pillStyle,

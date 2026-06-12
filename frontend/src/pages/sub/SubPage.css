@@ -129,11 +129,11 @@ body.dark .sub-topbar__btn { color: rgba(255, 255, 255, 0.55); border-color: rgb
 .sub-topbar__btn:hover,
 .sub-topbar__btn[data-state='open'] {
   background: rgba(255, 255, 255, 0.5);
-  color: #3279f9;
-  border-color: rgba(50, 121, 249, 0.5);
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
   box-shadow:
-    inset 0 1px 4px rgba(50, 121, 249, 0.22),
-    inset 0 7px 16px rgba(50, 121, 249, 0.12),
+    inset 0 1px 4px rgba(var(--color-primary-rgb), 0.22),
+    inset 0 7px 16px rgba(var(--color-primary-rgb), 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 body.dark .sub-topbar__btn:hover,

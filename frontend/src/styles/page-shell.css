@@ -14,7 +14,6 @@ html { scrollbar-gutter: stable; }
   background-attachment: fixed;
   min-height: 100vh;
   position: relative;
-  transition: background var(--dur-slow) var(--ease-out-expo);
   display: flex;
   flex-direction: column;
   /* `clip` (not `hidden`) prevents a horizontal scrollbar WITHOUT turning this
@@ -87,7 +86,11 @@ body::after {
   background: rgba(0, 0, 0, var(--bg-image-dim, 0));
   pointer-events: none;
 }
-body.has-theme-bg .panel-app-wrapper { background: transparent; }
+body.has-theme-bg .panel-app-wrapper,
+body.has-theme-bg .login-app,
+body.has-theme-bg .subscription-page {
+  background: transparent !important;
+}
 
 @keyframes auroraDrift {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
@@ -250,7 +253,7 @@ body.has-theme-bg .panel-app-wrapper { background: transparent; }
 .panel-app-wrapper::after { display: none !important; }
 
 /* background tint copied 1:1 from the login (same base + aurora) */
-.panel-app-wrapper { background: #F8F9FC !important; }
+
 .panel-app-wrapper::before {
   background:
     radial-gradient(38% 38% at 16% 22%, rgba(var(--aura-1, var(--color-primary-rgb)), 0.20) 0%, transparent 70%),

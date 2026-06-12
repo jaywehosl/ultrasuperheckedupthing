@@ -37,7 +37,7 @@ const VersionModal = lazy(() => import('./VersionModal'));
 function dialColor(color: string): string {
   if (color === '#faad14') return '#FBBC05';
   if (color === '#ff4d4f') return '#EA4335';
-  return '#3279F9';
+  return 'var(--color-primary)';
 }
 
 function Gauge({ icon, percent, color }: { icon: ReactNode; percent: number; color: string }) {

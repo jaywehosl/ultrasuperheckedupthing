@@ -87,8 +87,8 @@ func TestThemeToCSS_Basic(t *testing.T) {
 	if !strings.Contains(css, "--fx-particles-density: 1.5;") {
 		t.Errorf("Expected --fx-particles-density: 1.5. Got: %s", css)
 	}
-	if !strings.Contains(css, "--fx-particles-intensity: 1.2;") {
-		t.Errorf("Expected --fx-particles-intensity: 1.2. Got: %s", css)
+	if !strings.Contains(css, "--fx-particles-speed: 1.2;") {
+		t.Errorf("Expected --fx-particles-speed: 1.2. Got: %s", css)
 	}
 	if !strings.Contains(css, "--fx-particles-color: primary;") {
 		t.Errorf("Expected --fx-particles-color: primary. Got: %s", css)

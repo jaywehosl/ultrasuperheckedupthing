@@ -334,10 +334,9 @@ export default function AppearancePage() {
   const contrastRatio = getContrastRatio(primaryHex, bgHex);
   const isContrastLow = contrastRatio < 3.0;
 
-  const blurVal = num('--glass-blur', DEFAULTS.glassBlur);
   const densityVal = theme.effects?.particles?.density ?? 1.0;
   const isParticlesOn = theme.effects?.particles?.on !== false;
-  const isPerfCapActive = isParticlesOn && blurVal > 30 && densityVal > 1.2;
+
 
   return (
     <div className="appearance-page">
@@ -584,11 +583,7 @@ export default function AppearancePage() {
               }))}
             />
           </Row>
-          {isPerfCapActive && (
-            <div className="ap-warning-banner">
-              ⚠️ Performance Cap Active: Heavy blur values dampen actual particle count to preserve frame rates.
-            </div>
-          )}
+
         </Card>
       </div>
     </div>

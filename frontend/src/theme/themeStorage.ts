@@ -86,21 +86,32 @@ export async function uploadThemeAsset(kind: 'image' | 'font', file: File): Prom
 export function bootstrapTheme(): void {
   const injected = typeof window !== 'undefined' ? window.X_UI_THEME : undefined;
   const hasInjected = injected && Object.keys(injected).length > 0;
-  const initial = hasInjected ? injected : loadTheme();
+  const local = loadTheme();
 
-  applyTheme(initial);
-  if (initial.mode) applyThemeMode(initial.mode);
+  const theme = hasInjected ? { ...injected } : { ...local };
+  if (local.mode) {
+    theme.mode = local.mode;
+  }
+
+  applyTheme(theme);
+  if (theme.mode) {
+    applyThemeMode(theme.mode);
+  }
 
   if (hasInjected) {
-    cacheLocal(injected);
+    cacheLocal(theme);
     return; // the inlined theme IS the server copy — no fetch needed
   }
 
   void fetchServerTheme().then((srv) => {
     if (srv && Object.keys(srv).length) {
-      cacheLocal(srv);
-      applyTheme(srv);
-      if (srv.mode) applyThemeMode(srv.mode);
+      const mergedSrv = { ...srv };
+      if (local.mode) {
+        mergedSrv.mode = local.mode;
+      }
+      cacheLocal(mergedSrv);
+      applyTheme(mergedSrv);
+      if (mergedSrv.mode) applyThemeMode(mergedSrv.mode);
     }
   });
 }
