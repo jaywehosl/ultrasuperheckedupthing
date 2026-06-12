@@ -23,7 +23,7 @@
 
 .api-token-row {
   border: 1px solid var(--hairline-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-xs, 8px);
   padding: 10px 12px;
   display: flex;
   flex-direction: column;

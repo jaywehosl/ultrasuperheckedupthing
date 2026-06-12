@@ -62,6 +62,8 @@ const RADIUS_RAMP: Record<string, number> = {
   '--radius-lg': 20,
   '--radius-xl': 24,
   '--radius-2xl': 28,
+  '--radius-control': 14,
+  '--radius-control-sm': 10,
 };
 
 const SYNTHETIC_KEYS = new Set(['--radius-scale']);

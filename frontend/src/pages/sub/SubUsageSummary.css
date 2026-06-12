@@ -7,7 +7,7 @@
   backdrop-filter: blur(20px) saturate(185%);
   border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow: var(--specular);
-  border-radius: 14px;
+  border-radius: var(--radius-control, 14px);
 }
 body.dark .usage-summary {
   background: rgba(255, 255, 255, 0.04);

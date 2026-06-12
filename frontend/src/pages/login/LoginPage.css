@@ -30,7 +30,7 @@
   animation: loginAuroraDrift 30s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
 }
 
-.login-app.is-dark::before {
+html.is-dark .login-app::before {
   background:
     radial-gradient(38% 38% at 16% 22%, rgba(50, 121, 249, 0.28) 0%, transparent 70%),
     radial-gradient(34% 34% at 84% 16%, rgba(168, 85, 247, 0.22) 0%, transparent 70%),
@@ -42,7 +42,7 @@
   100% { transform: translate3d(3%, -2%, 0) scale(1.08); }
 }
 
-.login-app.is-dark {
+html.is-dark .login-app {
   --bg-page: #0b0c10;
   --bg-card: rgba(21, 22, 29, 0.34);
   --color-text: #ffffff;
@@ -50,7 +50,7 @@
   --color-border: rgba(255, 255, 255, 0.05);
 }
 
-.login-app.is-dark.is-ultra {
+html.is-ultra .login-app {
   --bg-page: #000000;
   --bg-card: rgba(12, 12, 14, 0.42);
   --color-border: rgba(255, 255, 255, 0.03);
@@ -92,11 +92,11 @@
   backdrop-filter: blur(16px) saturate(170%);
 }
 
-.login-app.is-dark .login-header {
+html.is-dark .login-app .login-header {
   background: rgba(11, 12, 16, 0.22);
 }
 
-.login-app.is-dark.is-ultra .login-header {
+html.is-ultra .login-app .login-header {
   background: rgba(0, 0, 0, 0.28);
 }
 
@@ -140,7 +140,7 @@
   transform: scale(1.05);
   box-shadow: 0 2px 10px rgba(18, 19, 23, 0.06) !important;
 }
-.login-app.is-dark .login-header-right .toolbar-btn.ds-btn:hover {
+html.is-dark .login-app .login-header-right .toolbar-btn.ds-btn:hover {
   background: rgba(255, 255, 255, 0.14) !important;
 }
 
@@ -202,7 +202,7 @@
   max-width: 380px;
   background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 28px;
+  border-radius: var(--radius-2xl, 28px);
   padding: 32px 32px 28px;
   /* strong blur tier + layered shadow + specular rim = frosted glass depth */
   box-shadow:
@@ -214,7 +214,7 @@
   transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-.login-app.is-dark .login-card {
+html.is-dark .login-app .login-card {
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow:
     0 24px 70px rgba(0, 0, 0, 0.5),
@@ -276,7 +276,7 @@ body.dark .login-card input:-webkit-autofill:focus {
   background: rgba(255, 255, 255, 0.32) !important;
   color: #121317 !important;
   border: 1px solid rgba(18, 19, 23, 0.1) !important;
-  border-radius: 14px !important;
+  border-radius: var(--radius-control, 14px) !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 600 !important;
   font-size: 14.5px !important;
@@ -322,7 +322,7 @@ body.dark .login-card input:-webkit-autofill:focus {
   -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
   backdrop-filter: blur(30px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
-  border-radius: 14px !important;
+  border-radius: var(--radius-control, 14px) !important;
   box-shadow:
     0 20px 50px rgba(18, 19, 23, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
@@ -354,7 +354,7 @@ body.dark .login-card input:-webkit-autofill:focus {
 
 .ant-popover .ant-menu-item {
   border: 1px solid transparent !important; /* so the hover kant can appear */
-  border-radius: 10px !important;
+  border-radius: var(--radius-control-sm, 10px) !important;
   /* full width + zero side margins => symmetric gaps on all 4 sides */
   width: 100% !important;
   box-sizing: border-box !important;

@@ -32,6 +32,7 @@ const TextModal = lazy(() => import('@/components/feedback/TextModal'));
 const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 
 import { useInbounds } from './useInbounds';
+import { useTheme } from '@/hooks/useTheme';
 import { InboundList } from './list';
 import { LazyMount } from '@/components/utility';
 const InboundFormModal = lazy(() => import('./form/InboundFormModal'));
@@ -68,7 +69,10 @@ interface ClientMatchTarget {
 
 export default function InboundsPage() {
   const { t } = useTranslation();
+  const { isDark, isUltra } = useTheme();
   const { isMobile } = useMediaQuery();
+
+  const pageClass = useMemo(() => ['inbounds-page', isDark && 'is-dark', isUltra && 'is-ultra'].filter(Boolean).join(' '), [isDark, isUltra]);
 
   const {
     fetched,
@@ -550,7 +554,7 @@ export default function InboundsPage() {
     <ConfigProvider>
       {messageContextHolder}
       {modalContextHolder}
-      <div className="section-content-wrapper inbounds-section-wrapper">
+      <div className={`section-content-wrapper inbounds-section-wrapper ${pageClass}`}>
             <Spin spinning={!fetched} delay={200} description={t('loading')} size="large">
               {!fetched ? (
                 <div className="loading-spacer" />

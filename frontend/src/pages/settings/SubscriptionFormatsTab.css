@@ -1,7 +1,7 @@
 .format-settings {
   margin-bottom: 8px;
   border: 1px solid var(--hairline-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-xs, 8px);
   overflow: hidden;
 }
 

@@ -13,7 +13,7 @@
   padding: 0 16px;
   /* canonical action-button = the header "Log Out" pill (frosted glass) */
   border: 1px solid rgba(18, 19, 23, 0.10);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   background: rgba(255, 255, 255, 0.32);
   color: var(--text-1);
   font-family: var(--font-sans);
@@ -141,7 +141,7 @@
   height: 42px;
   padding: 10px 16px;
   border: 1px solid rgba(18, 19, 23, 0.10);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   background: rgba(255, 255, 255, 0.32);
   -webkit-backdrop-filter: blur(10px) saturate(160%);
   backdrop-filter: blur(10px) saturate(160%);
@@ -353,7 +353,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 6px;
   background: rgba(255, 255, 255, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   backdrop-filter: blur(30px) saturate(180%);
   box-shadow: 0 20px 50px rgba(18, 19, 23, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -366,7 +366,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 8px 12px;
   margin: 2px 0;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-control-sm);
   font-size: 14px; font-weight: 500; color: var(--text-1);
   cursor: pointer; user-select: none; outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
@@ -654,7 +654,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   height: 42px;
   padding: 10px 16px;
   border: 1px solid rgba(18, 19, 23, 0.10);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   background: rgba(255, 255, 255, 0.32);
   -webkit-backdrop-filter: blur(10px) saturate(160%);
   backdrop-filter: blur(10px) saturate(160%);
@@ -684,7 +684,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 6px;
   background: rgba(255, 255, 255, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   backdrop-filter: blur(30px) saturate(180%);
   box-shadow: 0 20px 50px rgba(18, 19, 23, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -697,7 +697,7 @@ textarea.ds-input { height: auto; min-height: 80px; resize: vertical; }
   padding: 8px 12px;
   margin: 2px 0;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-control-sm);
   font-size: 14px; color: var(--text-1);
   cursor: pointer; user-select: none; outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;

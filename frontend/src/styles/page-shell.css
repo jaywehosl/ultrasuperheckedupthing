@@ -453,7 +453,7 @@ body.dark .ant-dropdown-menu {
 }
 
 .ant-dropdown-menu-item {
-  border-radius: 8px !important;
+  border-radius: var(--radius-xs, 8px) !important;
 }
 
 .ant-dropdown-menu-item:not(.ant-dropdown-menu-item-disabled):not(.ant-dropdown-menu-item-danger):hover,
@@ -717,7 +717,7 @@ body.dark .ant-input-password:focus {
 .ant-btn, .custom-btn {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 500 !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-control, 14px) !important;
   position: relative !important;
   overflow: hidden !important;
   transition: border-color 0.2s, background-color 0.2s, color 0.2s, box-shadow 0.2s !important;

@@ -98,11 +98,29 @@ export default function ParticleField({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const live = useRef({ palette, monochrome, additive, intensity, interactive, speed: 1.0 });
   const [themeTick, setThemeTick] = useState(0);
+  const lastParticleSig = useRef('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // The particle system only needs to re-initialize when a PARTICLE-relevant
+    // token changes (on/density/speed/interactive/color + the primary it tints
+    // from). A generic theme change (radius, blur, shadow, a palette swatch the
+    // particles don't use…) must NOT reload it — that's the visible "particles
+    // flash on every slider" bug. Diff a signature and only bump on real change.
     const handleThemeChange = () => {
-      setThemeTick((t) => t + 1);
+      const rs = window.getComputedStyle(document.documentElement);
+      const sig = [
+        '--fx-particles',
+        '--fx-particles-density',
+        '--fx-particles-speed',
+        '--fx-particles-interactive',
+        '--fx-particles-color',
+        '--color-primary',
+      ].map((k) => rs.getPropertyValue(k).trim()).join('|');
+      if (sig !== lastParticleSig.current) {
+        lastParticleSig.current = sig;
+        setThemeTick((t) => t + 1);
+      }
     };
     window.addEventListener('uup-theme-changed', handleThemeChange);
     window.addEventListener('uup-theme-mode-changed', handleThemeChange);
