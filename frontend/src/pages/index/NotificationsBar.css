@@ -55,6 +55,27 @@
   font-size: 15px;
 }
 .notif-row__text { flex: 1 1 auto; min-width: 0; }
+.notif-row__dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control-sm, 8px);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.notif-row__dismiss:hover {
+  color: var(--color-primary);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  background: rgba(var(--color-primary-rgb), 0.08);
+}
 
 /* Driven by the Palette tokens so the Appearance Error/Warning colours actually
    tint the status-bar notifications (were hardcoded #EA4335 / #FBBC05 etc). */

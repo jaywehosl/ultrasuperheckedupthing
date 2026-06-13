@@ -7,8 +7,17 @@ import {
   ExclamationCircleFilled,
   InfoCircleFilled,
 } from '@ant-design/icons';
+import { recordToast, type Severity } from '@/stores/notificationStore';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+/** Toast kind → notification severity (success/info are both informational). */
+const TOAST_SEVERITY: Record<ToastType, Severity> = {
+  success: 'info',
+  info: 'info',
+  warning: 'warning',
+  error: 'danger',
+};
 
 interface ToastItem {
   id: number;
@@ -41,6 +50,10 @@ function push(type: ToastType, content: ReactNode, duration = 3000) {
   const id = ++seq;
   items = [...items, { id, type, content }];
   emit();
+  // Mirror into the notification history log (string content only).
+  if (typeof content === 'string') {
+    recordToast(TOAST_SEVERITY[type], content);
+  }
   if (duration > 0) {
     window.setTimeout(() => dismiss(id), duration);
   }

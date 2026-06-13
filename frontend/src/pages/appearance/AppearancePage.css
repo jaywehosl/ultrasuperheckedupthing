@@ -32,6 +32,19 @@
   flex-wrap: wrap;
 }
 
+/* Tab shim layout (Styles | Notifications) — mirrors the Settings page. */
+.ap-tabs-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-4);
+  align-items: start;
+  margin-top: var(--space-4);
+}
+.ap-tabs-content { min-width: 0; }
+@media (max-width: 860px) {
+  .ap-tabs-layout { grid-template-columns: 1fr; }
+}
+
 .ap-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

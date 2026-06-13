@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { BgColorsOutlined, BellOutlined } from '@ant-design/icons';
 import { Button, Card, Divider, Segmented, Select, Switch } from '@/components/ds';
 import { toast } from '@/components/ds';
+import { VerticalTabs } from '@/components/ui';
 import { applyTheme, applyThemeMode, type PanelTheme, type ThemeMode } from '@/theme/themeApply';
 import { clearTheme, fetchServerTheme, loadTheme, saveTheme, uploadThemeAsset } from '@/theme/themeStorage';
+import NotificationsTab from './NotificationsTab';
 import './AppearancePage.css';
 
 /* NOTE: this is the P1 Appearance page. Controls drive the override core
@@ -340,6 +344,15 @@ export default function AppearancePage() {
   const densityVal = theme.effects?.particles?.density ?? 1.0;
   const isParticlesOn = theme.effects?.particles?.on !== false;
 
+  // Tab shim (mirrors Settings/Xray): Styles = the theme grid, Notifications =
+  // the alert sources + history log. Routed off the URL hash.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = location.hash.replace(/^#/, '') === 'notifications' ? 'notifications' : 'styles';
+  const tabItems = [
+    { key: 'styles', label: 'Styles', icon: <BgColorsOutlined /> },
+    { key: 'notifications', label: 'Notifications', icon: <BellOutlined /> },
+  ];
 
   return (
     <div className="appearance-page">
@@ -348,16 +361,24 @@ export default function AppearancePage() {
           <h1>Appearance</h1>
           <p>Customize the look of the panel. Changes preview live; Save to keep them.</p>
         </div>
-        <div className="ap-actions">
-          <Button onClick={onExport}>Export</Button>
-          <Button onClick={() => fileRef.current?.click()}>Import</Button>
-          <Button onClick={onReset}>Reset</Button>
-          <Button variant="primary" onClick={onSave}>Save</Button>
-          <input ref={fileRef} type="file" accept="application/json" hidden
-            onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} />
-        </div>
+        {activeTab === 'styles' && (
+          <div className="ap-actions">
+            <Button onClick={onExport}>Export</Button>
+            <Button onClick={() => fileRef.current?.click()}>Import</Button>
+            <Button onClick={onReset}>Reset</Button>
+            <Button variant="primary" onClick={onSave}>Save</Button>
+            <input ref={fileRef} type="file" accept="application/json" hidden
+              onChange={(e) => e.target.files?.[0] && onImport(e.target.files[0])} />
+          </div>
+        )}
       </div>
 
+      <div className="ap-tabs-layout">
+        <VerticalTabs items={tabItems} activeKey={activeTab} onChange={(key) => navigate(`#${key}`)} />
+        <div className="ap-tabs-content">
+        {activeTab === 'notifications' ? (
+          <NotificationsTab />
+        ) : (
       <div className="ap-grid">
         <Card title="Presets" className="ap-presets-card">
           <div className="ap-presets-list">
@@ -591,6 +612,9 @@ export default function AppearancePage() {
             </span>
           </Row>
         </Card>
+      </div>
+        )}
+        </div>
       </div>
     </div>
   );
