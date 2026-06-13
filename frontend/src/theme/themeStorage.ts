@@ -63,6 +63,11 @@ export async function saveTheme(theme: PanelTheme): Promise<boolean> {
     const msg = await HttpUtil.post('/panel/setting/theme', theme, {
       silent: true,
       headers: { 'Content-Type': 'application/json' },
+      // On the login screen the user isn't authenticated yet, so this 401s —
+      // that must NOT trigger the global session-expired page reload (it caused
+      // the login "flash/reload on theme switch"). The theme still applies +
+      // caches locally; it persists to the server once they're logged in.
+      skipAuthRedirect: true,
     });
     return Boolean(msg && (msg as { success?: boolean }).success);
   } catch {

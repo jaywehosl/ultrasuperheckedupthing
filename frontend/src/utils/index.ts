@@ -19,6 +19,11 @@ export class Msg<T = unknown> {
 
 export interface HttpOptions extends AxiosRequestConfig {
   silent?: boolean;
+  /** When this request 401s, do NOT trigger the global "session expired" page
+   *  redirect — just let it fail. Used by theme save, which is fired from the
+   *  (unauthenticated) login screen where a 401 is expected and must not reload
+   *  the page. */
+  skipAuthRedirect?: boolean;
 }
 
 export interface HttpModal {
