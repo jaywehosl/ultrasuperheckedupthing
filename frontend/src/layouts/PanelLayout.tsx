@@ -9,6 +9,7 @@ import { BusyOverlayProvider } from '@/layouts/BusyOverlayProvider';
 import MetricsPanel from '@/pages/index/MetricsPanel';
 import NotificationsBar from '@/pages/index/NotificationsBar';
 import SensorWatcher from '@/pages/index/SensorWatcher';
+import ClientOfflineWatcher from '@/pages/index/ClientOfflineWatcher';
 import { useWebSocketBridge } from '@/api/websocketBridge';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useTheme } from '@/hooks/useTheme';
@@ -58,6 +59,7 @@ export default function PanelLayout() {
                   <NotificationsBar />
                 </div>
                 <SensorWatcher />
+                <ClientOfflineWatcher />
                 <div className="panel-main-content">
                   <Outlet />
                 </div>

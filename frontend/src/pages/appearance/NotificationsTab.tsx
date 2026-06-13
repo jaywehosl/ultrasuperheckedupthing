@@ -27,6 +27,7 @@ const SENSOR_LABELS: { key: SensorKey; label: string; hint: string; unit: string
   { key: 'disk', label: 'Disk usage', hint: 'Alert when disk usage exceeds the threshold', unit: '%' },
   { key: 'sockets', label: 'Open TCP sockets', hint: 'Alert on an abnormal number of open sockets', unit: '' },
   { key: 'uptimeDays', label: 'Uptime reminder', hint: 'Remind to check OS / panel updates after N days up', unit: 'd' },
+  { key: 'clientOffline', label: 'Client offline', hint: 'Alert when a client that was online goes silent for N hours', unit: 'h' },
 ];
 
 const SEVERITY_ICON: Record<Severity, ReactNode> = {

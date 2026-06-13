@@ -42,7 +42,7 @@ export interface AlertPrefs {
 /** Threshold sensors evaluated against the polled server `status` (Phase 2).
  *  Edge-triggered: each fires once on the false→true crossing and re-arms when
  *  the value drops back below the threshold. */
-export type SensorKey = 'cpu' | 'mem' | 'disk' | 'sockets' | 'uptimeDays';
+export type SensorKey = 'cpu' | 'mem' | 'disk' | 'sockets' | 'uptimeDays' | 'clientOffline';
 export interface SensorConfig { enabled: boolean; threshold: number }
 export type SensorPrefs = Record<SensorKey, SensorConfig>;
 
@@ -69,6 +69,7 @@ const DEFAULT_SENSORS: SensorPrefs = {
   disk: { enabled: true, threshold: 90 },       // % used
   sockets: { enabled: false, threshold: 5000 }, // open TCP sockets
   uptimeDays: { enabled: false, threshold: 30 },// system uptime in days
+  clientOffline: { enabled: false, threshold: 24 }, // client silent for N hours
 };
 
 function loadHistory(): NotifRecord[] {

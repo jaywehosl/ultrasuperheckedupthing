@@ -19,9 +19,8 @@ const pct = (cur: number, total: number) => (total > 0 ? Math.round((cur / total
 export default function SensorWatcher() {
   const { status, fetched } = useStatusQuery();
   const { sensors } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const firing = useRef<Record<SensorKey, boolean>>({
-    cpu: false, mem: false, disk: false, sockets: false, uptimeDays: false,
-  });
+  // Only the status-derived sensors live here; clientOffline has its own watcher.
+  const firing = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!fetched) return;
@@ -32,7 +31,7 @@ export default function SensorWatcher() {
     const sockV = status.tcpCount;
     const upDays = Math.floor(status.uptime / 86400);
 
-    const checks: Record<SensorKey, { value: number; msg: (th: number) => string; ready: boolean }> = {
+    const checks: Record<string, { value: number; msg: (th: number) => string; ready: boolean }> = {
       cpu: { value: cpuV, ready: true, msg: (th) => `CPU usage ${cpuV}% (threshold ${th}%)` },
       mem: { value: memV, ready: status.mem.total > 0, msg: (th) => `Memory usage ${memV}% (threshold ${th}%)` },
       disk: { value: diskV, ready: status.disk.total > 0, msg: (th) => `Disk usage ${diskV}% (threshold ${th}%)` },
@@ -40,8 +39,8 @@ export default function SensorWatcher() {
       uptimeDays: { value: upDays, ready: status.uptime > 0, msg: (th) => `System up ${upDays} days — consider checking OS / panel updates (threshold ${th}d)` },
     };
 
-    (Object.keys(checks) as SensorKey[]).forEach((key) => {
-      const cfg = sensors[key];
+    Object.keys(checks).forEach((key) => {
+      const cfg = sensors[key as SensorKey];
       const chk = checks[key];
       if (!cfg?.enabled || !chk.ready) {
         firing.current[key] = false; // disabled/no-data → re-arm
