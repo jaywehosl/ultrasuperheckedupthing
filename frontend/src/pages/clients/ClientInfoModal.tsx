@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CopyOutlined, EyeOutlined, QrcodeOutlined, ReloadOutlined } from '@ant-design/icons';
 
@@ -160,6 +160,22 @@ export default function ClientInfoModal({
     );
   }
 
+  // Compact field cell (label over value) for the stats grid.
+  const field = (label: string, value: ReactNode) => (
+    <div className="ci-field">
+      <span className="ci-field__label">{label}</span>
+      <span className="ci-field__value">{value}</span>
+    </div>
+  );
+  // Full-width copyable credential row (long mono values: subId/uuid/password…).
+  const cred = (label: string, value: string) => (
+    <div className="ci-cred">
+      <span className="ci-cred__label">{label}</span>
+      <code className="ci-cred__value" title={value}>{value}</code>
+      <Button size="sm" variant="text" icon={<CopyOutlined />} aria-label={t('copy')} onClick={() => copyValue(value)} />
+    </div>
+  );
+
   return (
     <TooltipProvider>
       <Dialog
@@ -171,110 +187,82 @@ export default function ClientInfoModal({
       >
         {client && (
           <>
-            <table className="info-table block">
-              <tbody>
-                <tr>
-                  <td>{t('pages.clients.online')}</td>
-                  <td>
-                    {client.enable && isOnline ? <Tag tone="success">{t('pages.clients.online')}</Tag> : <Tag>{t('pages.clients.offline')}</Tag>}
-                    <span className="hint">{t('lastOnline')}: {dateLabel(traffic?.lastOnline)}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>{t('status')}</td>
-                  <td><Tag tone={client.enable ? 'success' : 'neutral'}>{client.enable ? t('enabled') : t('disabled')}</Tag></td>
-                </tr>
-                <tr>
-                  <td>{t('pages.clients.email')}</td>
-                  <td>{client.email ? <Tag tone="success">{client.email}</Tag> : <Tag tone="danger">{t('none')}</Tag>}</td>
-                </tr>
-                <tr>
-                  <td>{t('pages.clients.subId')}</td>
-                  <td>
-                    <Tag className="info-large-tag">{client.subId || '-'}</Tag>
-                    {client.subId && <Button size="sm" variant="text" icon={<CopyOutlined />} onClick={() => copyValue(client.subId!)} />}
-                  </td>
-                </tr>
-                {client.uuid && (
-                  <tr>
-                    <td>{t('pages.clients.uuid')}</td>
-                    <td><Tag className="info-large-tag">{client.uuid}</Tag><Button size="sm" variant="text" icon={<CopyOutlined />} onClick={() => copyValue(client.uuid!)} /></td>
-                  </tr>
-                )}
-                {client.password && (
-                  <tr>
-                    <td>{t('password')}</td>
-                    <td><Tag className="info-large-tag">{client.password}</Tag><Button size="sm" variant="text" icon={<CopyOutlined />} onClick={() => copyValue(client.password!)} /></td>
-                  </tr>
-                )}
-                {client.auth && (
-                  <tr>
-                    <td>{t('pages.clients.auth')}</td>
-                    <td><Tag className="info-large-tag">{client.auth}</Tag><Button size="sm" variant="text" icon={<CopyOutlined />} onClick={() => copyValue(client.auth!)} /></td>
-                  </tr>
-                )}
-                <tr>
-                  <td>{t('pages.clients.flow')}</td>
-                  <td>{client.flow ? <Tag>{client.flow}</Tag> : <Tag tone="warning">{t('none')}</Tag>}</td>
-                </tr>
-                <tr>
-                  <td>{t('pages.inbounds.traffic')}</td>
-                  <td>
-                    <Tag>↑ {SizeFormatter.sizeFormat(traffic?.up || 0)} / ↓ {SizeFormatter.sizeFormat(traffic?.down || 0)}</Tag>
-                    <span className="hint">{SizeFormatter.sizeFormat(used)} / {totalBytes > 0 ? SizeFormatter.sizeFormat(totalBytes) : '∞'}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>{t('remained')}</td>
-                  <td>{remaining < 0 ? <Tag tone="primary">∞</Tag> : <Tag tone={remaining > 0 ? 'neutral' : 'danger'}>{SizeFormatter.sizeFormat(remaining)}</Tag>}</td>
-                </tr>
-                <tr>
-                  <td>{t('pages.inbounds.expireDate')}</td>
-                  <td>
+            <div className="ci">
+              {/* Status band */}
+              <div className="ci-head">
+                {client.enable && isOnline ? <Tag tone="success">{t('pages.clients.online')}</Tag> : <Tag>{t('pages.clients.offline')}</Tag>}
+                <Tag tone={client.enable ? 'success' : 'neutral'}>{client.enable ? t('enabled') : t('disabled')}</Tag>
+                {client.email && <Tag tone="primary">{client.email}</Tag>}
+                <span className="ci-lastonline">{t('lastOnline')}: {dateLabel(traffic?.lastOnline)}</span>
+              </div>
+
+              {/* Credentials — long mono values, one per row, copyable */}
+              <div className="ci-creds">
+                {cred(t('pages.clients.subId'), client.subId || '-')}
+                {client.uuid && cred(t('pages.clients.uuid'), client.uuid)}
+                {client.password && cred(t('password'), client.password)}
+                {client.auth && cred(t('pages.clients.auth'), client.auth)}
+              </div>
+
+              {/* Compact stats grid */}
+              <div className="ci-grid">
+                {field(t('pages.clients.flow'), client.flow ? <Tag>{client.flow}</Tag> : <Tag tone="warning">{t('none')}</Tag>)}
+                {field(t('pages.inbounds.traffic'), <Tag>↑ {SizeFormatter.sizeFormat(traffic?.up || 0)} / ↓ {SizeFormatter.sizeFormat(traffic?.down || 0)}</Tag>)}
+                {field(`${t('pages.inbounds.traffic')} (${t('remained')})`, (
+                  <>
+                    {SizeFormatter.sizeFormat(used)} / {totalBytes > 0 ? SizeFormatter.sizeFormat(totalBytes) : '∞'}
+                    {' · '}
+                    {remaining < 0 ? '∞' : SizeFormatter.sizeFormat(remaining)}
+                  </>
+                ))}
+                {field(t('pages.inbounds.expireDate'), (
+                  <>
                     {!client.expiryTime ? <Tag tone="primary">∞</Tag> : <Tag tone={client.expiryTime < 0 ? 'primary' : 'neutral'}>{expiryLabel(client.expiryTime)}</Tag>}
-                    {(client.expiryTime ?? 0) > 0 && <span className="hint">{IntlUtil.formatRelativeTime(client.expiryTime)}</span>}
-                  </td>
-                </tr>
-                <tr><td>{t('pages.clients.ipLimit')}</td><td>{!client.limitIp ? <Tag>∞</Tag> : <Tag>{client.limitIp}</Tag>}</td></tr>
-                <tr>
-                  <td>{t('pages.inbounds.IPLimitlog')}</td>
-                  <td>
-                    <Button size="sm" icon={<EyeOutlined />} loading={ipsLoading} onClick={openIpsModal}>
-                      {clientIps.length > 0 ? clientIps.length : ''}
-                    </Button>
-                  </td>
-                </tr>
-                <tr><td>{t('pages.inbounds.createdAt')}</td><td><Tag>{dateLabel(client.createdAt)}</Tag></td></tr>
-                <tr><td>{t('pages.inbounds.updatedAt')}</td><td><Tag>{dateLabel(client.updatedAt)}</Tag></td></tr>
-                {client.comment && (
-                  <tr><td>{t('pages.clients.comment')}</td><td><Tag className="info-large-tag">{client.comment}</Tag></td></tr>
-                )}
-                <tr>
-                  <td>{t('pages.clients.attachedInbounds')}</td>
-                  <td>
-                    {(() => {
-                      const ids = client.inboundIds || [];
-                      if (ids.length === 0) return <span className="hint">—</span>;
-                      const visible = ids.slice(0, INBOUND_CHIP_LIMIT);
-                      const overflow = ids.slice(INBOUND_CHIP_LIMIT);
-                      return (
-                        <div className="chips">
-                          {visible.map((id) => inboundChip(id))}
-                          {overflow.length > 0 && (
-                            <Popover
-                              side="bottom"
-                              align="end"
-                              trigger={<button type="button" className="ds-tag chip-more">+{overflow.length} {t('more') !== 'more' ? t('more') : 'more'}</button>}
-                              content={<div className="chips chips-stack">{overflow.map((id) => inboundChip(id))}</div>}
-                            />
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    {(client.expiryTime ?? 0) > 0 && <span className="hint"> {IntlUtil.formatRelativeTime(client.expiryTime)}</span>}
+                  </>
+                ))}
+                {field(t('pages.clients.ipLimit'), !client.limitIp ? <Tag>∞</Tag> : <Tag>{client.limitIp}</Tag>)}
+                {field(t('pages.inbounds.IPLimitlog'), (
+                  <Button size="sm" icon={<EyeOutlined />} loading={ipsLoading} onClick={openIpsModal}>
+                    {clientIps.length > 0 ? clientIps.length : ''}
+                  </Button>
+                ))}
+                {field(t('pages.inbounds.createdAt'), <span className="ci-muted">{dateLabel(client.createdAt)}</span>)}
+                {field(t('pages.inbounds.updatedAt'), <span className="ci-muted">{dateLabel(client.updatedAt)}</span>)}
+              </div>
+
+              {client.comment && (
+                <div className="ci-field ci-field--full">
+                  <span className="ci-field__label">{t('pages.clients.comment')}</span>
+                  <span className="ci-field__value">{client.comment}</span>
+                </div>
+              )}
+
+              <div className="ci-field ci-field--full">
+                <span className="ci-field__label">{t('pages.clients.attachedInbounds')}</span>
+                <span className="ci-field__value">
+                  {(() => {
+                    const ids = client.inboundIds || [];
+                    if (ids.length === 0) return <span className="hint">—</span>;
+                    const visible = ids.slice(0, INBOUND_CHIP_LIMIT);
+                    const overflow = ids.slice(INBOUND_CHIP_LIMIT);
+                    return (
+                      <div className="chips">
+                        {visible.map((id) => inboundChip(id))}
+                        {overflow.length > 0 && (
+                          <Popover
+                            side="bottom"
+                            align="end"
+                            trigger={<button type="button" className="ds-tag chip-more">+{overflow.length} {t('more') !== 'more' ? t('more') : 'more'}</button>}
+                            content={<div className="chips chips-stack">{overflow.map((id) => inboundChip(id))}</div>}
+                          />
+                        )}
+                      </div>
+                    );
+                  })()}
+                </span>
+              </div>
+            </div>
 
             {links.length > 0 && (
               <>
