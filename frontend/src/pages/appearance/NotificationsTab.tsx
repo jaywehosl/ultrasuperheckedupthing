@@ -35,7 +35,8 @@ const SENSOR_LABELS: { key: SensorKey; label: string; hint: string; unit: string
   { key: 'cpu', label: 'CPU usage', hint: 'Alert when CPU load exceeds the threshold', unit: '%' },
   { key: 'mem', label: 'Memory usage', hint: 'Alert when RAM usage exceeds the threshold', unit: '%' },
   { key: 'disk', label: 'Disk usage', hint: 'Alert when disk usage exceeds the threshold', unit: '%' },
-  { key: 'sockets', label: 'Open TCP sockets', hint: 'Alert on an abnormal number of open sockets', unit: '' },
+  { key: 'sockets', label: 'Open TCP sockets', hint: 'Alert on an abnormal number of open TCP sockets', unit: '' },
+  { key: 'udpSockets', label: 'Open UDP sockets', hint: 'Alert on an abnormal number of open UDP sockets', unit: '' },
   { key: 'uptimeDays', label: 'Uptime reminder', hint: 'Remind to check OS / panel updates after N days up', unit: 'd' },
   { key: 'clientOffline', label: 'Client offline', hint: 'Alert when a client that was online goes silent for N hours', unit: 'h' },
 ];
@@ -102,7 +103,7 @@ export default function NotificationsTab() {
                     disabled={!cfg.enabled}
                     onChange={(e) => setSensorThreshold(s.key, Number((e.target as HTMLInputElement).value))}
                   />
-                  {s.unit && <code>{s.unit}</code>}
+                  <code className="notif-tab__unit">{s.unit || ' '}</code>
                 </span>
                 <Switch checked={cfg.enabled} onChange={(v) => setSensorEnabled(s.key, v)} />
               </div>
@@ -112,8 +113,8 @@ export default function NotificationsTab() {
 
         <div className="notif-tab__source">
           <div className="notif-tab__source-label">
-            <span>System log</span>
-            <span className="notif-tab__source-hint">Surface new panel log lines at/above this level (covers IP-limit / fail2ban / SSH if logged)</span>
+            <span>Security log</span>
+            <span className="notif-tab__source-hint">Watch the panel log for failed logins (more security signals soon). Level = minimum severity scanned.</span>
           </div>
           <div className="notif-tab__sensor-ctl">
             <span className="notif-tab__sensor-thresh" style={{ width: 120 }}>

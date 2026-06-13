@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 
 import { useMetricsPanel } from '@/layouts/MetricsPanelContext';
 import { useNotifications, type Severity } from '@/pages/index/useNotifications';
-import { dismissAlert, dismissEvent, subscribe, getSnapshot } from '@/stores/notificationStore';
+import { dismissAlert, dismissEvent, ackSensor, subscribe, getSnapshot } from '@/stores/notificationStore';
 import './NotificationsBar.css';
 
 const SEVERITY_ICON: Record<Severity, ReactNode> = {
@@ -47,7 +47,9 @@ export default function NotificationsBar() {
                   className="notif-row__dismiss"
                   aria-label={dismissLabel}
                   title={dismissLabel}
-                  onClick={() => dismissAlert(r.id, r.severity, r.text)}
+                  onClick={() => (r.category === 'sensor'
+                    ? ackSensor(r.id.replace(/^sensor-/, ''))
+                    : dismissAlert(r.id, r.severity, r.text))}
                 >
                   <CloseOutlined />
                 </button>

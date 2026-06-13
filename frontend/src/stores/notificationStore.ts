@@ -42,7 +42,7 @@ export interface AlertPrefs {
 /** Threshold sensors evaluated against the polled server `status` (Phase 2).
  *  Edge-triggered: each fires once on the false→true crossing and re-arms when
  *  the value drops back below the threshold. */
-export type SensorKey = 'cpu' | 'mem' | 'disk' | 'sockets' | 'uptimeDays' | 'clientOffline';
+export type SensorKey = 'cpu' | 'mem' | 'disk' | 'sockets' | 'udpSockets' | 'uptimeDays' | 'clientOffline';
 export interface SensorConfig { enabled: boolean; threshold: number }
 export type SensorPrefs = Record<SensorKey, SensorConfig>;
 
@@ -57,6 +57,9 @@ interface NotifState {
    *  (sensors / log). Persisted so they survive a reload until dismissed. */
   active: NotifRecord[];
   dismissed: string[];
+  /** Status-sensor keys the user has dismissed for the CURRENT over-threshold
+   *  episode; auto-cleared when the value drops back (re-arms the live row). */
+  sensorAcked: string[];
   prefs: AlertPrefs;
   sensors: SensorPrefs;
   logWatch: LogWatchPrefs;
@@ -68,6 +71,7 @@ const PREFS_KEY = 'uup.notifications.prefs';
 const SENSORS_KEY = 'uup.notifications.sensors';
 const LOGWATCH_KEY = 'uup.notifications.logwatch';
 const ACTIVE_KEY = 'uup.notifications.active';
+const SENSOR_ACKED_KEY = 'uup.notifications.sensorAcked';
 const HISTORY_CAP = 200;
 const ACTIVE_CAP = 50;
 
@@ -82,6 +86,7 @@ const DEFAULT_SENSORS: SensorPrefs = {
   mem: { enabled: false, threshold: 90 },       // % used
   disk: { enabled: true, threshold: 90 },       // % used
   sockets: { enabled: false, threshold: 5000 }, // open TCP sockets
+  udpSockets: { enabled: false, threshold: 5000 }, // open UDP sockets
   uptimeDays: { enabled: false, threshold: 30 },// system uptime in days
   clientOffline: { enabled: false, threshold: 24 }, // client silent for N hours
 };
@@ -109,6 +114,15 @@ function loadActive(): NotifRecord[] {
     const raw = localStorage.getItem(ACTIVE_KEY);
     const arr = raw ? (JSON.parse(raw) as unknown) : null;
     return Array.isArray(arr) ? (arr as NotifRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+function loadStringArr(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    const arr = raw ? (JSON.parse(raw) as unknown) : null;
+    return Array.isArray(arr) ? (arr as string[]) : [];
   } catch {
     return [];
   }
@@ -151,6 +165,7 @@ let state: NotifState = {
   history: typeof localStorage !== 'undefined' ? loadHistory() : [],
   active: typeof localStorage !== 'undefined' ? loadActive() : [],
   dismissed: typeof localStorage !== 'undefined' ? loadDismissed() : [],
+  sensorAcked: typeof localStorage !== 'undefined' ? loadStringArr(SENSOR_ACKED_KEY) : [],
   prefs: typeof localStorage !== 'undefined' ? loadPrefs() : { ...DEFAULT_PREFS },
   sensors: typeof localStorage !== 'undefined' ? loadSensors() : structuredClone(DEFAULT_SENSORS),
   logWatch: typeof localStorage !== 'undefined' ? loadLogWatch() : { ...DEFAULT_LOGWATCH },
@@ -167,6 +182,7 @@ function persist() {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
     localStorage.setItem(ACTIVE_KEY, JSON.stringify(state.active));
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(state.dismissed));
+    localStorage.setItem(SENSOR_ACKED_KEY, JSON.stringify(state.sensorAcked));
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
     localStorage.setItem(SENSORS_KEY, JSON.stringify(state.sensors));
     localStorage.setItem(LOGWATCH_KEY, JSON.stringify(state.logWatch));
@@ -224,6 +240,19 @@ export function pushEvent(severity: Severity, text: string, dedupKey?: string): 
 export function dismissEvent(id: string): void {
   if (!state.active.some((r) => r.id === id)) return;
   commit({ ...state, active: state.active.filter((r) => r.id !== id) });
+}
+
+/** Dismiss a LIVE status-sensor row for the current episode (hides it until the
+ *  value drops back below the threshold, then it re-arms). Status sensors are
+ *  live conditions, not logged events — so this never touches history. */
+export function ackSensor(key: string): void {
+  if (state.sensorAcked.includes(key)) return;
+  commit({ ...state, sensorAcked: [...state.sensorAcked, key] });
+}
+/** Re-arm a dismissed sensor once its condition clears (called by SensorWatcher). */
+export function clearAckSensor(key: string): void {
+  if (!state.sensorAcked.includes(key)) return;
+  commit({ ...state, sensorAcked: state.sensorAcked.filter((k) => k !== key) });
 }
 
 /** X a live alert: silence it forever (per key) and drop it into history. */

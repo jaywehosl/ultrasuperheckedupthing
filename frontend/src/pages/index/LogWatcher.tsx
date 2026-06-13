@@ -5,31 +5,43 @@ import { HttpUtil } from '@/utils';
 import { subscribe, getSnapshot, pushEvent, type Severity } from '@/stores/notificationStore';
 
 const POLL_MS = 30000;
-const FETCH_COUNT = 50;       // lines per poll
-const MAX_EMIT_PER_POLL = 5;  // don't flood on a burst
+const FETCH_COUNT = 100; // lines per poll (we filter down to security signals)
 
-/** Map a log line's level token to a notification severity. */
-function severityOf(line: string): Severity {
-  const head = (line || '').split(' - ')[0]?.toUpperCase() ?? '';
-  if (head.includes('ERROR') || head.includes(' ERR')) return 'danger';
-  if (head.includes('WARNING')) return 'warning';
-  return 'info';
-}
+interface Detected { severity: Severity; text: string; dedupKey: string }
 
-/** Strip the "DATE TIME LEVEL - " prefix for a tidier toast; fall back to raw. */
-function bodyOf(line: string): string {
-  const idx = (line || '').indexOf(' - ');
-  const body = idx >= 0 ? line.slice(idx + 3) : line;
-  return (body || '').trim() || line;
+/**
+ * Targeted security-signal matchers over panel log lines. We do NOT surface the
+ * whole log (that's what the Logs viewer is for) — only the specific signals the
+ * operator cares about. Each returns a clean notification or null.
+ *
+ * Confirmed formats (real panel logs):
+ *   WARNING - X-UI: failed login: username="x", IP="1.2.3.4", reason="invalid credentials"[, blocked_until=...]
+ *
+ * TODO (need real samples): client IP-limit exceeded, SSH brute-force.
+ */
+const FAILED_LOGIN_RE = /failed login:\s*username="([^"]*)",\s*IP="([^"]*)",\s*reason="([^"]*)"/i;
+
+function detect(line: string): Detected | null {
+  const m = FAILED_LOGIN_RE.exec(line);
+  if (m) {
+    const [, user, ip, reason] = m;
+    const blocked = /blocked_until=/.test(line);
+    return {
+      severity: 'danger',
+      text: `Failed panel login: ${user || '?'} from ${ip || '?'} — ${reason}${blocked ? ' (rate-limited)' : ''}`,
+      // Collapse repeats from the same source/reason into one active entry.
+      dedupKey: `login:${user}:${ip}:${reason}`,
+    };
+  }
+  return null;
 }
 
 /**
- * Headless Phase-2 sensor: surface NEW panel log lines at/above the chosen level
- * as notifications. Seed-then-delta: the first poll after enabling just records
- * the current window without emitting; later polls emit only lines that weren't
- * in the previous window (capped per poll). The backend already filters by level
- * (POST /server/logs/:count {level}), so every returned line is in-scope. Covers
- * IP-limit / fail2ban / SSH events when they reach the panel log.
+ * Headless Phase-2 sensor: watch panel log lines for targeted SECURITY signals
+ * (currently failed panel logins) and raise a notification. Seed-then-delta: the
+ * first poll after enabling is baseline (no replay); later polls only consider
+ * NEW lines. Matches are collapsed by source so a burst of identical attempts is
+ * one notification (pushEvent dedupKey), not a flood.
  */
 export default function LogWatcher() {
   const { logWatch } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -71,9 +83,13 @@ export default function LogWatcher() {
     const fresh = current.filter((l) => !prevSeen.current.has(l));
     prevSeen.current = new Set(current);
 
-    fresh.slice(-MAX_EMIT_PER_POLL).forEach((line) => {
-      pushEvent(severityOf(line), bodyOf(line), `log:${line}`);
-    });
+    // Detect targeted signals, collapse duplicates within this poll by dedupKey.
+    const byKey = new Map<string, Detected>();
+    for (const line of fresh) {
+      const d = detect(line);
+      if (d) byKey.set(d.dedupKey, d);
+    }
+    byKey.forEach((d) => pushEvent(d.severity, d.text, d.dedupKey));
   }, [enabled, data]);
 
   return null;

@@ -35,8 +35,11 @@
   align-items: center;
   gap: 6px;
 }
-.notif-tab__sensor-thresh .ds-input { width: 84px; text-align: right; }
+.notif-tab__sensor-thresh .ds-input { width: 96px; text-align: right; }
 .notif-tab__sensor-thresh code { color: var(--text-3); font-size: 12px; }
+/* Fixed-width unit slot so every row's input column lines up, even when a
+   sensor has no unit (TCP/UDP sockets). */
+.notif-tab__unit { display: inline-block; width: 14px; text-align: left; }
 
 .notif-tab__empty {
   padding: 24px 0;
