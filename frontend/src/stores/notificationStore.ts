@@ -46,18 +46,27 @@ export type SensorKey = 'cpu' | 'mem' | 'disk' | 'sockets' | 'uptimeDays' | 'cli
 export interface SensorConfig { enabled: boolean; threshold: number }
 export type SensorPrefs = Record<SensorKey, SensorConfig>;
 
+/** System log watcher: surface NEW panel log lines at/above `level` as
+ *  notifications. Separate from numeric sensors because its "threshold" is a log
+ *  level string. Levels match the log viewer: debug|info|notice|warning|err. */
+export interface LogWatchPrefs { enabled: boolean; level: string }
+
 interface NotifState {
   history: NotifRecord[];
   dismissed: string[];
   prefs: AlertPrefs;
   sensors: SensorPrefs;
+  logWatch: LogWatchPrefs;
 }
 
 const HISTORY_KEY = 'uup.notifications.history';
 const DISMISSED_KEY = 'uup.notifications.dismissed';
 const PREFS_KEY = 'uup.notifications.prefs';
 const SENSORS_KEY = 'uup.notifications.sensors';
+const LOGWATCH_KEY = 'uup.notifications.logwatch';
 const HISTORY_CAP = 200;
+
+const DEFAULT_LOGWATCH: LogWatchPrefs = { enabled: false, level: 'warning' };
 
 const DEFAULT_PREFS: AlertPrefs = { security: true, xray: true, restart: true };
 
@@ -114,12 +123,22 @@ function loadSensors(): SensorPrefs {
     return structuredClone(DEFAULT_SENSORS);
   }
 }
+function loadLogWatch(): LogWatchPrefs {
+  try {
+    const raw = localStorage.getItem(LOGWATCH_KEY);
+    const obj = raw ? (JSON.parse(raw) as Partial<LogWatchPrefs>) : null;
+    return obj ? { ...DEFAULT_LOGWATCH, ...obj } : { ...DEFAULT_LOGWATCH };
+  } catch {
+    return { ...DEFAULT_LOGWATCH };
+  }
+}
 
 let state: NotifState = {
   history: typeof localStorage !== 'undefined' ? loadHistory() : [],
   dismissed: typeof localStorage !== 'undefined' ? loadDismissed() : [],
   prefs: typeof localStorage !== 'undefined' ? loadPrefs() : { ...DEFAULT_PREFS },
   sensors: typeof localStorage !== 'undefined' ? loadSensors() : structuredClone(DEFAULT_SENSORS),
+  logWatch: typeof localStorage !== 'undefined' ? loadLogWatch() : { ...DEFAULT_LOGWATCH },
 };
 
 const listeners = new Set<() => void>();
@@ -134,6 +153,7 @@ function persist() {
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(state.dismissed));
     localStorage.setItem(PREFS_KEY, JSON.stringify(state.prefs));
     localStorage.setItem(SENSORS_KEY, JSON.stringify(state.sensors));
+    localStorage.setItem(LOGWATCH_KEY, JSON.stringify(state.logWatch));
   } catch {
     /* ignore quota / disabled storage */
   }
@@ -208,4 +228,11 @@ export function setSensorEnabled(key: SensorKey, enabled: boolean): void {
 export function setSensorThreshold(key: SensorKey, threshold: number): void {
   if (!Number.isFinite(threshold)) return;
   commit({ ...state, sensors: { ...state.sensors, [key]: { ...state.sensors[key], threshold } } });
+}
+
+export function setLogWatchEnabled(enabled: boolean): void {
+  commit({ ...state, logWatch: { ...state.logWatch, enabled } });
+}
+export function setLogWatchLevel(level: string): void {
+  commit({ ...state, logWatch: { ...state.logWatch, level } });
 }

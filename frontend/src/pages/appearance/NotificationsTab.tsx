@@ -6,7 +6,7 @@ import {
 } from '@ant-design/icons';
 import type { ReactNode } from 'react';
 
-import { Button, Card, Input, Switch } from '@/components/ds';
+import { Button, Card, Input, Select, Switch } from '@/components/ds';
 import {
   subscribe,
   getSnapshot,
@@ -15,10 +15,20 @@ import {
   setAlertPref,
   setSensorEnabled,
   setSensorThreshold,
+  setLogWatchEnabled,
+  setLogWatchLevel,
   type AlertCategory,
   type SensorKey,
   type Severity,
 } from '@/stores/notificationStore';
+
+const LOG_LEVELS = [
+  { value: 'debug', label: 'Debug+' },
+  { value: 'info', label: 'Info+' },
+  { value: 'notice', label: 'Notice+' },
+  { value: 'warning', label: 'Warning+' },
+  { value: 'err', label: 'Error' },
+];
 import './NotificationsTab.css';
 
 const SENSOR_LABELS: { key: SensorKey; label: string; hint: string; unit: string }[] = [
@@ -51,7 +61,7 @@ function formatTime(ts: number): string {
 }
 
 export default function NotificationsTab() {
-  const { history, dismissed, prefs, sensors } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const { history, dismissed, prefs, sensors, logWatch } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return (
     <div className="notif-tab">
@@ -99,6 +109,19 @@ export default function NotificationsTab() {
             </div>
           );
         })}
+
+        <div className="notif-tab__source">
+          <div className="notif-tab__source-label">
+            <span>System log</span>
+            <span className="notif-tab__source-hint">Surface new panel log lines at/above this level (covers IP-limit / fail2ban / SSH if logged)</span>
+          </div>
+          <div className="notif-tab__sensor-ctl">
+            <span className="notif-tab__sensor-thresh" style={{ width: 120 }}>
+              <Select value={logWatch.level} onChange={(v) => setLogWatchLevel(String(v))} options={LOG_LEVELS} disabled={!logWatch.enabled} />
+            </span>
+            <Switch checked={logWatch.enabled} onChange={setLogWatchEnabled} />
+          </div>
+        </div>
       </Card>
 
       <Card
