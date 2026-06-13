@@ -186,8 +186,15 @@ export function isDismissed(key: string): boolean {
   return state.dismissed.includes(key);
 }
 
+/** Clear the log, but KEEP the entries that are the only handle for restoring a
+ *  currently-dismissed live alert (source==='alert' whose key is still silenced)
+ *  — otherwise clearing history would strand a dismissed alert with no way to
+ *  bring it back to the status bar. Toasts and already-restored entries go. */
 export function clearHistory(): void {
-  commit({ ...state, history: [] });
+  const history = state.history.filter(
+    (r) => r.source === 'alert' && !!r.key && state.dismissed.includes(r.key),
+  );
+  commit({ ...state, history });
 }
 
 export function setAlertPref(category: AlertCategory, enabled: boolean): void {

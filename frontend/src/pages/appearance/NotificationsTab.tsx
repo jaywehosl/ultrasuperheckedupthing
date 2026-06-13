@@ -103,7 +103,13 @@ export default function NotificationsTab() {
       <Card
         title="History"
         extra={
-          <Button size="sm" variant="text" danger disabled={history.length === 0} onClick={clearHistory}>
+          <Button
+            size="sm"
+            variant="text"
+            danger
+            disabled={!history.some((r) => !(r.source === 'alert' && r.key && dismissed.includes(r.key)))}
+            onClick={clearHistory}
+          >
             Clear
           </Button>
         }
