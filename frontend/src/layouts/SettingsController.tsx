@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { useTranslation } from 'react-i18next';
 
 import PlanVerificationModal from '@/components/ui/PlanVerificationModal';
+import DangerConfirmModal from '@/components/ui/DangerConfirmModal';
 import { HttpUtil, PromiseUtil } from '@/utils';
 import { getMessage } from '@/utils/messageBus';
 import { useAllSettings } from '@/api/queries/useAllSettings';
@@ -18,6 +19,25 @@ interface ApiMsg { success?: boolean }
 // frontend-only settings store (planned: a layer of our own UI prefs on top of
 // the backend settings). Flip to true to re-enable the pre-save diff review.
 const PLAN_VERIFICATION_ENABLED = false;
+
+// Settings that control how the panel/sub is actually reached. Changing any of
+// them behind a reverse proxy + cookie-gate can permanently lock the operator
+// out, so a Save touching them goes through DangerConfirmModal (countdown + ack
+// + backup) first. Labels are shown in the modal's field list.
+const ACCESS_CRITICAL_FIELDS: { key: string; label: string }[] = [
+  { key: 'webPort', label: 'Panel port' },
+  { key: 'webListen', label: 'Panel listen address' },
+  { key: 'webDomain', label: 'Panel domain' },
+  { key: 'webBasePath', label: 'Panel base path (URI)' },
+  { key: 'webCertFile', label: 'Panel TLS certificate' },
+  { key: 'webKeyFile', label: 'Panel TLS key' },
+  { key: 'subPort', label: 'Subscription port' },
+  { key: 'subListen', label: 'Subscription listen address' },
+  { key: 'subDomain', label: 'Subscription domain' },
+  { key: 'subPath', label: 'Subscription path (URI)' },
+  { key: 'subURI', label: 'Subscription URL' },
+  { key: 'subJsonPath', label: 'Subscription JSON path' },
+];
 
 // "Restart panel" reminder must survive a full page reload (e.g. switching the
 // language, which calls window.location.reload()). A save persists settings to
@@ -69,6 +89,7 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
 
   const busyOverlay = useBusyOverlay();
   const [showPlan, setShowPlan] = useState(false);
+  const [showDanger, setShowDanger] = useState(false);
   const [restartNeeded, setRestartNeededState] = useState<boolean>(loadRestartNeeded);
   const setRestartNeeded = useCallback((v: boolean) => {
     persistRestartNeeded(v);
@@ -129,6 +150,19 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
     }
   }, [saveAll, setSpinning, setRestartNeeded]);
 
+  // Access-critical fields whose draft value differs from the saved server value.
+  const changedDangerFields = useMemo(() => {
+    if (!originalSetting) return [] as string[];
+    const orig = originalSetting as unknown as Record<string, unknown>;
+    const draft = allSetting as unknown as Record<string, unknown>;
+    return ACCESS_CRITICAL_FIELDS.filter((f) => draft[f.key] !== orig[f.key]).map((f) => f.label);
+  }, [allSetting, originalSetting]);
+
+  const proceedSave = useCallback(() => {
+    if (PLAN_VERIFICATION_ENABLED) setShowPlan(true);
+    else void executeSave();
+  }, [executeSave]);
+
   const requestSave = useCallback(() => {
     const result = AllSettingSchema.safeParse(allSetting);
     if (!result.success) {
@@ -138,12 +172,15 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
       message.error(`${fieldPath}: ${t(msgKey, { defaultValue: msgKey })}`);
       return;
     }
-    if (PLAN_VERIFICATION_ENABLED) {
-      setShowPlan(true);
-    } else {
-      void executeSave();
+    // A Save that touches port/path/domain/cert (panel or sub) must clear the
+    // hard confirmation gate first — those can lock the operator out behind the
+    // reverse proxy.
+    if (changedDangerFields.length > 0) {
+      setShowDanger(true);
+      return;
     }
-  }, [allSetting, message, t, executeSave]);
+    proceedSave();
+  }, [allSetting, message, t, changedDangerFields, proceedSave]);
 
   // Restart immediately — no confirm modal. A panel restart takes ~half a
   // second (along with the core); re-triggering it (e.g. after a language
@@ -234,6 +271,14 @@ export function SettingsControllerProvider({ children }: { children: ReactNode }
         confirmLoading={spinning}
         onConfirm={executeSave}
         onCancel={() => setShowPlan(false)}
+      />
+
+      <DangerConfirmModal
+        open={showDanger}
+        fields={changedDangerFields}
+        onConfirm={() => { setShowDanger(false); proceedSave(); }}
+        onCancel={() => setShowDanger(false)}
+        onBackup={() => { window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getDb'; }}
       />
     </SettingsControllerContext.Provider>
   );

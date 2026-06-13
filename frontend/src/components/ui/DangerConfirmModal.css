@@ -1,0 +1,55 @@
+.danger-modal { display: flex; flex-direction: column; gap: 16px; }
+
+.danger-modal__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-error);
+}
+
+.danger-modal__lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+
+.danger-modal__fields {
+  margin: 0;
+  padding: 12px 14px 12px 30px;
+  border-radius: var(--radius-md);
+  background: rgba(var(--color-error-rgb), 0.08);
+  border: 1px solid rgba(var(--color-error-rgb), 0.22);
+  color: var(--text-1);
+  font-size: 13px;
+}
+.danger-modal__fields li { margin: 2px 0; }
+
+.danger-modal__backup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.danger-modal__ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-1);
+  cursor: pointer;
+}
+.danger-modal__ack input { margin-top: 2px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+
+.danger-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
