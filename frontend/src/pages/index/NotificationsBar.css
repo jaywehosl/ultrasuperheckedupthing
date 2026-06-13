@@ -56,18 +56,19 @@
 }
 .notif-row__text { flex: 1 1 auto; min-width: 0; }
 
+/* Driven by the Palette tokens so the Appearance Error/Warning colours actually
+   tint the status-bar notifications (were hardcoded #EA4335 / #FBBC05 etc). */
 .notif-row--danger {
-  background: rgba(234, 67, 53, 0.08);
-  border-color: rgba(234, 67, 53, 0.22);
+  background: rgba(var(--color-error-rgb), 0.08);
+  border-color: rgba(var(--color-error-rgb), 0.22);
 }
-.notif-row--danger .notif-row__icon { color: #EA4335; }
+.notif-row--danger .notif-row__icon { color: var(--color-error); }
 
 .notif-row--warning {
-  background: rgba(251, 188, 5, 0.1);
-  border-color: rgba(251, 188, 5, 0.28);
+  background: rgba(var(--color-warning-rgb), 0.1);
+  border-color: rgba(var(--color-warning-rgb), 0.28);
 }
-.notif-row--warning .notif-row__icon { color: #d79a00; }
-.is-dark .notif-row--warning .notif-row__icon { color: #FBBC05; }
+.notif-row--warning .notif-row__icon { color: var(--color-warning); }
 
 .notif-row--info {
   background: rgba(var(--color-primary-rgb), 0.08);

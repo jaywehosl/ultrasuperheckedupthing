@@ -30,8 +30,12 @@
   --color-warning-rgb: 245, 165, 36;
   --color-error-rgb:   234, 67, 53;
 
-  /* ---- Accent hues used by the ambient backdrop ---- */
-  --aura-1: 50, 121, 249;   /* blue   */
+  /* ---- Accent hues used by the ambient backdrop ----
+     --aura-1 is the DOMINANT lobe (used twice in the page-shell gradient) and
+     now follows --color-primary, so a custom Primary actually recolours the
+     ambient glow — and the saturation knob no longer amplifies a fixed blue that
+     Palette couldn't touch. 2/3 stay as accent variety. */
+  --aura-1: var(--color-primary-rgb);   /* follows Primary */
   --aura-2: 168, 85, 247;   /* violet */
   --aura-3: 20, 184, 166;   /* teal   */
 
