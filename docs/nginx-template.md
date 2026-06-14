@@ -198,8 +198,10 @@ server {
   link is what arms the cookie; subsequent visits pass via the cookie map.
 - The panel/sub already 403 foreign Hosts themselves (DomainValidator), so the
   proxy is defence-in-depth, not the only guard.
-- Branded `__xui_4xx.html` / `__xui_5xx.html` ship in the release tarball and are
-  copied to `/etc/x-ui/errorpages/` at install (glass style, no server banners).
-  Branded pages cover the full common error set (400 401 403 404 405 429 500 502
-  503 504); the catch-all (unknown SNI) stays `444` (silent drop, no page).
+- Error pages `__xui_4xx.html` / `__xui_5xx.html` are written **inline by
+  `install.sh`** into `/etc/x-ui/errorpages/` (not shipped in the release
+  tarball). Today they are **minimal placeholders** — a tiny dark page; `5xx` is
+  currently just a copy of `4xx` (so 5xx also reads "404"). Proper branded glass
+  pages for the full error set are a TODO. `server_tokens off` keeps the nginx
+  version from leaking; the catch-all (unknown SNI) stays `444` (silent drop).
 - Web server is **nginx only** for now (a Caddy flavour may come later).

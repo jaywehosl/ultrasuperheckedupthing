@@ -49,3 +49,7 @@ docker-compose.override.yml
 # Ignore large local capture / third-party reference assets (not for the repo)
 *.mp4
 /antigravity_reference_assets/
+# Local-only internal dev notes (kept out of the public repo)
+frontend/DESIGN_GUIDELINES.md
+frontend/HANDOFF_DS_MIGRATION.md
+frontend/REDESIGN_TODO.md
