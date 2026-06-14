@@ -43,23 +43,41 @@ The backend (Go + Xray-core integration, REST API, subscription engine, database
 
 ## Quick Start
 
-### 1. One-click install (precompiled binary)
-
-Deploy the latest release binary on a Linux (amd64 / arm64) VPS:
+On a fresh Linux (amd64 / arm64) VPS, run the installer:
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/community_panel/main/install.sh)
 ```
 
-The installer fetches the latest binary from **GitHub Releases**, installs the `x-ui` systemd service, and sets up dependencies. Read the disclaimer above before running this over an existing 3X-UI install.
+It fetches the latest binary from **GitHub Releases**, installs the `x-ui` systemd service and dependencies, and offers the deployment modes below. (Prerelease channel — newest build incl. prereleases, expect rough edges: swap `install.sh` → `install-prerelease.sh`.) Read the disclaimer before running this over an existing 3X-UI install.
 
-**Prerelease channel** — installs the newest build *including prereleases* (expect rough edges):
+### ✅ Recommended: turnkey reverse-proxy + cookie-gate
 
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/jaywehosl/community_panel/main/install-prerelease.sh)
-```
+When the installer asks, pick **"Reverse-proxy / Nginx on domains"** and the **"Cookie-gate (secret cookie-auth link)"** access style. You provide three **distinct** domains — panel, subscription, and a *selfsteal / Reality decoy* — and the installer does the rest end-to-end:
 
-### 2. Run locally (developer mode)
+- issues Let's Encrypt certificates (HTTP-01),
+- configures **Nginx with 3 SNI vhosts on a single port 443** (no ports in any URL),
+- puts the panel behind a **cookie-gate**, and prints a **secret cookie-gate link — save it** (it's how you unlock the panel in your browser).
+
+**Why this is the recommended deployment:**
+
+| Without it | With reverse-proxy + cookie-gate |
+|---|---|
+| Panel on a custom port/path, reachable by anyone who finds it | Single **443**, no port/path leaked; clean domain URLs |
+| Default port/path are fingerprintable → scanners & brute-force find the login | Without the secret cookie the panel **doesn't answer** — a scanner sees the **decoy site**, not a login. The panel is effectively invisible |
+| You manage TLS yourself | TLS terminated by Nginx, auto-issued & renewed |
+| Login/cookies may travel plain HTTP | Always HTTPS |
+| The proxy is a separate manual chore | One guided install sets up panel + sub + Reality decoy together |
+
+This is exactly the setup the panel is tuned for — e.g. the in-app **"this change can lock you out"** guard exists because changing the panel port/path/domain breaks the proxy contract. See the [User Guide](docs/USER_GUIDE.md) and [nginx template](docs/nginx-template.md) for details.
+
+> ⚠️ **Save the secret cookie-gate link** the installer prints. Without it you cannot reach the panel.
+
+### Plain binary (advanced — behind your own proxy / SSH tunnel)
+
+If you run your own reverse proxy or an SSH tunnel, choose the plain install and bind the panel to `127.0.0.1`. The installer warns when the panel would otherwise be exposed over plain HTTP.
+
+### Run locally (developer mode)
 
 Prerequisites: **Go 1.26+** and **Node.js 18+**.
 
@@ -80,7 +98,7 @@ npm install
 npm run dev      # Vite dev server (proxies the API to a backend you configure)
 ```
 
-### 3. Build from source
+### Build from source
 
 ```bash
 # 1) Build the frontend (outputs to web/dist, which the Go binary embeds)
@@ -112,6 +130,16 @@ sudo ./deploy.sh
 
 ---
 
+## Documentation
+
+- **[User Guide](docs/USER_GUIDE.md)** — every feature *we* added on top of stock 3X-UI (Appearance / theming, the notification system & sensors, the lock-out safety guard, backup & restore, the redesigned client info) and how to use them. Русская версия: [docs/USER_GUIDE.ru-RU.md](docs/USER_GUIDE.ru-RU.md).
+- **[Architecture & Design](docs/ARCHITECTURE.md)** — the structural guide: how things are implemented (technical) and the ideas behind them (theory). Русская версия: [docs/ARCHITECTURE.ru-RU.md](docs/ARCHITECTURE.ru-RU.md).
+- **Russian README:** [README.ru-RU.md](README.ru-RU.md).
+
+For the upstream panel's own usage docs, see [3X-UI](https://github.com/MHSanaei/3x-ui) — this guide only covers what differs here.
+
+---
+
 ## License
 
 Licensed under the **GNU General Public License v3.0** (GPL-3.0) — inherited from the upstream 3X-UI project. See [LICENSE](/LICENSE).
@@ -122,7 +150,7 @@ You are **free to use, study, modify, and redistribute** this project, including
 
 - **[3X-UI](https://github.com/MHSanaei/3x-ui)** — the upstream panel this fork is built on (Go backend, API, subscription engine).
 - **[Xray-core](https://github.com/XTLS/Xray-core)** — the proxy core the panel manages.
-- **eGames** — the original idea this project draws on, and the reverse-proxy + cookie-gate installation script whose implementation we adapted. Credit where it's due.
+- **[eGames](https://github.com/eGamesAPI/remnawave-reverse-proxy)** — we adapted his installation scripts and CLI, taken as a model of a *finished, genuinely useful tool* (no features for features' sake). We don't build on his ideas — we reused his scripts/CLI as a good reference. Source: <https://github.com/eGamesAPI/remnawave-reverse-proxy>
 
 ---
 
