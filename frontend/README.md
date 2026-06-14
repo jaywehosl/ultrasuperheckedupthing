@@ -1,10 +1,14 @@
-# 3x-ui frontend
+# Community Panel — frontend
 
-React 19 + Ant Design 6 + TypeScript + Vite 8. Three SPA bundles —
-`index.html` (admin panel SPA, all `/panel/*` routes), `login.html`
-(login + 2FA), and `subpage.html` (public subscription viewer). All
-three are built into `../web/dist/` and embedded into the Go binary
-via `embed.FS`.
+React 19 + TypeScript + Vite 8, on a hand-rolled **DS** component library built
+on Radix UI primitives. The original Ant Design UI is being **migrated off**
+incrementally — some antd remains in not-yet-ported screens, so you'll still see
+antd imports and the legacy antd `Form` pattern below.
+
+Three SPA bundles — `index.html` (admin panel SPA, all `/panel/*` routes),
+`login.html` (login + 2FA), and `subpage.html` (public subscription viewer). All
+three are built into `../web/dist/` and embedded into the Go binary via
+`embed.FS`.
 
 State is split between local `useState`, TanStack Query for server
 state, and `useTheme` / `useWebSocket` contexts. Form validation,
@@ -88,7 +92,7 @@ frontend/
     ├── pages/           # One folder per route, page component + helpers
     │   ├── index/, login/, inbounds/, clients/, xray/, nodes/,
     │   ├── settings/, api-docs/, sub/
-    ├── layouts/         # AdminLayout (sidebar + header + outlet)
+    ├── layouts/         # PanelLayout (sidebar + header + status bar + outlet)
     ├── components/      # Cross-page React components
     ├── hooks/           # useClients, useTheme, useWebSocket, …
     ├── api/             # Axios + CSRF interceptor, TanStack Query bridge,
@@ -145,9 +149,15 @@ Patterns:
 - **No `.loose()` or `[key: string]: any`** in production schemas.
   `@typescript-eslint/no-explicit-any: error` is enforced.
 
-## Form pattern (Pattern A)
+## Form pattern (Pattern A) — legacy (antd)
 
-All non-trivial modals use this single pattern:
+> ⚠️ This describes the **legacy Ant Design** form pattern, still used by
+> not-yet-migrated modals. New/ported screens use the DS components
+> (`Field` + `Input`/`Select`/`Switch` from `@/components/ds`) with Zod
+> validation directly, not antd `Form`. Treat the below as reference for the
+> remaining antd screens until the migration completes.
+
+The remaining antd modals use this single pattern:
 
 ```tsx
 const [form] = Form.useForm<InboundFormValues>();
