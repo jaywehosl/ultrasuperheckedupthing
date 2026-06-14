@@ -136,6 +136,8 @@ sudo ./deploy.sh
 
 - **[User Guide](docs/USER_GUIDE.md)** — every feature *we* added on top of stock 3X-UI (Appearance / theming, the notification system & sensors, the lock-out safety guard, backup & restore, the redesigned client info) and how to use them. Русская версия: [docs/USER_GUIDE.ru-RU.md](docs/USER_GUIDE.ru-RU.md).
 - **[Architecture & Design](docs/ARCHITECTURE.md)** — the structural guide: how things are implemented (technical) and the ideas behind them (theory). Русская версия: [docs/ARCHITECTURE.ru-RU.md](docs/ARCHITECTURE.ru-RU.md).
+- **[Inbound setup](docs/INBOUND_SETUP.md)** — creating a VLESS·TCP·Reality (selfsteal) and a Hysteria2 inbound on this install, including the required External Proxy + `Force TLS = same`. Русская версия: [docs/INBOUND_SETUP.ru-RU.md](docs/INBOUND_SETUP.ru-RU.md).
+- **[nginx template](docs/nginx-template.md)** — the reverse-proxy config behind the recommended install. Русская версия: [docs/nginx-template.ru-RU.md](docs/nginx-template.ru-RU.md).
 - **Russian README:** [README.ru-RU.md](README.ru-RU.md).
 
 For the upstream panel's own usage docs, see [3X-UI](https://github.com/MHSanaei/3x-ui) — this guide only covers what differs here.
