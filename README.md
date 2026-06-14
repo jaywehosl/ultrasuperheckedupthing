@@ -43,6 +43,29 @@ The backend (Go + Xray-core integration, REST API, subscription engine, database
 
 ---
 
+## Requirements
+
+- **Server:** a Linux **VPS** (amd64 or arm64) with **systemd** and **root**
+  access. Releases are built and tested for Debian / Ubuntu — use one of those.
+- **Minimum specs:** ~**1 vCPU, 1 GB RAM, 10 GB disk**. The panel + Xray are
+  light; size up for traffic and logs.
+- **Domains:** for the recommended turnkey install you need **three distinct
+  domains or subdomains**, each with an **A record pointing to the server's IP**
+  (the machine you run the installer on):
+  1. the **panel** domain,
+  2. the **subscription** domain,
+  3. the **selfsteal / Reality decoy** domain.
+- **Open ports:** **80** (Let's Encrypt HTTP-01 validation) and **443**.
+
+Need a VPS? Aeza works well: [aeza.net](https://aeza.net/virtual-servers) (intl) /
+[aeza.ru](https://aeza.ru/virtual-servers) (RU).
+
+> 🖥️ **Desktop only.** The interface is built for desktop — there is **no mobile
+> version yet**. Opened in a phone browser the pages will look badly broken. Use a
+> desktop/laptop browser.
+
+---
+
 ## Quick Start
 
 On a fresh Linux (amd64 / arm64) VPS, run the installer:
