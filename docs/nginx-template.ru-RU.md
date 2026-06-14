@@ -1,47 +1,48 @@
-# nginx reverse-proxy template
+# Шаблон nginx для реверс-прокси
 
-> 🇷🇺 Русская версия: [nginx-template.ru-RU.md](nginx-template.ru-RU.md)
+> 🇬🇧 English version: [nginx-template.md](nginx-template.md)
 
-The reference config behind the **recommended turnkey reverse-proxy + cookie-gate
-install**. The installer renders this (envsubst-style) into
-`/etc/x-ui/nginx/xui.conf` and reloads nginx. This documents the live config —
-read it to understand the deployment or to adapt it by hand.
+Референс-конфиг, лежащий в основе **рекомендуемой turnkey-установки реверс-прокси +
+cookie-gate**. Установщик рендерит его (в стиле envsubst) в
+`/etc/x-ui/nginx/xui.conf` и перезагружает nginx. Здесь описан реальный
+конфиг — читайте, чтобы понять развёртывание или адаптировать его вручную.
 
-## How it sits in the stack
+## Как это устроено в стеке
 
 ```
 :443  Xray VLESS Reality (serverNames=[SELFSTEAL_DOMAIN], xver=1)
-        ├─ authenticated VLESS  → proxied (real traffic)
-        └─ everything else      → realitySettings.dest = unix:/dev/shm/xui.sock
-                                   (raw TLS relayed here, with PROXY protocol header)
+        ├─ авторизованный VLESS  → проксируется (реальный трафик)
+        └─ всё остальное         → realitySettings.dest = unix:/dev/shm/xui.sock
+                                   (сырой TLS реле сюда, с заголовком PROXY protocol)
                                           │
-                                   nginx (this config) terminates TLS, vhosts by SNI:
-                                     PANEL_DOMAIN     → 127.0.0.1:WEB_PORT  (panel, HTTP)
-                                     SUB_DOMAIN       → 127.0.0.1:SUB_PORT  (sub, HTTP)
-                                     SELFSTEAL_DOMAIN → /var/www/SELFSTEAL  (static decoy)
-                                     anything else    → 444 (drop)
+                                   nginx (этот конфиг) терминирует TLS, vhost по SNI:
+                                     PANEL_DOMAIN     → 127.0.0.1:WEB_PORT  (панель, HTTP)
+                                     SUB_DOMAIN       → 127.0.0.1:SUB_PORT  (подписка, HTTP)
+                                     SELFSTEAL_DOMAIN → /var/www/SELFSTEAL  (статичная заглушка)
+                                     всё прочее       → 444 (drop)
 ```
 
-- nginx listens ONLY on a unix socket (`/dev/shm/xui.sock`) — nothing on a TCP
-  port to scan. `ssl` + `proxy_protocol` because Xray relays the original TLS
-  ClientHello with a PROXY header (Reality `xver=1`).
-- panel + sub run plain HTTP on 127.0.0.1 (TLS terminated here). So at install we
-  set `webCertFile`/`subCertFile` EMPTY and `listenIP=subListen=127.0.0.1`.
-- Real client IP is recovered from the PROXY protocol header.
+- nginx слушает ТОЛЬКО unix-сокет (`/dev/shm/xui.sock`) — на TCP-порту нечего
+  сканировать. `ssl` + `proxy_protocol`, потому что Xray реле оригинального TLS
+  ClientHello с заголовком PROXY (Reality `xver=1`).
+- панель + подписка работают по plain HTTP на 127.0.0.1 (TLS терминируется здесь).
+  Поэтому при установке `webCertFile`/`subCertFile` ПУСТЫЕ, а
+  `listenIP=subListen=127.0.0.1`.
+- Реальный IP клиента восстанавливается из заголовка PROXY protocol.
 
-## Render variables (filled by the installer)
+## Переменные рендера (заполняет установщик)
 
-| var | meaning |
+| переменная | смысл |
 |-----|---------|
-| `PANEL_DOMAIN` `SUB_DOMAIN` `SELFSTEAL_DOMAIN` | the three hostnames |
-| `WEB_PORT` `SUB_PORT` | localhost ports the panel/sub bind to |
-| `WEB_BASE_PATH` | panel base path (`/` when cookie-gate, else `/<random>/`) |
-| `*_CERT` `*_KEY` | cert/key paths — one wildcard set (CF DNS-01) or 3 per-domain sets |
-| `COOKIE_KEY` `COOKIE_VAL` | cookie-gate secret (only when style 2 chosen) |
-| `SELFSTEAL_ROOT` | `/var/www/<SELFSTEAL_DOMAIN>` (decoy template dir) |
+| `PANEL_DOMAIN` `SUB_DOMAIN` `SELFSTEAL_DOMAIN` | три хоста |
+| `WEB_PORT` `SUB_PORT` | localhost-порты панели/подписки |
+| `WEB_BASE_PATH` | base path панели (`/` при cookie-gate, иначе `/<random>/`) |
+| `*_CERT` `*_KEY` | пути к cert/key — один wildcard-набор (CF DNS-01) или 3 по доменам |
+| `COOKIE_KEY` `COOKIE_VAL` | секрет cookie-gate (только при стиле 2) |
+| `SELFSTEAL_ROOT` | `/var/www/<SELFSTEAL_DOMAIN>` (каталог заглушки) |
 
-Blocks wrapped in `# >>> COOKIE-GATE` … `# <<<` are emitted ONLY for access
-style 2 (cookie-gate). For style 1 (webBasePath) they are omitted entirely.
+Блоки `# >>> COOKIE-GATE` … `# <<<` эмитятся ТОЛЬКО для стиля доступа 2
+(cookie-gate). Для стиля 1 (webBasePath) опускаются полностью.
 
 ---
 
@@ -181,25 +182,24 @@ server {
 
 ---
 
-## Notes / decisions for this template
+## Заметки / решения по шаблону
 
-- **Cert layout:** with Cloudflare DNS-01 we issue ONE wildcard `*.base` (+base)
-  cert and point all `*_CERT/*_KEY` at it. With HTTP-01 we issue 3 separate
-  certs and fill each block's pair. The template is identical either way — only
-  the rendered paths differ.
-- **`dest` = unix socket vs `127.0.0.1:8443`:** primary is the unix socket
-  (`/dev/shm/xui.sock`, eGames-proven, nothing on a TCP port). If a target Xray
-  build rejects a unix-socket Reality `dest`, fall back to nginx
+- **Раскладка сертификатов:** с Cloudflare DNS-01 выпускаем ОДИН wildcard `*.base`
+  (+base) и направляем все `*_CERT/*_KEY` на него. С HTTP-01 — 3 отдельных
+  сертификата, по паре на блок. Шаблон одинаков; различаются только пути.
+- **`dest` = unix-сокет vs `127.0.0.1:8443`:** основной — unix-сокет
+  (`/dev/shm/xui.sock`, проверено у eGames, ничего на TCP-порту). Если конкретная
+  сборка Xray не принимает unix-сокет в Reality `dest`, фолбэк —
   `listen 127.0.0.1:8443 ssl proxy_protocol` + `realitySettings.dest=127.0.0.1:8443`.
-- **http2 on** per-server (nginx ≥1.25 syntax). On older nginx use
-  `listen ... http2`. Installer detects nginx version.
-- **Cookie-gate `if`:** the single `if ($authorized = 0)` is the documented-safe
-  use of `if` in nginx (return only). The `add_header Set-Cookie` on the entry
-  link is what arms the cookie; subsequent visits pass via the cookie map.
-- The panel/sub already 403 foreign Hosts themselves (DomainValidator), so the
-  proxy is defence-in-depth, not the only guard.
-- Branded `__xui_4xx.html` / `__xui_5xx.html` ship in the release tarball and are
-  copied to `/etc/x-ui/errorpages/` at install (glass style, no server banners).
-  Branded pages cover the full common error set (400 401 403 404 405 429 500 502
-  503 504); the catch-all (unknown SNI) stays `444` (silent drop, no page).
-- Web server is **nginx only** for now (a Caddy flavour may come later).
+- **http2 on** на каждый server (синтаксис nginx ≥1.25). На старом nginx —
+  `listen ... http2`. Установщик определяет версию nginx.
+- **`if` в cookie-gate:** единственный `if ($authorized = 0)` — документированно
+  безопасное применение `if` в nginx (только `return`). `add_header Set-Cookie` на
+  входной ссылке взводит cookie; последующие визиты проходят по cookie-map.
+- Панель/подписка сами отдают 403 на чужой Host (DomainValidator), так что прокси —
+  это эшелонированная защита, а не единственный страж.
+- Брендированные `__xui_4xx.html` / `__xui_5xx.html` идут в релизном архиве и
+  копируются в `/etc/x-ui/errorpages/` при установке (glass-стиль, без баннеров
+  сервера). Охватывают полный набор частых ошибок (400 401 403 404 405 429 500 502
+  503 504); catch-all (неизвестный SNI) остаётся `444` (тихий drop, без страницы).
+- Веб-сервер пока **только nginx** (вариант Caddy возможен позже).
